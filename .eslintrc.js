@@ -10,7 +10,7 @@ module.exports = {
 		'plugin:@typescript-eslint/recommended',
 	],
 	rules: {
-		"indent": ["warn", "tab"],
+		"indent": ["warn", "space"],
 		"no-console": ["warn"],
 		"no-multiple-empty-lines": ["warn", { "max": 1 }]
 	},

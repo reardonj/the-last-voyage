@@ -3,5 +3,8 @@
 		"node_modules": true,
 		"package-lock.json": true
 	},
-	"files.insertFinalNewline": true
+	"files.insertFinalNewline": true,
+	"cSpell.words": [
+		"Preloader"
+	]
 }
