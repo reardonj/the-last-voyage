@@ -15,6 +15,6 @@ export default class Boot extends Phaser.Scene {
 	public create(): void {
 		Utilities.LogSceneMethodEntry("Boot", "create");
 
-		this.scene.start(MainGame.Name);
+		this.scene.start(Preloader.Name);
 	}
 }

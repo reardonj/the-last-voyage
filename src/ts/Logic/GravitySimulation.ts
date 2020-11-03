@@ -14,10 +14,10 @@ export class GravitySimulation {
     position: M.Vector2, 
     velocity: M.Vector2,
     initialAcc: M.Vector2)
-    : IterableIterator<[pos: M.Vector2, vel: M.Vector2]> {
+    : IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]> {
     const delta = deltaMs / 1000 / extraSteps;
 
-    let acc = this.applyGravity(position).add(initialAcc);
+    let acc = initialAcc;
     let vel = velocity;
     let pos = position;
     let step = 0;
@@ -26,13 +26,14 @@ export class GravitySimulation {
     while (true) {
       step = (step + 1) % extraSteps;
       const newPos = pos.clone().add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
-      const newAcc = this.applyGravity(pos);
+      const newAcc = this.applyGravity(pos).add(initialAcc);
       vel.add(acc.add(newAcc).scale(delta * 0.5));
       pos = newPos;
       acc = newAcc;
 
       if (step == 0) {
-        yield [pos, vel.clone()];
+        initialAcc = M.Vector2.ZERO;
+        yield [pos, vel.clone(), acc.clone()];
       }
     }
   }

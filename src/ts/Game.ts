@@ -8,8 +8,8 @@ import MainGame from "./Scenes/MainGame";
 import MainSettings from "./Scenes/MainSettings";
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
-	width: 800,
-	height: 450,
+	width: 1280,
+	height: 720,
 	type: Phaser.AUTO,
 	parent: "content",
 	title: "Starter Project for Phaser 3 with Visual Studio Code, TypeScript, and NodeJS"
