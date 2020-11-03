@@ -1,5 +1,6 @@
 import Preloader from "./Preloader";
 import Utilities from "../Utilities";
+import MainGame from "./MainGame";
 
 export default class Boot extends Phaser.Scene {
 	/**
@@ -14,6 +15,6 @@ export default class Boot extends Phaser.Scene {
 	public create(): void {
 		Utilities.LogSceneMethodEntry("Boot", "create");
 
-		this.scene.start(Preloader.Name);
+		this.scene.start(MainGame.Name);
 	}
 }
