@@ -8,32 +8,38 @@ export class GravitySimulation {
     this.wells = [...wells];
   }
 
-  calculate(seconds: number, resolution: number, position: M.Vector2, velocity: M.Vector2): [pos: M.Vector2, vel: M.Vector2][] {
-    const result: [M.Vector2, M.Vector2][] = [];
-    const delta = 1 / resolution;
+  *calculate(
+    deltaMs: number, 
+    extraSteps: number, 
+    position: M.Vector2, 
+    velocity: M.Vector2,
+    initialAcc: M.Vector2)
+    : IterableIterator<[pos: M.Vector2, vel: M.Vector2]> {
+    const delta = deltaMs / 1000 / extraSteps;
 
-    let acc = new M.Vector2();
+    let acc = this.applyGravity(position).add(initialAcc);
     let vel = velocity;
     let pos = position;
+    let step = 0;
 
-    const tempPos = new M.Vector2();
 
-    result.push([pos, vel]);
-
-    for (var i: number = 0; i < seconds * resolution; i++) {
-      const newPos = tempPos.copy(pos).add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
+    while (true) {
+      step = (step + 1) % extraSteps;
+      const newPos = pos.clone().add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
       const newAcc = this.applyGravity(pos);
       vel.add(acc.add(newAcc).scale(delta * 0.5));
-      pos = newPos.clone();
+      pos = newPos;
       acc = newAcc;
-      result.push([pos, vel.clone()]);
+
+      if (step == 0) {
+        yield [pos, vel.clone()];
+      }
     }
-    return result;
   }
 
   private applyGravity(position: M.Vector2): M.Vector2 {
     let acc = new M.Vector2();
-    for(let body of this.wells) {
+    for (let body of this.wells) {
       const distSqr = body.position.distanceSq(position);
       const force = GravitySimulation.grav * body.mass / distSqr;
       acc.add(body.position.clone().subtract(position).normalize().scale(force));
