@@ -1,40 +1,43 @@
 import { Math as M } from 'phaser';
 
 export class GravitySimulation {
-  private static grav = 20;
+  private static grav = 0.00004982;
   readonly wells: GravityWell[];
 
   constructor(wells: GravityWell[]) {
     this.wells = [...wells];
   }
 
+  /**
+   * Calculate the position of a body, with steps in the given resolution, where 1 = 1 day.
+   */
   *calculate(
-    deltaMs: number, 
-    extraSteps: number, 
+    resolution: number, 
+    accuracy: number,
     position: M.Vector2, 
     velocity: M.Vector2,
     initialAcc: M.Vector2)
     : IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]> {
-    const delta = deltaMs / 1000 / extraSteps;
+    const delta = resolution/accuracy;
 
-    let acc = initialAcc;
+    let acc = initialAcc.clone().scale(delta * delta);
     let vel = velocity;
     let pos = position;
     let step = 0;
 
 
     while (true) {
-      step = (step + 1) % extraSteps;
+      if (step == 0) {
+        yield [pos, vel.clone(), acc.clone()];
+      }
+      step = (step + 1) % accuracy;
+
       const newPos = pos.clone().add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
-      const newAcc = this.applyGravity(pos).add(initialAcc);
+      const newAcc = this.applyGravity(pos);
       vel.add(acc.add(newAcc).scale(delta * 0.5));
       pos = newPos;
       acc = newAcc;
 
-      if (step == 0) {
-        initialAcc = M.Vector2.ZERO;
-        yield [pos, vel.clone(), acc.clone()];
-      }
     }
   }
 
