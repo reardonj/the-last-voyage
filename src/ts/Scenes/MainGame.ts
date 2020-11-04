@@ -45,12 +45,12 @@ export default class MainGame extends Phaser.Scene {
     ];
 
     this.sim = new GravitySimulation(this.wells);
-    this.position = new M.Vector2(-10000, -10000);
-    this.nextVelocity = new M.Vector2(0.3, 0);
+    this.position = new M.Vector2(-6000, -6000);
+    this.nextVelocity = new M.Vector2(3, 2);
 
     this.toScale.push(this.add.image(this.wells[0].position.x, this.wells[0].position.y, "sun").setDisplaySize(16, 16));
     for (let well of this.wells.slice(1)) {
-      this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log(well.mass + 1), 0xffffff));
+      this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
     }
 
     this.prediction = [];
@@ -60,10 +60,10 @@ export default class MainGame extends Phaser.Scene {
       this.toScale.push(p);
     }
 
-    this.currentPosition = this.add.circle(this.position.x, this.position.y, 10, 0x0000ff);
+    this.currentPosition = this.add.circle(this.position.x, this.position.y, 2, 0xffffff);
     this.toScale.push(this.currentPosition);
     //this.cameras.main.startFollow(this.currentPosition, false);
-    this.cameras.main.centerOn(0,0);
+    this.cameras.main.centerOn(0, 0);
     this.cameras.main.setZoom(0.05);
     this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -79,19 +79,19 @@ export default class MainGame extends Phaser.Scene {
     const needsUpdate =
       !this.nextPredictions ||
       this.cursors.up.isDown ||
-      this.cursors.down.isDown;
+      this.cursors.down.isDown ||
+      this.cursors.right.isDown ||
+      this.cursors.left.isDown;
 
 
     if (needsUpdate) {
-      const acc = this.cursors.up.isDown ? 1 : this.cursors.down.isDown ? -1 : 0;
-      const forwardAcc = this.nextVelocity.clone().normalize().scale(acc);
+      let acc = this.nextAcc();
 
       this.path = this.sim.calculate(
-        30,
-        100,
+        1,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
-        forwardAcc);
+        acc);
       this.nextPredictions = [];
 
       for (let i = 0; i < this.prediction.length * this.predictionSpacing; i++) {
@@ -120,15 +120,31 @@ export default class MainGame extends Phaser.Scene {
 
     this.position = this.nextPredictions[1][0];
     this.nextVelocity = this.nextPredictions[1][1];
-    this.nextAcceleration = this.nextPredictions[1][2];
     this.currentPosition.setPosition(this.position.x, this.position.y);
 
     const baseScale = this.game.canvas.height / 2;
     const scaleDist = this.position.distance(M.Vector2.ZERO) * 1.5;
-    this.cameras.main.setZoom(baseScale/scaleDist);
-    const scaleFactor = 1/this.cameras.main.zoom;
-    for(let p of this.toScale) {
+    this.cameras.main.setZoom(baseScale / scaleDist);
+    const scaleFactor = 1 / this.cameras.main.zoom;
+    for (let p of this.toScale) {
       p.setScale(scaleFactor)
     }
+  }
+
+  private nextAcc(): M.Vector2 {
+    let x = 0;
+    let y = 0;
+    if (this.cursors.up.isDown) {
+      y = -1;
+    } else if (this.cursors.down.isDown) {
+      y = 1;
+    }
+
+    if (this.cursors.right.isDown) {
+      x = 1;
+    } else if (this.cursors.left.isDown) {
+      x = -1;
+    }
+    return new M.Vector2(x, y).scale(0.1);
   }
 }

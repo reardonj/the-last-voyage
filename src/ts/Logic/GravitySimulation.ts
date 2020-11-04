@@ -12,32 +12,24 @@ export class GravitySimulation {
    * Calculate the position of a body, with steps in the given resolution, where 1 = 1 day.
    */
   *calculate(
-    resolution: number, 
     accuracy: number,
     position: M.Vector2, 
     velocity: M.Vector2,
     initialAcc: M.Vector2)
     : IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]> {
-    const delta = resolution/accuracy;
+    const delta = 1/accuracy;
 
     let acc = initialAcc.clone().scale(delta * delta);
     let vel = velocity;
     let pos = position;
-    let step = 0;
-
 
     while (true) {
-      if (step == 0) {
         yield [pos, vel.clone(), acc.clone()];
-      }
-      step = (step + 1) % accuracy;
-
       const newPos = pos.clone().add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
       const newAcc = this.applyGravity(pos);
       vel.add(acc.add(newAcc).scale(delta * 0.5));
       pos = newPos;
       acc = newAcc;
-
     }
   }
 
