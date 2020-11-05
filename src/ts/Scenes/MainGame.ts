@@ -4,7 +4,11 @@ import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import { GigametersPerDayToLightSpeedPercent, GigametersPerDayToMetresPerSecond, MetresPerSecondToPercentLightSpeed } from "../Logic/Conversions";
 
-type ScaleSetting = [scale: number, orbitalDotFrequency: number];
+type ScaleSetting = [
+  scale: number,
+  orbitalDotFrequency: number,
+  daysPerFrame: number
+];
 
 export default class MainGame extends Phaser.Scene {
   /**
@@ -23,12 +27,12 @@ export default class MainGame extends Phaser.Scene {
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private path: IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]>;
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
-  private predictionSpacing = 10;
+  private predictionSpacing = 30;
   private frame = 0;
 
 
   private scaleSettings: ScaleSetting[] = [
-    [0.05, .001]
+    [0.05, .001, 7]
   ]
 
 
@@ -53,14 +57,14 @@ export default class MainGame extends Phaser.Scene {
 
     this.sim = new GravitySimulation(this.wells);
     this.position = new M.Vector2(-6000, -6000);
-    this.nextVelocity = new M.Vector2(3, 2);
+    this.nextVelocity = new M.Vector2(15, 8);
 
     this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
     this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 9, 0xffffff));
     for (let well of this.wells.slice(1)) {
       this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
       const radius = well.position.length();
-      const dotSpacing = 1 / (radius * 0.005);
+      const dotSpacing = Math.PI * 2 / Math.round(radius * 0.01);
       for (let angle = 0; angle < Math.PI * 2; angle += dotSpacing) {
         const position = new M.Vector2().setToPolar(angle, radius);
         this.toScale.push(this.add.circle(position.x, position.y, 1, 0xffffff));
@@ -68,7 +72,7 @@ export default class MainGame extends Phaser.Scene {
     }
 
     this.prediction = [];
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 10; i++) {
       const p = this.add.circle(50, 50, 1, 0xffff00);
       this.prediction.push(p);
       this.toScale.push(p);
@@ -76,7 +80,7 @@ export default class MainGame extends Phaser.Scene {
 
     this.currentPosition = this.add.circle(this.position.x, this.position.y, 2, 0xffffff);
     this.toScale.push(this.currentPosition);
-    //this.cameras.main.startFollow(this.currentPosition, false);
+
     this.cameras.main.centerOn(0, 0);
     this.cameras.main.setZoom(0.05);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -96,39 +100,17 @@ export default class MainGame extends Phaser.Scene {
 
 
     if (needsUpdate) {
-      let acc = this.nextAcc();
-
+      const acc = this.nextAcc();
       this.path = this.sim.calculate(
         1,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
         acc);
 
-      this.nextPredictions = [];
-      for (let i = 0; i < this.prediction.length * this.predictionSpacing; i++) {
-        this.nextPredictions.push(this.path.next().value);
-      }
-
-      this.frame = 0;
-      for (let i = 0; i < this.prediction.length; i++) {
-        this.prediction[i].setPosition(
-          this.nextPredictions[i * this.predictionSpacing][0].x,
-          this.nextPredictions[i * this.predictionSpacing][0].y);
-      }
+      this.resetPredictions();
     }
     else {
-      this.nextPredictions.push(this.path.next().value);
-      this.nextPredictions.shift();
-
-      if (this.frame == 0) {
-        //Utilities.Log("Velocity:" + GigametersPerDayToLightSpeedPercent(this.nextVelocity.length()));
-        const toUpdate = this.prediction.shift();
-        this.prediction.push(toUpdate);
-        toUpdate.setPosition(
-          this.nextPredictions[this.nextPredictions.length - 1][0].x,
-          this.nextPredictions[this.nextPredictions.length - 1][0].y);
-      }
-      this.frame = (this.frame + 1) % this.predictionSpacing;
+      this.updatePredictions();
     }
 
     this.position = this.nextPredictions[1][0];
@@ -142,6 +124,32 @@ export default class MainGame extends Phaser.Scene {
     const scaleFactor = 1 / this.cameras.main.zoom;
     for (let p of this.toScale) {
       p.setScale(scaleFactor)
+    }
+  }
+
+  private updatePredictions() {
+    this.nextPredictions.push(this.path.next().value);
+    this.nextPredictions.shift();
+
+    this.renderPredictions();
+  }
+
+
+  private resetPredictions() {
+    this.nextPredictions = [];
+    for (let i = 0; i < (this.prediction.length + 1) * this.predictionSpacing; i++) {
+      this.nextPredictions.push(this.path.next().value);
+    }
+
+    this.renderPredictions();
+  }
+
+  private renderPredictions() {
+    this.frame = (this.frame + 1) % this.predictionSpacing;
+    for (let i = 0; i < this.prediction.length; i++) {
+      this.prediction[i].setPosition(
+        this.nextPredictions[(i + 1) * this.predictionSpacing - this.frame][0].x,
+        this.nextPredictions[(i + 1) * this.predictionSpacing - this.frame][0].y);
     }
   }
 
