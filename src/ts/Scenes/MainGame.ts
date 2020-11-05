@@ -2,6 +2,9 @@ import Utilities from "../Utilities";
 import RelativisticMath from "../RelativisticMath"
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
+import { GigametersPerDayToLightSpeedPercent, GigametersPerDayToMetresPerSecond, MetresPerSecondToPercentLightSpeed } from "../Logic/Conversions";
+
+type ScaleSetting = [scale: number, orbitalDotFrequency: number];
 
 export default class MainGame extends Phaser.Scene {
   /**
@@ -22,8 +25,11 @@ export default class MainGame extends Phaser.Scene {
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
   private predictionSpacing = 10;
   private frame = 0;
-  velocityLabel: GameObjects.Text;
-  accelerationLabel: GameObjects.Text;
+
+
+  private scaleSettings: ScaleSetting[] = [
+    [0.05, .001]
+  ]
 
 
   public preload(): void {
@@ -41,16 +47,24 @@ export default class MainGame extends Phaser.Scene {
       new GravityWell(this.randomOrbit(778), 18987),
       new GravityWell(this.randomOrbit(1426), 5685),
       new GravityWell(this.randomOrbit(2870), 868),
-      new GravityWell(this.randomOrbit(4498), 1024)
+      new GravityWell(this.randomOrbit(4498), 1024),
+      new GravityWell(this.randomOrbit(5906), 0.13)
     ];
 
     this.sim = new GravitySimulation(this.wells);
     this.position = new M.Vector2(-6000, -6000);
     this.nextVelocity = new M.Vector2(3, 2);
 
-    this.toScale.push(this.add.image(this.wells[0].position.x, this.wells[0].position.y, "sun").setDisplaySize(16, 16));
+    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
+    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 9, 0xffffff));
     for (let well of this.wells.slice(1)) {
       this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
+      const radius = well.position.length();
+      const dotSpacing = 1 / (radius * 0.005);
+      for (let angle = 0; angle < Math.PI * 2; angle += dotSpacing) {
+        const position = new M.Vector2().setToPolar(angle, radius);
+        this.toScale.push(this.add.circle(position.x, position.y, 1, 0xffffff));
+      }
     }
 
     this.prediction = [];
@@ -66,9 +80,6 @@ export default class MainGame extends Phaser.Scene {
     this.cameras.main.centerOn(0, 0);
     this.cameras.main.setZoom(0.05);
     this.cursors = this.input.keyboard.createCursorKeys();
-
-    this.velocityLabel = this.add.text(10, 10, "").setScrollFactor(0);
-    this.accelerationLabel = this.add.text(10, 30, "").setScrollFactor(0);
   }
 
   private randomOrbit(distance: number): M.Vector2 {
@@ -92,11 +103,12 @@ export default class MainGame extends Phaser.Scene {
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
         acc);
-      this.nextPredictions = [];
 
+      this.nextPredictions = [];
       for (let i = 0; i < this.prediction.length * this.predictionSpacing; i++) {
         this.nextPredictions.push(this.path.next().value);
       }
+
       this.frame = 0;
       for (let i = 0; i < this.prediction.length; i++) {
         this.prediction[i].setPosition(
@@ -109,6 +121,7 @@ export default class MainGame extends Phaser.Scene {
       this.nextPredictions.shift();
 
       if (this.frame == 0) {
+        //Utilities.Log("Velocity:" + GigametersPerDayToLightSpeedPercent(this.nextVelocity.length()));
         const toUpdate = this.prediction.shift();
         this.prediction.push(toUpdate);
         toUpdate.setPosition(
@@ -122,9 +135,10 @@ export default class MainGame extends Phaser.Scene {
     this.nextVelocity = this.nextPredictions[1][1];
     this.currentPosition.setPosition(this.position.x, this.position.y);
 
+
     const baseScale = this.game.canvas.height / 2;
-    const scaleDist = this.position.distance(M.Vector2.ZERO) * 1.5;
-    this.cameras.main.setZoom(baseScale / scaleDist);
+    const scaleDist = (this.position.distance(M.Vector2.ZERO) * 1.5);
+    //this.cameras.main.setZoom(baseScale / scaleDist);
     const scaleFactor = 1 / this.cameras.main.zoom;
     for (let p of this.toScale) {
       p.setScale(scaleFactor)
@@ -135,16 +149,16 @@ export default class MainGame extends Phaser.Scene {
     let x = 0;
     let y = 0;
     if (this.cursors.up.isDown) {
-      y = -1;
-    } else if (this.cursors.down.isDown) {
       y = 1;
+    } else if (this.cursors.down.isDown) {
+      y = -1;
     }
 
     if (this.cursors.right.isDown) {
-      x = 1;
-    } else if (this.cursors.left.isDown) {
       x = -1;
+    } else if (this.cursors.left.isDown) {
+      x = 1;
     }
-    return new M.Vector2(x, y).scale(0.1);
+    return new M.Vector2(x, y).normalize().scale(0.1);
   }
 }
