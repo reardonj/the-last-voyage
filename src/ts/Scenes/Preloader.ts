@@ -1,6 +1,7 @@
 import SplashScreen from "./SplashScreen";
 import Utilities from "../Utilities";
 import MainGame from "./MainGame";
+import Hud from "./Hud";
 
 export default class Preloader extends Phaser.Scene {
 	/**
@@ -11,16 +12,16 @@ export default class Preloader extends Phaser.Scene {
 	public preload(): void {
 		this.addProgressBar();
 
-		this.load.path = "assets/";
-		this.load.image("phaser_pixel_medium_flat");
-    this.load.image("Phaser-Logo-Small");
-    this.load.image("sun")
+    this.load.path = "assets/";
+    this.load.bitmapFont("future-thin-24", "fonts/kenvector_future_thin_24.png", "fonts/kenvector_future_thin_24.xml");
+    this.load.bitmapFont("future-thin-16", "fonts/kenvector_future_thin_16.png", "fonts/kenvector_future_thin_16.xml");
 	}
 
 	public create(): void {
 		Utilities.LogSceneMethodEntry("Preloader", "create");
 
 		this.scene.start(MainGame.Name);
+		this.scene.start(Hud.Name);
 	}
 
 	public update(): void {

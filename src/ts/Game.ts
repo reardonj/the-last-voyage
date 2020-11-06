@@ -6,6 +6,7 @@ import SplashScreen from "./Scenes/SplashScreen";
 import Utilities from "./Utilities";
 import MainGame from "./Scenes/MainGame";
 import MainSettings from "./Scenes/MainSettings";
+import Hud from './Scenes/Hud';
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
 	width: 1280,
@@ -26,7 +27,8 @@ export default class Game extends Phaser.Game {
 		this.scene.add(SplashScreen.Name, SplashScreen);
 		this.scene.add(MainMenu.Name, MainMenu);
 		this.scene.add(MainGame.Name, MainGame);
-		this.scene.add(MainSettings.Name, MainSettings);
+    this.scene.add(MainSettings.Name, MainSettings);
+    this.scene.add(Hud.Name, Hud);
 		this.scene.start(Boot.Name);
 	}
 }

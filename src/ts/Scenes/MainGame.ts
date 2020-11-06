@@ -1,8 +1,9 @@
+import * as EventSource from "../Logic/EventSource";
 import Utilities from "../Utilities";
 import RelativisticMath from "../RelativisticMath"
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
-import { GigametersPerDayToLightSpeedPercent, GigametersPerDayToMetresPerSecond, MetresPerSecondToPercentLightSpeed } from "../Logic/Conversions";
+import * as Conversions from "../Logic/Conversions";
 
 type ScaleSetting = [
   scale: number,
@@ -51,12 +52,11 @@ export default class MainGame extends Phaser.Scene {
       new GravityWell(this.randomOrbit(778), 18987),
       new GravityWell(this.randomOrbit(1426), 5685),
       new GravityWell(this.randomOrbit(2870), 868),
-      new GravityWell(this.randomOrbit(4498), 1024),
-      new GravityWell(this.randomOrbit(5906), 0.13)
+      new GravityWell(this.randomOrbit(4498), 1024)
     ];
 
     this.sim = new GravitySimulation(this.wells);
-    this.position = new M.Vector2(-6000, -6000);
+    this.position = new M.Vector2(-5000, -5000);
     this.nextVelocity = new M.Vector2(15, 8);
 
     this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
@@ -125,6 +125,13 @@ export default class MainGame extends Phaser.Scene {
     for (let p of this.toScale) {
       p.setScale(scaleFactor)
     }
+
+    EventSource.Source.emit(
+      EventSource.TimePassed, 
+      {
+        earth: 60 * 24, 
+        relative: Conversions.contractTime(60 * 24, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length()))
+      });
   }
 
   private updatePredictions() {
