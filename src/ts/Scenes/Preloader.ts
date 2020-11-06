@@ -1,6 +1,6 @@
 import SplashScreen from "./SplashScreen";
 import Utilities from "../Utilities";
-import MainGame from "./MainGame";
+import SolarSystemNavigation from "./SolarSystemNavigation";
 import Hud from "./Hud";
 
 export default class Preloader extends Phaser.Scene {
@@ -18,9 +18,7 @@ export default class Preloader extends Phaser.Scene {
 	}
 
 	public create(): void {
-		Utilities.LogSceneMethodEntry("Preloader", "create");
-
-		this.scene.start(MainGame.Name);
+		this.scene.start(SolarSystemNavigation.Name);
 		this.scene.start(Hud.Name);
 	}
 

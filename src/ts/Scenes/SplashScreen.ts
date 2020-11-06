@@ -1,4 +1,3 @@
-import Utilities from "../Utilities";
 import MainMenu from "./MainMenu";
 
 export default class SplashScreen extends Phaser.Scene {
@@ -12,8 +11,6 @@ export default class SplashScreen extends Phaser.Scene {
 	}
 
 	public create(): void {
-		Utilities.LogSceneMethodEntry("SplashScreen", "create");
-
 		const titleText = this.add.text(this.cameras.main.centerX, this.cameras.main.centerY * 0.5, "Starter Project for Phaser 3 with TypeScript")
 			.setOrigin(0.5, 0)
 			.setFontFamily("monospace").setFontSize(26).setFill("#fff");

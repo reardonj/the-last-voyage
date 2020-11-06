@@ -1,6 +1,6 @@
-import * as EventSource from "../Logic/EventSource";
+import * as EventSource from "../GameData/EventSource";
 import Utilities from "../Utilities";
-import MainGame from "./MainGame";
+import SolarSystemNavigation from "./SolarSystemNavigation";
 
 const LeftMargin = 8;
 const textTint = 0xccccff;

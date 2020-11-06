@@ -1,9 +1,10 @@
-import * as EventSource from "../Logic/EventSource";
+import * as EventSource from "../GameData/EventSource";
 import Utilities from "../Utilities";
-import RelativisticMath from "../RelativisticMath"
+import RelativisticMath from "../Logic/RelativisticMath"
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
+import { SolarSystemState } from "../GameData/SolarSystem";
 
 type ScaleSetting = [
   scale: number,
@@ -11,11 +12,11 @@ type ScaleSetting = [
   daysPerFrame: number
 ];
 
-export default class MainGame extends Phaser.Scene {
+export default class SolarSystemNavigation extends Phaser.Scene {
   /**
    * Unique name of the scene.
    */
-  public static Name = "MainGame";
+  public static Name = "SolarSystemNavigation";
 
   private sim: GravitySimulation;
   private wells: GravityWell[];
@@ -36,12 +37,14 @@ export default class MainGame extends Phaser.Scene {
     [0.05, .001, 7]
   ]
 
+  public init(data: SolarSystemState): void {
+
+  }
 
   public preload(): void {
   }
 
   public create(): void {
-    Utilities.LogSceneMethodEntry("MainGame", "create");
     const centre = new M.Vector2(0, 0);
     this.wells = [
       new GravityWell(centre, 20000000),
@@ -127,9 +130,9 @@ export default class MainGame extends Phaser.Scene {
     }
 
     EventSource.Source.emit(
-      EventSource.TimePassed, 
+      EventSource.TimePassed,
       {
-        earth: 60 * 24, 
+        earth: 60 * 24,
         relative: Conversions.contractTime(60 * 24, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length()))
       });
   }
