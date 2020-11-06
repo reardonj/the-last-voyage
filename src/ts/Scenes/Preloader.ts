@@ -2,6 +2,7 @@ import SplashScreen from "./SplashScreen";
 import Utilities from "../Utilities";
 import SolarSystemNavigation from "./SolarSystemNavigation";
 import Hud from "./Hud";
+import GameState from "../GameData/GameState";
 
 export default class Preloader extends Phaser.Scene {
 	/**
@@ -18,8 +19,9 @@ export default class Preloader extends Phaser.Scene {
 	}
 
 	public create(): void {
-		this.scene.start(SolarSystemNavigation.Name);
-		this.scene.start(Hud.Name);
+    const state = new GameState({ earthTime: 0, relativeTime: 0});
+		this.scene.start(Hud.Name, state);
+		this.scene.start(SolarSystemNavigation.Name, state);
 	}
 
 	public update(): void {

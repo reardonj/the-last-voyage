@@ -1,10 +1,7 @@
-import * as EventSource from "../GameData/EventSource";
-import Utilities from "../Utilities";
-import RelativisticMath from "../Logic/RelativisticMath"
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
-import { SolarSystemState } from "../GameData/SolarSystem";
+import GameState, { Events } from "../GameData/GameState";
 
 type ScaleSetting = [
   scale: number,
@@ -36,10 +33,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private scaleSettings: ScaleSetting[] = [
     [0.05, .001, 7]
   ]
-
-  public init(data: SolarSystemState): void {
-
-  }
 
   public preload(): void {
   }
@@ -129,12 +122,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       p.setScale(scaleFactor)
     }
 
-    EventSource.Source.emit(
-      EventSource.TimePassed,
-      {
-        earth: 60 * 24,
-        relative: Conversions.contractTime(60 * 24, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length()))
-      });
+    (<GameState>this.scene.settings.data).updateTime(
+        60 * 24,
+        Conversions.contractTime(60 * 24, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
   }
 
   private updatePredictions() {

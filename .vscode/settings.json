@@ -5,6 +5,8 @@
 	},
 	"files.insertFinalNewline": true,
 	"cSpell.words": [
-		"Preloader"
-	]
+    "Preloader",
+    "Tween",
+    "Tweens"
+  ]
 }
