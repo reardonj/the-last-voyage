@@ -1,4 +1,4 @@
-import GameState, { Events, TimePassedEvent } from "../GameData/GameState";
+import GameState, { Events, LocationChangedEvent, TimePassedEvent } from "../GameData/GameState";
 import { Colours, Fonts } from "../Utilities";
 
 const LeftMargin = 8;
@@ -43,7 +43,7 @@ export default class Hud extends Phaser.Scene {
 
   public create(state: GameState): void {
     this.durationText = this.add.bitmapText(LeftMargin, LeftMargin / 2, Fonts.Proportional16, "").setTint(Colours.TextTint);
-    this.locationText = this.add.bitmapText(LeftMargin, 30, Fonts.Proportional24, "Sol.Outer Planets").setTint(Colours.TextTint);
+    this.locationText = this.add.bitmapText(LeftMargin, 30, Fonts.Proportional24, "----").setTint(Colours.TextTint);
 
     [this.integrityText, this.integrityWarning] = this.setupStatusText(LeftMargin / 2, "Integrity");
     [this.fuelText, this.fuelWarning] = this.setupStatusText(LeftMargin / 2 + 20, "Fuel");
@@ -51,6 +51,7 @@ export default class Hud extends Phaser.Scene {
     [this.suppliesText, this.suppliesWarning] = this.setupStatusText(LeftMargin / 2 + 60, "Supplies");
 
     state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
+    state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
   }
 
   setupStatusText(y: number, name: string): [Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween] {
@@ -80,5 +81,9 @@ export default class Hud extends Phaser.Scene {
   updateTime(state: TimePassedEvent) {
     this.durationText.setText(
       `Mission Duration: ${createTimeString(state.earth)} Earth / ${createTimeString(state.relative)} Relative`);
+  }
+
+  updateLocation(state: LocationChangedEvent) {
+    this.locationText.setText(state.join("."));
   }
 }

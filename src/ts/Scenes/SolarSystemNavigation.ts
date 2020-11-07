@@ -5,8 +5,8 @@ import GameState, { Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Sprites } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
 
-type TransformableObject = 
-  Phaser.GameObjects.Components.Transform & 
+type TransformableObject =
+  Phaser.GameObjects.Components.Transform &
   Phaser.GameObjects.Components.AlphaSingle &
   Phaser.GameObjects.GameObject;
 
@@ -18,7 +18,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   public static Name = "SolarSystemNavigation";
 
   private sim: GravitySimulation;
-  private wells: GravityWell[];
   private position: M.Vector2;
   private nextVelocity: M.Vector2;
 
@@ -54,7 +53,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.prediction = [];
     for (let i = 0; i < 20; i++) {
-      const p = this.add.circle(50, 50, 1, 0xffffaa).setAlpha(1 - 0.8 * (i/20));
+      const p = this.add.circle(50, 50, 1, 0xffffaa).setAlpha(1 - 0.8 * (i / 20));
       this.prediction.push(p);
       this.toScale.push(p);
     }
@@ -66,10 +65,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const daysPassed = this.doUpdates();
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
-
     this.currentPosition.setRotation(this.nextVelocity.angle());
 
-    (<GameState>this.scene.settings.data).updateTime(
+    this.gameState().updateTime(
       60 * 24 * daysPassed,
       Conversions.contractTime(60 * 24 * daysPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
   }
@@ -89,6 +87,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       for (let p of this.orbitalBodies) {
         p.setScale(scaleFactor);
       }
+
+      const location =
+        scale == 0.05 ? "Outer System" :
+          scale == 1 ? "Inner System" :
+            "Mid System";
+      this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem().name, location]);
     }
   }
 
@@ -166,5 +170,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       x = 1;
     }
     return new M.Vector2(x, y).normalize();
+  }
+
+  private gameState() {
+    return (<GameState>this.scene.settings.data);
   }
 }

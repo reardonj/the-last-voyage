@@ -123,10 +123,13 @@ export class SolarSystemDefinition {
 }
 
 export const Events = {
-  TimePassed: "timePassed"
+  TimePassed: "timePassed",
+  LocationChanged: "locationChanged"
 }
 
 export interface TimePassedEvent {
   earth: number;
   relative: number;
 }
+
+export type LocationChangedEvent = string[]

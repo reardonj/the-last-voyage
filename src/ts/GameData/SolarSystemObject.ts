@@ -16,6 +16,7 @@ export function createGameObjects(system: SolarSystemDefinition): ScalableObject
     .filter(x => system.objects[x].type == "sun")
     .map(x => system.objects[x].mass)
     .reduce((a, x) => a + x, 0);
+  const planets = [];
   for (let key in system.objects) {
     const object = system.objects[key];
     switch (object.type) {
@@ -23,10 +24,12 @@ export function createGameObjects(system: SolarSystemDefinition): ScalableObject
         objects.push(new SunSprite(object));
         break;
       case "planet":
+        planets.push(object);
         objects.push(new PlanetSprite(object, sunMass));
         break;
     }
   }
+  objects.unshift(new InvisibleObjectIndicator(planets));
   return objects;
 }
 
@@ -49,6 +52,36 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
   return levels;
 }
 
+class InvisibleObjectIndicator implements ScalableObject {
+  position: Phaser.Math.Vector2;
+  mass: number;
+  orbits: Planet[];
+  graphic: Phaser.GameObjects.Arc;
+
+  constructor(planets: Planet[]) {
+    this.position = new Phaser.Math.Vector2();
+    this.mass = 0;
+    this.orbits = planets.sort((a, b) => a.orbitalRadius - b.orbitalRadius);
+  }
+
+  create(scene: Phaser.Scene) {
+    this.graphic = scene.add.circle(0, 0, 0, Colours.TextTint).setAlpha(0.5);
+  }
+
+  update(scene: Phaser.Scene) {
+  }
+
+  setScale(scale: number) {
+    const min = this.orbits.find(x => x.orbitalRadius / scale > 30);
+    if (min == this.orbits[0]) {
+      this.graphic.setVisible(false);
+    } else {
+      this.graphic.setRadius(min.orbitalRadius);
+      this.graphic.setVisible(true);
+    }
+  }
+}
+
 class SunSprite implements ScalableObject {
   private toScale: Phaser.GameObjects.Components.Transform[] = [];
   position: Phaser.Math.Vector2;
@@ -60,8 +93,8 @@ class SunSprite implements ScalableObject {
   }
 
   create(scene: Phaser.Scene) {
-    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 12, 0x8080ff));
-    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 9, 0xffffff));
+    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 12, Colours.TextTint));
+    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 10, 0xeeeea0));
   }
 
   update(scene: Phaser.Scene) {
@@ -105,7 +138,7 @@ class PlanetSprite implements ScalableObject {
     this.orbit.strokeCircle(0, 0, this.definition.orbitalRadius);
     this.sprite.setScale(scale);
 
-    const isVisible = this.definition.orbitalRadius / scale > 20;
+    const isVisible = this.definition.orbitalRadius / scale > 30;
     this.orbit.setVisible(isVisible);
     this.sprite.setVisible(isVisible);
   }
