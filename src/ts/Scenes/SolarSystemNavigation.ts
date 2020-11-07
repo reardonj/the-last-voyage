@@ -2,7 +2,7 @@ import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { Events } from "../GameData/GameState";
-import { Colours } from "../Utilities";
+import { Colours, Sprites } from "../Utilities";
 
 type TransformableObject = 
   Phaser.GameObjects.Components.Transform & 
@@ -94,7 +94,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.orbits = this.add.graphics();
     for (let well of this.wells.slice(1)) {
       const radius = well.position.length();
-      this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
+      this.toScale.push(this.add.sprite(well.position.x, well.position.y, Sprites.Planet).setTint(Colours.TextTint));
     }
     this.drawOrbits();
   }

@@ -16,3 +16,7 @@ export const Fonts = {
 export const Colours = {
   TextTint: 0xccccff
 }
+
+export const Sprites = {
+  Planet: "planet"
+}
