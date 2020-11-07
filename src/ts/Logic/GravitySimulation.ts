@@ -22,7 +22,6 @@ export class GravitySimulation {
     let acc = initialAcc;
     let vel = velocity;
     let pos = position;
-    
 
     while (true) {
       yield [pos, vel.clone(), acc.clone()];

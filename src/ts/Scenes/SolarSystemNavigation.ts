@@ -2,12 +2,26 @@ import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { Events } from "../GameData/GameState";
+import { Colours } from "../Utilities";
 
 type ScaleSetting = [
   scale: number,
   orbitalDotFrequency: number,
   daysPerFrame: number
 ];
+
+export interface SolarSystemState {
+  game: GameState;
+  init: SolarSystemParameters;
+}
+
+export interface SolarSystemParameters {
+  initialPosition: M.Vector2
+}
+
+export function createSolarSystemNavigationState(game: GameState, initialPosition: M.Vector2): SolarSystemState {
+  return { game: game, init: { initialPosition: initialPosition } };
+}
 
 export default class SolarSystemNavigation extends Phaser.Scene {
   /**
@@ -20,7 +34,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private position: M.Vector2;
   private nextVelocity: M.Vector2;
 
-  private toScale: Phaser.GameObjects.Components.Transform[] = [];
+  private toScale: (Phaser.GameObjects.Components.Transform & Phaser.GameObjects.GameObject)[] = [];
   private prediction: Phaser.GameObjects.Arc[];
   private currentPosition: Phaser.GameObjects.Arc;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
@@ -28,16 +42,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
   private predictionSpacing = 30;
   private frame = 0;
-
-
-  private scaleSettings: ScaleSetting[] = [
-    [0.05, .001, 7]
-  ]
+  orbits: GameObjects.Graphics;
+  daysPassed: number;
+  zoomLevels: number[] = [];
 
   public preload(): void {
   }
 
-  public create(): void {
+  public create(state: SolarSystemState): void {
     const centre = new M.Vector2(0, 0);
     this.wells = [
       new GravityWell(centre, 20000000),
@@ -50,36 +62,51 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       new GravityWell(this.randomOrbit(2870), 868),
       new GravityWell(this.randomOrbit(4498), 1024)
     ];
+    const radiuses = this.wells.map(x => x.position.length());
+    for (let i = 1; i < radiuses.length; i++) {
+      this.zoomLevels.push((radiuses[i-1] + radiuses[i])/2);
+    }
 
     this.sim = new GravitySimulation(this.wells);
-    this.position = new M.Vector2(-5000, -5000);
-    this.nextVelocity = new M.Vector2(15, 8);
-
-    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
-    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 9, 0xffffff));
-    for (let well of this.wells.slice(1)) {
-      this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
-      const radius = well.position.length();
-      const dotSpacing = Math.PI * 2 / Math.round(radius * 0.01);
-      for (let angle = 0; angle < Math.PI * 2; angle += dotSpacing) {
-        const position = new M.Vector2().setToPolar(angle, radius);
-        this.toScale.push(this.add.circle(position.x, position.y, 1, 0xffffff));
-      }
-    }
-
-    this.prediction = [];
-    for (let i = 0; i < 10; i++) {
-      const p = this.add.circle(50, 50, 1, 0xffff00);
-      this.prediction.push(p);
-      this.toScale.push(p);
-    }
-
+    this.position = state.init.initialPosition.clone();
+    this.nextVelocity = new M.Vector2(10, 6);
     this.currentPosition = this.add.circle(this.position.x, this.position.y, 2, 0xffffff);
     this.toScale.push(this.currentPosition);
 
     this.cameras.main.centerOn(0, 0);
-    this.cameras.main.setZoom(0.05);
     this.cursors = this.input.keyboard.createCursorKeys();
+
+    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
+    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 9, 0xffffff));
+
+    this.cameras.main.setZoom(0.04);
+    this.setupOrbitals();
+    this.updateScaledObjects();
+
+    this.prediction = [];
+    for (let i = 0; i < 20; i++) {
+      const p = this.add.circle(50, 50, 1, 0xffffaa);
+      this.prediction.push(p);
+      this.toScale.push(p);
+    }
+  }
+
+  private setupOrbitals() {
+    this.orbits = this.add.graphics();
+    for (let well of this.wells.slice(1)) {
+      const radius = well.position.length();
+      this.toScale.push(this.add.circle(well.position.x, well.position.y, Math.log10(well.mass + 1), 0xffffff));
+    }
+    this.drawOrbits();
+  }
+
+  private drawOrbits() {
+    this.orbits.clear();
+    this.orbits.lineStyle(2 / this.cameras.main.zoom, Colours.TextTint);
+    for (let well of this.wells.slice(1)) {
+      const radius = well.position.length();
+      this.orbits.strokeCircle(0, 0, radius);
+    }
   }
 
   private randomOrbit(distance: number): M.Vector2 {
@@ -87,8 +114,36 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public update(time: number, delta: number) {
+    const daysPassed = this.doUpdates();
+    this.updateScaledObjects();
+
+    (<SolarSystemState>this.scene.settings.data).game.updateTime(
+      60 * 24 * daysPassed,
+      Conversions.contractTime(60 * 24 * daysPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
+  }
+
+  private updateScaledObjects() {
+    const baseScale = this.game.canvas.height / 2;
+    const distFromCentre = this.position.distance(M.Vector2.ZERO);
+    const scaleDist = Math.ceil(this.zoomLevels.reduceRight((c, w) => w > distFromCentre ? w : c, 1000000) * 1.1);
+    const scale = Math.max(0.05, Math.min(1, Math.round(100 * baseScale / scaleDist) / 100));
+
+    if (this.cameras.main.zoom != scale) {
+      this.cameras.main.zoomTo(scale, 500);
+      const scaleFactor = 1 / scale;
+      for (let p of this.toScale) {
+        p.setScale(scaleFactor);
+      }
+
+      this.drawOrbits();
+    }
+  }
+
+  private doUpdates(): number {
+    const daysPassed = 0.05 / this.cameras.main.zoom;
     const needsUpdate =
       !this.nextPredictions ||
+      this.daysPassed != daysPassed ||
       this.cursors.up.isDown ||
       this.cursors.down.isDown ||
       this.cursors.right.isDown ||
@@ -96,13 +151,16 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
 
     if (needsUpdate) {
-      const acc = this.nextAcc();
+      const acc = this.nextAcc().scale(1 / 20 / daysPassed);
+      if (this.nextPredictions) {
+        acc.add(this.nextPredictions[1][2]);
+      }
       this.path = this.sim.calculate(
-        1,
+        daysPassed,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
         acc);
-
+      this.daysPassed = daysPassed;
       this.resetPredictions();
     }
     else {
@@ -112,19 +170,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.position = this.nextPredictions[1][0];
     this.nextVelocity = this.nextPredictions[1][1];
     this.currentPosition.setPosition(this.position.x, this.position.y);
-
-
-    const baseScale = this.game.canvas.height / 2;
-    const scaleDist = (this.position.distance(M.Vector2.ZERO) * 1.5);
-    //this.cameras.main.setZoom(baseScale / scaleDist);
-    const scaleFactor = 1 / this.cameras.main.zoom;
-    for (let p of this.toScale) {
-      p.setScale(scaleFactor)
-    }
-
-    (<GameState>this.scene.settings.data).updateTime(
-        60 * 24,
-        Conversions.contractTime(60 * 24, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
+    return daysPassed;
   }
 
   private updatePredictions() {
@@ -133,7 +179,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.renderPredictions();
   }
-
 
   private resetPredictions() {
     this.nextPredictions = [];
@@ -167,6 +212,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     } else if (this.cursors.left.isDown) {
       x = 1;
     }
-    return new M.Vector2(x, y).normalize().scale(0.1);
+    return new M.Vector2(x, y).normalize();
   }
 }
