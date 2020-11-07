@@ -4,11 +4,10 @@ import * as Conversions from "../Logic/Conversions";
 import GameState, { Events } from "../GameData/GameState";
 import { Colours } from "../Utilities";
 
-type ScaleSetting = [
-  scale: number,
-  orbitalDotFrequency: number,
-  daysPerFrame: number
-];
+type TransformableObject = 
+  Phaser.GameObjects.Components.Transform & 
+  Phaser.GameObjects.Components.AlphaSingle &
+  Phaser.GameObjects.GameObject;
 
 export interface SolarSystemState {
   game: GameState;
@@ -34,13 +33,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private position: M.Vector2;
   private nextVelocity: M.Vector2;
 
-  private toScale: (Phaser.GameObjects.Components.Transform & Phaser.GameObjects.GameObject)[] = [];
-  private prediction: Phaser.GameObjects.Arc[];
+  private toScale: TransformableObject[] = [];
+  private prediction: TransformableObject[];
   private currentPosition: Phaser.GameObjects.Arc;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private path: IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]>;
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
-  private predictionSpacing = 30;
+  private predictionSpacing = 50;
   private frame = 0;
   orbits: GameObjects.Graphics;
   daysPassed: number;
@@ -64,7 +63,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     ];
     const radiuses = this.wells.map(x => x.position.length());
     for (let i = 1; i < radiuses.length; i++) {
-      this.zoomLevels.push((radiuses[i-1] + radiuses[i])/2);
+      this.zoomLevels.push((radiuses[i - 1] + radiuses[i]) / 2);
     }
 
     this.sim = new GravitySimulation(this.wells);
@@ -85,7 +84,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.prediction = [];
     for (let i = 0; i < 20; i++) {
-      const p = this.add.circle(50, 50, 1, 0xffffaa);
+      const p = this.add.circle(50, 50, 1, 0xffffaa).setAlpha(1 - 0.8 * (i/20));
       this.prediction.push(p);
       this.toScale.push(p);
     }
