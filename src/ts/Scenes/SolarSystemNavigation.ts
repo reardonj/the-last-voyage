@@ -24,13 +24,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
   private toScale: TransformableObject[] = [];
   private prediction: TransformableObject[];
-  private currentPosition: Phaser.GameObjects.Arc;
+  private currentPosition: TransformableObject;
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private path: IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]>;
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
   private predictionSpacing = 50;
   private frame = 0;
-  private orbits: GameObjects.Graphics;
   private daysPassed: number;
   private zoomLevels: number[] = [];
   private orbitalBodies: ScalableObject[];
@@ -46,8 +45,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.position = state.currentScene[1].initPosition.clone();
     this.nextVelocity = state.currentScene[1].initVelocity.clone();
-    this.currentPosition = this.add.circle(this.position.x, this.position.y, 2, 0xffffff);
-    this.toScale.push(this.currentPosition);
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -61,12 +58,16 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       this.prediction.push(p);
       this.toScale.push(p);
     }
+    this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
+    this.toScale.push(this.currentPosition);
   }
 
   public update(time: number, delta: number) {
     const daysPassed = this.doUpdates();
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
+
+    this.currentPosition.setRotation(this.nextVelocity.angle());
 
     (<GameState>this.scene.settings.data).updateTime(
       60 * 24 * daysPassed,

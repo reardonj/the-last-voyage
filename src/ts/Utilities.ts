@@ -18,5 +18,6 @@ export const Colours = {
 }
 
 export const Sprites = {
-  Planet: "planet"
+  Planet: "planet",
+  Ship: "ship"
 }

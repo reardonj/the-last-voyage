@@ -94,7 +94,7 @@ class PlanetSprite implements ScalableObject {
 
   update(scene: Phaser.Scene) {
     const days = gameState(scene).earthTime;
-    const positionInOrbit = this.definition.startAngle + 2 * Math.PI * (days/this.orbitalPeriod);
+    const positionInOrbit = this.definition.startAngle + 2 * Math.PI * (days / this.orbitalPeriod);
     this.position.setToPolar(positionInOrbit, this.definition.orbitalRadius);
     this.sprite.setPosition(this.position.x, this.position.y);
   }
@@ -104,6 +104,10 @@ class PlanetSprite implements ScalableObject {
     this.orbit.lineStyle(2 * scale, Colours.TextTint);
     this.orbit.strokeCircle(0, 0, this.definition.orbitalRadius);
     this.sprite.setScale(scale);
+
+    const isVisible = this.definition.orbitalRadius / scale > 20;
+    this.orbit.setVisible(isVisible);
+    this.sprite.setVisible(isVisible);
   }
 }
 
