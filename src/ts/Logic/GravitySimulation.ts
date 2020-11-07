@@ -1,7 +1,7 @@
 import { Math as M } from 'phaser';
+import RelativisticMath from './RelativisticMath';
 
 export class GravitySimulation {
-  private static grav = 0.00004982;
   readonly wells: GravityWell[];
 
   constructor(wells: GravityWell[]) {
@@ -38,7 +38,7 @@ export class GravitySimulation {
     let pos = new M.Vector2();
     for (let body of this.wells) {
       const distSqr = body.position.distanceSq(position);
-      const force = GravitySimulation.grav * body.mass / distSqr;
+      const force = RelativisticMath.GravitationalConstant * body.mass / distSqr;
       acc.add(pos.copy(body.position).subtract(position).normalize().scale(force));
     }
 
@@ -46,12 +46,7 @@ export class GravitySimulation {
   }
 }
 
-export class GravityWell {
+export interface GravityWell {
   readonly position: M.Vector2;
   readonly mass: number;
-
-  constructor(position: M.Vector2, mass: number) {
-    this.position = position;
-    this.mass = mass;
-  }
 }

@@ -1,7 +1,7 @@
 import GameState from "../GameData/GameState";
 import Utilities, { Colours, Fonts } from "../Utilities";
 import Hud from "./Hud";
-import SolarSystemNavigation, { createSolarSystemNavigationState } from "./SolarSystemNavigation";
+import SolarSystemNavigation from "./SolarSystemNavigation";
 
 export default class MainMenu extends Phaser.Scene {
 	/**
@@ -16,11 +16,9 @@ export default class MainMenu extends Phaser.Scene {
     newGameText.setX(this.cameras.main.width/2 - newGameText.width/2);
     newGameText.setInteractive({ useHandCursor: true  });
 		newGameText.on("pointerdown", () => { 
-      const state = new GameState({ earthTime: 0, relativeTime: 0});
+      const state = GameState.newGame();
       this.scene.start(Hud.Name, state);
-      this.scene.start(
-        SolarSystemNavigation.Name, 
-        createSolarSystemNavigationState(state, new Phaser.Math.Vector2(-5000, -5000)));
+      this.scene.start(state.currentSceneName(), state);
     }, this);
 
 	}

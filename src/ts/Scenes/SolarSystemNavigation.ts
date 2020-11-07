@@ -1,26 +1,15 @@
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
-import GameState, { Events } from "../GameData/GameState";
+import GameState, { Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Sprites } from "../Utilities";
+import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
 
 type TransformableObject = 
   Phaser.GameObjects.Components.Transform & 
   Phaser.GameObjects.Components.AlphaSingle &
   Phaser.GameObjects.GameObject;
 
-export interface SolarSystemState {
-  game: GameState;
-  init: SolarSystemParameters;
-}
-
-export interface SolarSystemParameters {
-  initialPosition: M.Vector2
-}
-
-export function createSolarSystemNavigationState(game: GameState, initialPosition: M.Vector2): SolarSystemState {
-  return { game: game, init: { initialPosition: initialPosition } };
-}
 
 export default class SolarSystemNavigation extends Phaser.Scene {
   /**
@@ -41,45 +30,29 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
   private predictionSpacing = 50;
   private frame = 0;
-  orbits: GameObjects.Graphics;
-  daysPassed: number;
-  zoomLevels: number[] = [];
+  private orbits: GameObjects.Graphics;
+  private daysPassed: number;
+  private zoomLevels: number[] = [];
+  private orbitalBodies: ScalableObject[];
 
   public preload(): void {
   }
 
-  public create(state: SolarSystemState): void {
-    const centre = new M.Vector2(0, 0);
-    this.wells = [
-      new GravityWell(centre, 20000000),
-      new GravityWell(this.randomOrbit(57), 3),
-      new GravityWell(this.randomOrbit(108), 49),
-      new GravityWell(this.randomOrbit(149), 50),
-      new GravityWell(this.randomOrbit(227), 6.4),
-      new GravityWell(this.randomOrbit(778), 18987),
-      new GravityWell(this.randomOrbit(1426), 5685),
-      new GravityWell(this.randomOrbit(2870), 868),
-      new GravityWell(this.randomOrbit(4498), 1024)
-    ];
-    const radiuses = this.wells.map(x => x.position.length());
-    for (let i = 1; i < radiuses.length; i++) {
-      this.zoomLevels.push((radiuses[i - 1] + radiuses[i]) / 2);
-    }
+  public create(state: GameState): void {
+    this.zoomLevels = createZoomLevels(state.currentSystem());
+    this.orbitalBodies = createGameObjects(state.currentSystem());
+    this.orbitalBodies.forEach(x => x.create(this));
+    this.sim = new GravitySimulation(this.orbitalBodies);
 
-    this.sim = new GravitySimulation(this.wells);
-    this.position = state.init.initialPosition.clone();
-    this.nextVelocity = new M.Vector2(10, 6);
+    this.position = state.currentScene[1].initPosition.clone();
+    this.nextVelocity = state.currentScene[1].initVelocity.clone();
     this.currentPosition = this.add.circle(this.position.x, this.position.y, 2, 0xffffff);
     this.toScale.push(this.currentPosition);
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 12, 0x8080ff));
-    this.toScale.push(this.add.circle(this.wells[0].position.x, this.wells[0].position.y, 9, 0xffffff));
-
     this.cameras.main.setZoom(0.04);
-    this.setupOrbitals();
     this.updateScaledObjects();
 
     this.prediction = [];
@@ -90,33 +63,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
   }
 
-  private setupOrbitals() {
-    this.orbits = this.add.graphics();
-    for (let well of this.wells.slice(1)) {
-      const radius = well.position.length();
-      this.toScale.push(this.add.sprite(well.position.x, well.position.y, Sprites.Planet).setTint(Colours.TextTint));
-    }
-    this.drawOrbits();
-  }
-
-  private drawOrbits() {
-    this.orbits.clear();
-    this.orbits.lineStyle(2 / this.cameras.main.zoom, Colours.TextTint);
-    for (let well of this.wells.slice(1)) {
-      const radius = well.position.length();
-      this.orbits.strokeCircle(0, 0, radius);
-    }
-  }
-
-  private randomOrbit(distance: number): M.Vector2 {
-    return new M.Vector2().setToPolar(Phaser.Math.FloatBetween(0, Math.PI * 2), distance);
-  }
-
   public update(time: number, delta: number) {
     const daysPassed = this.doUpdates();
     this.updateScaledObjects();
+    this.orbitalBodies.forEach(x => x.update(this));
 
-    (<SolarSystemState>this.scene.settings.data).game.updateTime(
+    (<GameState>this.scene.settings.data).updateTime(
       60 * 24 * daysPassed,
       Conversions.contractTime(60 * 24 * daysPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
   }
@@ -133,8 +85,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       for (let p of this.toScale) {
         p.setScale(scaleFactor);
       }
-
-      this.drawOrbits();
+      for (let p of this.orbitalBodies) {
+        p.setScale(scaleFactor);
+      }
     }
   }
 
