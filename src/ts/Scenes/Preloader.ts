@@ -1,8 +1,8 @@
-import SplashScreen from "./SplashScreen";
-import Utilities from "../Utilities";
 import SolarSystemNavigation from "./SolarSystemNavigation";
 import Hud from "./Hud";
 import GameState from "../GameData/GameState";
+import { Fonts } from "../Utilities";
+import MainMenu from "./MainMenu";
 
 export default class Preloader extends Phaser.Scene {
 	/**
@@ -14,14 +14,12 @@ export default class Preloader extends Phaser.Scene {
 		this.addProgressBar();
 
     this.load.path = "assets/";
-    this.load.bitmapFont("future-thin-24", "fonts/kenvector_future_thin_24.png", "fonts/kenvector_future_thin_24.xml");
-    this.load.bitmapFont("future-thin-16", "fonts/kenvector_future_thin_16.png", "fonts/kenvector_future_thin_16.xml");
+    this.load.bitmapFont(Fonts.Proportional24, "fonts/kenvector_future_thin_24.png", "fonts/kenvector_future_thin_24.xml");
+    this.load.bitmapFont(Fonts.Proportional16, "fonts/kenvector_future_thin_16.png", "fonts/kenvector_future_thin_16.xml");
 	}
 
 	public create(): void {
-    const state = new GameState({ earthTime: 0, relativeTime: 0});
-		this.scene.start(Hud.Name, state);
-		this.scene.start(SolarSystemNavigation.Name, state);
+		this.scene.start(MainMenu.Name);
 	}
 
 	public update(): void {

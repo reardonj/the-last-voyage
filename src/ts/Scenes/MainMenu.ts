@@ -1,4 +1,6 @@
-import Utilities from "../Utilities";
+import GameState from "../GameData/GameState";
+import Utilities, { Colours, Fonts } from "../Utilities";
+import Hud from "./Hud";
 import SolarSystemNavigation from "./SolarSystemNavigation";
 
 export default class MainMenu extends Phaser.Scene {
@@ -10,15 +12,14 @@ export default class MainMenu extends Phaser.Scene {
 	public create(): void {
 		const textYPosition = this.cameras.main.height / 3;
 
-		const newGameText = this.add.text(this.cameras.main.centerX, textYPosition, "Start");
-		newGameText
-			.setFontFamily("monospace")
-			.setFontSize(40)
-			.setFill("#fff")
-			.setAlign("center")
-			.setOrigin(0.5);
-		newGameText.setInteractive();
-		newGameText.on("pointerdown", () => { this.scene.start(SolarSystemNavigation.Name); }, this);
+    const newGameText = this.add.bitmapText(0, 200, Fonts.Proportional24, "A New Beginning", 32).setTint(Colours.TextTint);
+    newGameText.setX(this.cameras.main.width/2 - newGameText.width/2);
+    newGameText.setInteractive({ useHandCursor: true  });
+		newGameText.on("pointerdown", () => { 
+      const state = new GameState({ earthTime: 0, relativeTime: 0});
+      this.scene.start(Hud.Name, state);
+      this.scene.start(SolarSystemNavigation.Name, state);
+    }, this);
 
 	}
 

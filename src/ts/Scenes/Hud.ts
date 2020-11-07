@@ -1,7 +1,7 @@
 import GameState, { Events, TimePassedEvent } from "../GameData/GameState";
+import { Colours, Fonts } from "../Utilities";
 
 const LeftMargin = 8;
-const textTint = 0xccccff;
 
 function createTimeString(time: number): string {
   const years = Math.floor(time / 524160);
@@ -42,23 +42,19 @@ export default class Hud extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
-    this.durationText = this.add.bitmapText(LeftMargin, LeftMargin / 2, "future-thin-16", "");
-    this.locationText = this.add.bitmapText(LeftMargin, 30, "future-thin-24", "Sol.Outer Planets");
+    this.durationText = this.add.bitmapText(LeftMargin, LeftMargin / 2, Fonts.Proportional16, "").setTint(Colours.TextTint);
+    this.locationText = this.add.bitmapText(LeftMargin, 30, Fonts.Proportional24, "Sol.Outer Planets").setTint(Colours.TextTint);
 
     [this.integrityText, this.integrityWarning] = this.setupStatusText(LeftMargin / 2, "Integrity");
     [this.fuelText, this.fuelWarning] = this.setupStatusText(LeftMargin / 2 + 20, "Fuel");
     [this.populationText, this.populationWarning] = this.setupStatusText(LeftMargin / 2 + 40, "Population");
     [this.suppliesText, this.suppliesWarning] = this.setupStatusText(LeftMargin / 2 + 60, "Supplies");
 
-    this.locationText.tint = textTint;
-    this.durationText.tint = textTint;
-
     state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
   }
 
   setupStatusText(y: number, name: string): [Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween] {
-    const text = this.add.bitmapText(0, y, "future-thin-16", name + " |||||");
-    text.tint = textTint;
+    const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " |||||").setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
 
     const tween = this.add.tween({

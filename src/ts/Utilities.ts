@@ -7,3 +7,12 @@ export default class Utilities {
 		console.log((new Date()).toISOString() + " : " + message);
 	}
 }
+
+export const Fonts = {
+  Proportional16: "future-thin-16",
+  Proportional24: "future-thin-24"
+}
+
+export const Colours = {
+  TextTint: 0xccccff
+}
