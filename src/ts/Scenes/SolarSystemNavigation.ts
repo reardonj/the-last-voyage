@@ -4,12 +4,12 @@ import * as Conversions from "../Logic/Conversions";
 import GameState, { Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Sprites } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
+import Hud from "./Hud";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
   Phaser.GameObjects.Components.AlphaSingle &
   Phaser.GameObjects.GameObject;
-
 
 export default class SolarSystemNavigation extends Phaser.Scene {
   /**
@@ -37,6 +37,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
+    this.events.on('transitioncomplete', function () { this.scene.launch(Hud.Name, state) }, this);
+
     this.zoomLevels = createZoomLevels(state.currentSystem());
     this.orbitalBodies = createGameObjects(state.currentSystem());
     this.orbitalBodies.forEach(x => x.create(this));
@@ -48,8 +50,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.cameras.main.setZoom(0.04);
-    this.updateScaledObjects();
+    this.updateScaledObjects(true);
 
     this.prediction = [];
     for (let i = 0; i < 20; i++) {
@@ -74,14 +75,18 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       minutesPassed);
   }
 
-  private updateScaledObjects() {
+  private updateScaledObjects(force?: boolean) {
     const baseScale = this.game.canvas.height / 2;
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
     const scaleDist = Math.ceil(this.zoomLevels.reduceRight((c, w) => w > distFromCentre ? w : c, 1000000) * 1.1);
     const scale = Math.max(0.05, Math.min(1, Math.round(100 * baseScale / scaleDist) / 100));
 
-    if (this.cameras.main.zoom != scale) {
-      this.cameras.main.zoomTo(scale, 500);
+    if (force || this.cameras.main.zoom != scale) {
+      if (!force) {
+        this.cameras.main.zoomTo(scale, 500);
+      } else {
+        this.cameras.main.setZoom(scale);
+      }
       const scaleFactor = 1 / scale;
       for (let p of this.toScale) {
         p.setScale(scaleFactor);
@@ -89,13 +94,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       for (let p of this.orbitalBodies) {
         p.setScale(scaleFactor);
       }
-
-      const location =
-        scale == 0.05 ? "Outer System" :
-          scale == 1 ? "Inner System" :
-            "Mid System";
-      this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem().name, location]);
     }
+
+    const location =
+      scale == 0.05 ? "Outer System" :
+        scale == 1 ? "Inner System" :
+          "Mid System";
+    this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem().name, location]);
+    return scale;
   }
 
   private doUpdates(): number {

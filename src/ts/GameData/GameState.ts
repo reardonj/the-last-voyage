@@ -1,7 +1,5 @@
-import MainMenu from "../Scenes/MainMenu";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
-import Utilities from "../Utilities";
-import { ScalableObject } from "./SolarSystemObject";
+import Transition from "../Scenes/Transition";
 
 export default class GameState implements SavedState {
   fuel: number;
@@ -14,7 +12,7 @@ export default class GameState implements SavedState {
   systems: { [id: string]: SolarSystemDefinition; };
   eventSource: Phaser.Events.EventEmitter;
 
-  static newGame() {
+  static newGame(transitionScene: Transition) {
     const systems = createSystems();
     return new GameState({
       fuel: StatusMaxValue,
@@ -28,13 +26,14 @@ export default class GameState implements SavedState {
         "solar-system",
         {
           name: "Sol",
-          initVelocity: new Phaser.Math.Vector2(50, 24),
-          initPosition: new Phaser.Math.Vector2(-5000, -5000)
+          initVelocity: new Phaser.Math.Vector2(5, 3),
+          initPosition: new Phaser.Math.Vector2(-50, 155)
         }]
-    });
+    },
+      transitionScene);
   }
 
-  constructor(savedState: SavedState) {
+  constructor(savedState: SavedState, private transitionScene: Transition) {
     this.fuel = savedState.fuel;
     this.passengers = savedState.passengers;
     this.integrity = savedState.integrity;
@@ -75,6 +74,15 @@ export default class GameState implements SavedState {
   useFuel(accelerationMagnitude: number, durationMinutes: number) {
     this.fuel = Phaser.Math.Clamp(this.fuel - accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
+  }
+
+  transition(currentScene: Phaser.Scene) {
+    currentScene.scene.transition({
+      target: this.currentSceneName(),
+      data: this,
+      duration: 300,
+    });
+    this.transitionScene.startTransition(300);
   }
 
 }
@@ -157,7 +165,13 @@ export class SolarSystemDefinition {
 export const Events = {
   TimePassed: "timePassed",
   LocationChanged: "locationChanged",
-  FuelChanged: "fuleChanged"
+  FuelChanged: "fuelChanged",
+
+  /*** 
+   * A scene transition is beginning. 
+   * The duration of the transition in ms is passed as an event parameter 
+   */
+  SceneTransition: "sceneTransition"
 }
 
 export interface TimePassedEvent {
