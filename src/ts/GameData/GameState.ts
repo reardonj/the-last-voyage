@@ -19,7 +19,7 @@ export default class GameState implements SavedState {
         "solar-system",
         {
           name: "Sol",
-          initVelocity: new Phaser.Math.Vector2(10, 8),
+          initVelocity: new Phaser.Math.Vector2(50, 24),
           initPosition: new Phaser.Math.Vector2(-5000, -5000)
         }]
     });
@@ -51,10 +51,10 @@ export default class GameState implements SavedState {
     }
   }
 
-  updateTime(earth: number, relative: number) {
+  updateTime(earth: number, relative: number, minutesPerTick: number) {
     this.earthTime += earth;
     this.relativeTime += relative;
-    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime });
+    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: minutesPerTick });
   }
 
 }
@@ -130,6 +130,7 @@ export const Events = {
 export interface TimePassedEvent {
   earth: number;
   relative: number;
+  minutesPerTick: number;
 }
 
 export type LocationChangedEvent = string[]

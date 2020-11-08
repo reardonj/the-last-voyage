@@ -3,16 +3,21 @@ import { Colours, Fonts } from "../Utilities";
 
 const LeftMargin = 8;
 
-function createTimeString(time: number): string {
+function createTimeString(time: number, minutesPerTick: number): string {
   const years = Math.floor(time / 524160);
   time = time % 524160;
-  const weeks = time / 10080;
+  const weeks = 1 + Math.floor(time / 10080);
   time = time % 10080;
-  const days = time / 1440;
+  const days = 1 + Math.floor(time / 1440);
   time = time % 1440;
-  const hours = time / 60;
+  const hours = pad(time / 60, 2);
   const minutes = time % 60;
-  return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)} ${pad(hours, 2)}:${pad(minutes, 2)}`;
+
+  if (minutesPerTick < 1) {
+    return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)} ${hours}:${pad(minutes, 2)}`;
+  } else {
+    return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)}`;
+  }
 }
 
 function pad(num: number, length: number) {
@@ -42,8 +47,8 @@ export default class Hud extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
-    this.durationText = this.add.bitmapText(LeftMargin, LeftMargin / 2, Fonts.Proportional16, "").setTint(Colours.TextTint);
-    this.locationText = this.add.bitmapText(LeftMargin, 30, Fonts.Proportional24, "----").setTint(Colours.TextTint);
+    this.durationText = this.add.bitmapText(0, 696, Fonts.Proportional16, "").setTint(Colours.TextTint);
+    this.locationText = this.add.bitmapText(0, 680, Fonts.Proportional24, "----").setTint(Colours.TextTint);
 
     [this.integrityText, this.integrityWarning] = this.setupStatusText(LeftMargin / 2, "Integrity");
     [this.fuelText, this.fuelWarning] = this.setupStatusText(LeftMargin / 2 + 20, "Fuel");
@@ -80,10 +85,12 @@ export default class Hud extends Phaser.Scene {
 
   updateTime(state: TimePassedEvent) {
     this.durationText.setText(
-      `Mission Duration: ${createTimeString(state.earth)} Earth / ${createTimeString(state.relative)} Relative`);
+      `Mission Duration: ${createTimeString(state.earth, state.minutesPerTick)} Earth / ${createTimeString(state.relative, state.minutesPerTick)} Relative`);
+    this.rightAlign(this.durationText, LeftMargin);
   }
 
   updateLocation(state: LocationChangedEvent) {
-    this.locationText.setText(state.join("."));
+    this.locationText.setText(state.reverse().join("."));
+    this.rightAlign(this.locationText, LeftMargin);
   }
 }

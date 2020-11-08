@@ -67,9 +67,11 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.orbitalBodies.forEach(x => x.update(this));
     this.currentPosition.setRotation(this.nextVelocity.angle());
 
+    const minutesPassed = 60 * 24 * daysPassed;
     this.gameState().updateTime(
-      60 * 24 * daysPassed,
-      Conversions.contractTime(60 * 24 * daysPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())));
+      minutesPassed,
+      Conversions.contractTime(minutesPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())),
+      minutesPassed);
   }
 
   private updateScaledObjects() {
@@ -97,7 +99,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   private doUpdates(): number {
-    const daysPassed = 0.05 / this.cameras.main.zoom;
+    const daysPassed = 0.01 / this.cameras.main.zoom;
     const needsUpdate =
       !this.nextPredictions ||
       this.daysPassed != daysPassed ||
@@ -108,7 +110,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
 
     if (needsUpdate) {
-      const acc = this.nextAcc().scale(1 / 20 / daysPassed);
+      const acc = this.nextAcc().scale(1 / 5 / daysPassed);
       if (this.nextPredictions) {
         acc.add(this.nextPredictions[1][2]);
       }
