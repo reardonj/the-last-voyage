@@ -111,6 +111,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     if (needsUpdate) {
       const acc = this.nextAcc().scale(1 / 5 / daysPassed);
+      this.gameState().useFuel(acc.length(), daysPassed * 60 * 24);
       if (this.nextPredictions) {
         acc.add(this.nextPredictions[1][2]);
       }

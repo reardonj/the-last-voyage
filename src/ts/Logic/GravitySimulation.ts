@@ -8,8 +8,9 @@ export class GravitySimulation {
     this.wells = [...wells];
   }
 
-  /**
-   * Calculate the position of a body, with steps in the given resolution, where 1 = 1 day.
+  /***
+   * Calculate the position of a body, with steps in the given resolution.
+   * @param initialAcc initial acceleration, in units of million km / day^2
    */
   *calculate(
     daysPerFrame: number,

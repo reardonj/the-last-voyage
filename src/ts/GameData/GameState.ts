@@ -1,8 +1,13 @@
 import MainMenu from "../Scenes/MainMenu";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
+import Utilities from "../Utilities";
 import { ScalableObject } from "./SolarSystemObject";
 
 export default class GameState implements SavedState {
+  fuel: number;
+  passengers: number;
+  integrity: number;
+  supplies: number;
   earthTime: number;
   relativeTime: number;
   currentScene: CurrentScene;
@@ -12,6 +17,10 @@ export default class GameState implements SavedState {
   static newGame() {
     const systems = createSystems();
     return new GameState({
+      fuel: StatusMaxValue,
+      passengers: StatusMaxValue,
+      integrity: StatusMaxValue,
+      supplies: StatusMaxValue,
       earthTime: 0,
       relativeTime: 0,
       systems: systems,
@@ -26,6 +35,11 @@ export default class GameState implements SavedState {
   }
 
   constructor(savedState: SavedState) {
+    this.fuel = savedState.fuel;
+    this.passengers = savedState.passengers;
+    this.integrity = savedState.integrity;
+    this.supplies = savedState.supplies;
+
     this.earthTime = savedState.earthTime;
     this.relativeTime = savedState.relativeTime;
     this.currentScene = savedState.currentScene;
@@ -55,6 +69,12 @@ export default class GameState implements SavedState {
     this.earthTime += earth;
     this.relativeTime += relative;
     this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: minutesPerTick });
+    this.useFuel(1 / 24 / 60, relative);
+  }
+
+  useFuel(accelerationMagnitude: number, durationMinutes: number) {
+    this.fuel = Phaser.Math.Clamp(this.fuel - accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
+    this.eventSource.emit(Events.FuelChanged, this.fuel);
   }
 
 }
@@ -63,14 +83,14 @@ function createSystems(): { [id: string]: SolarSystemDefinition } {
   return {
     "Sol": new SolarSystemDefinition("Sol", {
       "Sol": sun("Sol", 20000000, new Phaser.Math.Vector2()),
-      "Mercury": planet("Mercury", 3, 57, 0),
-      "Venus": planet("Venus", 49, 108, 1),
-      "Earth": planet("Earth", 50, 149, 2),
-      "Mars": planet("Mars", 6.4, 227, 3),
-      "Jupiter": planet("Jupiter", 18987, 778, 4),
-      "Saturn": planet("Saturn", 5685, 1426, 5),
-      "Uranus": planet("Uranus", 868, 2870, 6),
-      "Neptune": planet("Neptune", 1024, 4498, 7)
+      "Mercury": planet("Mercury", 3, 57, 0, -1),
+      "Venus": planet("Venus", 49, 108, 1, -1),
+      "Earth": planet("Earth", 50, 149, 2, -1),
+      "Mars": planet("Mars", 6.4, 227, 3, -1),
+      "Jupiter": planet("Jupiter", 18987, 778, 4, -1),
+      "Saturn": planet("Saturn", 5685, 1426, 5, -1),
+      "Uranus": planet("Uranus", 868, 2870, 6, -1),
+      "Neptune": planet("Neptune", 1024, 4498, 7, -1)
     })
   };
 }
@@ -78,10 +98,14 @@ function createSystems(): { [id: string]: SolarSystemDefinition } {
 export type CurrentScene = ["solar-system", SolarSystemState];
 
 export interface SavedState {
+  systems: { [id: string]: SolarSystemDefinition }
   earthTime: number,
   relativeTime: number,
   currentScene: CurrentScene,
-  systems: { [id: string]: SolarSystemDefinition }
+  fuel: number,
+  passengers: number,
+  integrity: number,
+  supplies: number,
 }
 
 export interface SolarSystemState {
@@ -106,11 +130,19 @@ export type Planet = {
   name: string,
   mass: number,
   orbitalRadius: number,
+  orbitalSpeedMultiplier: number,
   startAngle: number
 }
 
-function planet(name: string, mass: number, orbitalRadius: number, startAngle: number): Planet {
-  return { type: "planet", name: name, mass: mass, orbitalRadius: orbitalRadius, startAngle };
+function planet(name: string, mass: number, orbitalRadius: number, startAngle: number, orbitalSpeedMultiplier: number): Planet {
+  return {
+    type: "planet",
+    name: name,
+    mass: mass,
+    orbitalRadius: orbitalRadius,
+    startAngle,
+    orbitalSpeedMultiplier: orbitalSpeedMultiplier
+  };
 }
 
 export type SolarSystemObject = Sun | Planet;
@@ -124,7 +156,8 @@ export class SolarSystemDefinition {
 
 export const Events = {
   TimePassed: "timePassed",
-  LocationChanged: "locationChanged"
+  LocationChanged: "locationChanged",
+  FuelChanged: "fuleChanged"
 }
 
 export interface TimePassedEvent {
@@ -134,3 +167,5 @@ export interface TimePassedEvent {
 }
 
 export type LocationChangedEvent = string[]
+
+export const StatusMaxValue = 1000000;

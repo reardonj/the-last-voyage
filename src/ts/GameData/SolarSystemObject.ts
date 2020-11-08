@@ -122,7 +122,9 @@ class PlanetSprite implements ScalableObject {
   create(scene: Phaser.Scene) {
     this.orbit = scene.add.graphics();
     this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.TextTint);
-    this.orbitalPeriod = 24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
+    this.orbitalPeriod =
+      this.definition.orbitalSpeedMultiplier *
+      24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
   }
 
   update(scene: Phaser.Scene) {

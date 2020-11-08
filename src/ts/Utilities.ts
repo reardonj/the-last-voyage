@@ -21,3 +21,15 @@ export const Sprites = {
   Planet: "planet",
   Ship: "ship"
 }
+
+export const Resources = {
+  Hud: {
+    Fuel: "Fuel",
+    Integrity: "Integrity",
+    MissionDuration: "Mission Duration",
+    Passengers: "Passengers",
+    Supplies: "Supplies",
+    AbsoluteDuration: "Earth",
+    RelativeDuration: "Relative"
+  }
+}
