@@ -8,13 +8,29 @@ export default class Utilities {
   }
 }
 
+export class UI {
+  public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint) {
+    obj.setInteractive({ useHandCursor: true });
+    obj.on("pointerover", () => obj.setTint(Colours.Highlight), this);
+    obj.on("pointerout", () => obj.setTint(Colours.TextTint), this);
+  }
+
+  public static centre(
+    left: number,
+    right: number,
+    obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & { width: number }) {
+    obj.setX((left + right) / 2 - obj.width / 2);
+  }
+}
+
 export const Fonts = {
   Proportional16: "future-thin-16",
   Proportional24: "future-thin-24"
 }
 
 export const Colours = {
-  TextTint: 0xccccff
+  TextTint: 0xccccff,
+  Highlight: 0xe0e0ff
 }
 
 export const Sprites = {
@@ -26,13 +42,13 @@ export const Resources = {
   Hud: {
     Fuel: "Fuel",
     Integrity: "Integrity",
-    MissionDuration: "Mission Duration",
+    MissionDuration: "Mission Time",
     Passengers: "Passengers",
     Supplies: "Supplies",
     AbsoluteDuration: "Earth",
     RelativeDuration: "Relative"
   },
   GameOver: {
-    Fuel: "The ship's reactor shuts down as its last grams of fuel are consumed,\nleaving the Pilgrim adrift in space."
+    Fuel: "The ship's reactor shuts down as it consumes the last grams of fuel,\nleaving the Pilgrim adrift in space."
   }
 }

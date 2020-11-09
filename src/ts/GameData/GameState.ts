@@ -34,7 +34,7 @@ export default class GameState implements SavedState {
       transitionScene);
   }
 
-  constructor(savedState: SavedState, private transitionScene: Transition) {
+  constructor(savedState: SavedState, public transitionScene: Transition) {
     this.fuel = savedState.fuel;
     this.passengers = savedState.passengers;
     this.integrity = savedState.integrity;
@@ -109,7 +109,7 @@ export default class GameState implements SavedState {
       target: this.currentSceneName(),
       data: this,
       duration: 300,
-      sleep: false
+      remove: true
     });
     this.transitionScene.startTransition(300);
   }

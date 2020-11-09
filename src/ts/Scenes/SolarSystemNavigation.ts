@@ -38,9 +38,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
   public create(state: GameState): void {
     this.events.on('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
-    this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
+    const onStep = this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
+    this.events.on('destroy', () => this.game.events.off("step", undefined, this));
 
-    this.add.rectangle(0, 0, this.cameras.main.width * 2, this.cameras.main.height * 2, 0x000000, 1);
+    this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1);
     this.zoomLevels = createZoomLevels(state.currentSystem());
     this.orbitalBodies = createGameObjects(state.currentSystem());
     this.orbitalBodies.forEach(x => x.create(this));
