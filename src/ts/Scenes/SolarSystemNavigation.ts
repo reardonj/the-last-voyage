@@ -37,15 +37,18 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
-    this.events.on('transitioncomplete', function () { this.scene.launch(Hud.Name, state) }, this);
+    this.events.on('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
+    this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
 
+    this.add.rectangle(0, 0, this.cameras.main.width * 2, this.cameras.main.height * 2, 0x000000, 1);
     this.zoomLevels = createZoomLevels(state.currentSystem());
     this.orbitalBodies = createGameObjects(state.currentSystem());
     this.orbitalBodies.forEach(x => x.create(this));
     this.sim = new GravitySimulation(this.orbitalBodies);
 
-    this.position = state.currentScene[1].initPosition.clone();
-    this.nextVelocity = state.currentScene[1].initVelocity.clone();
+    const solarState = <SolarSystemState>state.currentScene[1];
+    this.position = solarState.initPosition.clone();
+    this.nextVelocity = solarState.initVelocity.clone();
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -63,6 +66,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public update(time: number, delta: number) {
+    if (this.gameState().currentScene[0] != "solar-system") {
+      return;
+    }
+
     const daysPassed = this.doUpdates();
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));

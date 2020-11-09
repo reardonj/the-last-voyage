@@ -1,3 +1,4 @@
+import GameOver from "../Scenes/GameOver";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 
@@ -50,6 +51,19 @@ export default class GameState implements SavedState {
     switch (this.currentScene[0]) {
       case "solar-system":
         return SolarSystemNavigation.Name;
+      case "game-over":
+        return GameOver.Name;
+      default:
+        throw new Error("Current scene is unkown.");
+    }
+  }
+
+  currentSceneType() {
+    switch (this.currentScene[0]) {
+      case "solar-system":
+        return SolarSystemNavigation;
+      case "game-over":
+        return GameOver;
       default:
         throw new Error("Current scene is unkown.");
     }
@@ -59,8 +73,9 @@ export default class GameState implements SavedState {
     switch (this.currentScene[0]) {
       case "solar-system":
         return this.systems[this.currentScene[1].name];
+      case "game-over":
       default:
-        throw new Error("Current scene is unkown.");
+        throw new Error("Current scene is unknown.");
     }
   }
 
@@ -72,15 +87,29 @@ export default class GameState implements SavedState {
   }
 
   useFuel(accelerationMagnitude: number, durationMinutes: number) {
-    this.fuel = Phaser.Math.Clamp(this.fuel - accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
+    this.fuel = Phaser.Math.Clamp(this.fuel - 10 * accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
   }
 
+  doStateBasedTransitions(currentScene: Phaser.Scene) {
+    if (this.currentScene[0] == "game-over") {
+      return;
+    }
+
+    if (this.fuel == 0) {
+      this.currentScene = ["game-over", { reason: "fuel" }]
+      this.transition(currentScene);
+    }
+  }
+
   transition(currentScene: Phaser.Scene) {
+    const newScene = currentScene.scene.add(this.currentSceneName(), this.currentSceneType(), false, this);
+    newScene.scene.sendToBack(this.currentSceneName());
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
       duration: 300,
+      sleep: false
     });
     this.transitionScene.startTransition(300);
   }
@@ -103,7 +132,9 @@ function createSystems(): { [id: string]: SolarSystemDefinition } {
   };
 }
 
-export type CurrentScene = ["solar-system", SolarSystemState];
+export type CurrentScene =
+  ["solar-system", SolarSystemState] |
+  ["game-over", GameOverState];
 
 export interface SavedState {
   systems: { [id: string]: SolarSystemDefinition }
@@ -114,6 +145,10 @@ export interface SavedState {
   passengers: number,
   integrity: number,
   supplies: number,
+}
+
+export interface GameOverState {
+  reason: "fuel"
 }
 
 export interface SolarSystemState {

@@ -1,11 +1,11 @@
 export default class Utilities {
-	/**
-	 * Logs a particular message to the console.
-	 * @param message Message to log.
-	 */
-	public static Log(message: string): void {
-		console.log((new Date()).toISOString() + " : " + message);
-	}
+  /**
+   * Logs a particular message to the console.
+   * @param message Message to log.
+   */
+  public static Log(message: string): void {
+    console.log((new Date()).toISOString() + " : " + message);
+  }
 }
 
 export const Fonts = {
@@ -31,5 +31,8 @@ export const Resources = {
     Supplies: "Supplies",
     AbsoluteDuration: "Earth",
     RelativeDuration: "Relative"
+  },
+  GameOver: {
+    Fuel: "The ship's reactor shuts down as its last grams of fuel are consumed,\nleaving the Pilgrim adrift in space."
   }
 }

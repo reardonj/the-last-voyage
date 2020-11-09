@@ -1,7 +1,7 @@
 <?xml version='1.0'?>
    <font>
        <info aa='1' size='22' smooth='1' stretchH='100' bold='0' padding='0,0,0,0' spacing='0,0' charset='' italic='0' unicode='0' face='KenVector Future Thin'/>
-       <common scaleW='320' packed='0' pages='1' lineHeight='20' scaleH='256' base='22'/>
+       <common scaleW='320' packed='0' pages='1' lineHeight='27' scaleH='256' base='22'/>
        <pages>
             <page id='0' file='kenvector_future_thin_24.png'/>
        </pages>
@@ -13,7 +13,7 @@
             <char xadvance='19' x='208' chnl='0' yoffset='-6' y='196' xoffset='0' id='36' page='0' height='28' width='16'/>
             <char xadvance='13' x='208' chnl='0' yoffset='-6' y='168' xoffset='0' id='37' page='0' height='28' width='12'/>
             <char xadvance='19' x='208' chnl='0' yoffset='-6' y='140' xoffset='0' id='38' page='0' height='28' width='16'/>
-            <char xadvance='8' x='202' chnl='0' yoffset='-15' y='140' xoffset='0' id='39' page='0' height='28' width='6'/>
+            <char xadvance='8' x='202' chnl='0' yoffset='-10' y='140' xoffset='0' id='39' page='0' height='28' width='6'/>
             <char xadvance='11' x='308' chnl='0' yoffset='-6' y='112' xoffset='0' id='40' page='0' height='28' width='8'/>
             <char xadvance='11' x='300' chnl='0' yoffset='-6' y='112' xoffset='0' id='41' page='0' height='28' width='8'/>
             <char xadvance='13' x='288' chnl='0' yoffset='-12' y='112' xoffset='0' id='42' page='0' height='28' width='12'/>
