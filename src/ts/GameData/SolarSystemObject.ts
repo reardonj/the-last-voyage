@@ -72,6 +72,8 @@ class InvisibleObjectIndicator implements ScalableObject {
     this.orbits = planets.sort((a, b) => a.orbitalRadius - b.orbitalRadius);
   }
 
+  positionAt(time: number) { return this.position }
+
   info(): ObjectInfo {
     const hidden = this.orbits.filter(x => x.orbitalRadius < this.min.orbitalRadius);
     return {
@@ -113,6 +115,8 @@ class SunSprite implements ScalableObject {
     this.mass = definition.mass;
   }
 
+  positionAt(time: number) { return this.position }
+
   create(scene: Phaser.Scene) {
     const outerCircle = scene.add.circle(this.definition.position.x, this.definition.position.y, 12, Colours.TextTint);
     this.toScale.push(outerCircle);
@@ -150,20 +154,26 @@ class PlanetSprite implements ScalableObject {
   constructor(private definition: Planet, private sunMass: number) {
     this.mass = definition.mass;
     this.position = new Phaser.Math.Vector2(-100000, -100000);
+    this.orbitalPeriod =
+      this.definition.orbitalSpeedMultiplier *
+      24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
+  }
+
+  positionAt(time: number) {
+    return new Phaser.Math.Vector2().setToPolar(
+      this.definition.startAngle + 2 * Math.PI * (time / this.orbitalPeriod),
+      this.definition.orbitalRadius)
   }
 
   create(scene: Phaser.Scene) {
     this.orbit = scene.add.graphics();
     this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.TextTint);
     this.interactionObject = this.sprite;
-    this.orbitalPeriod =
-      this.definition.orbitalSpeedMultiplier *
-      24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
   }
 
   update(scene: Phaser.Scene) {
-    const days = gameState(scene).earthTime;
-    const positionInOrbit = this.definition.startAngle + 2 * Math.PI * (days / this.orbitalPeriod);
+    const minutes = gameState(scene).earthTime;
+    const positionInOrbit = this.definition.startAngle + 2 * Math.PI * (minutes / this.orbitalPeriod);
     this.position.setToPolar(positionInOrbit, this.definition.orbitalRadius);
     this.sprite.setPosition(this.position.x, this.position.y);
   }

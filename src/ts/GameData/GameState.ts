@@ -28,7 +28,7 @@ export default class GameState implements SavedState {
         {
           name: "Sol",
           initVelocity: new Phaser.Math.Vector2(5, 3),
-          initPosition: new Phaser.Math.Vector2(-50, 155)
+          initPosition: new Phaser.Math.Vector2(-40, 146)
         }]
     },
       transitionScene);

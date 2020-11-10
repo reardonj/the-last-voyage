@@ -41,7 +41,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
     this.events.on('destroy', () => this.game.events.off("step", undefined, this));
 
-    this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1);
+    this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1)
+      .setInteractive(true, () => true)
+      .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));;
     this.zoomLevels = createZoomLevels(state.currentSystem());
     this.orbitalBodies = createGameObjects(state.currentSystem());
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
@@ -77,7 +79,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       return;
     }
 
-    const daysPassed = this.doUpdates();
+    const daysPassed = this.updateShip();
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
     this.currentPosition.setRotation(this.nextVelocity.angle());
@@ -118,7 +120,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     return scale;
   }
 
-  private doUpdates(): number {
+  private updateShip(): number {
     const daysPassed = 0.01 / this.cameras.main.zoom;
     const needsUpdate =
       !this.nextPredictions ||
@@ -136,6 +138,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
         acc.add(this.nextPredictions[1][2]);
       }
       this.path = this.sim.calculate(
+        this.gameState().earthTime,
         daysPassed,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,

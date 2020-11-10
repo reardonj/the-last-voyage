@@ -136,9 +136,10 @@ export default class Hud extends Phaser.Scene {
     };
   }
 
-  showInfo(info: ObjectInfo) {
-
-    if (this.infoContainer.visible) {
+  showInfo(info: ObjectInfo | null) {
+    if (!info) {
+      this.hideInfo();
+    } else if (this.infoContainer.visible) {
       this.tweens.add({
         targets: this.infoContainer,
         x: -this.infoRect.width,

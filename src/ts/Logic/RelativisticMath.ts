@@ -16,7 +16,7 @@ export default class RelativisticMath {
    * Calculates the orbital period of a body.
    * @param a the semi-major axis of the orbit, in millions of kilometres.
    * @param centralMass the mass of the object being orbited, in units of 10^23kgs.
-   * @returns the number of minutes it takes to orbit, in days.
+   * @returns the time it takes to orbit, in days.
    */
   static orbitalPeriod(a: number, centralMass: number): number {
     return 2 * Math.PI * Math.sqrt(Math.pow(a, 3) / (this.GravitationalConstant * centralMass))

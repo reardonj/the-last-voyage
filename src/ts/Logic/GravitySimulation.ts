@@ -13,6 +13,7 @@ export class GravitySimulation {
    * @param initialAcc initial acceleration, in units of million km / day^2
    */
   *calculate(
+    startTime: number,
     daysPerFrame: number,
     position: M.Vector2,
     velocity: M.Vector2,
@@ -20,6 +21,7 @@ export class GravitySimulation {
     : IterableIterator<[pos: M.Vector2, vel: M.Vector2, acc: M.Vector2]> {
     const delta = daysPerFrame;
 
+    let time = startTime;
     let acc = initialAcc;
     let vel = velocity;
     let pos = position;
@@ -27,20 +29,21 @@ export class GravitySimulation {
     while (true) {
       yield [pos, vel.clone(), acc.clone()];
       const newPos = pos.clone().add(vel.clone().scale(delta).add(acc.clone().scale(delta * delta * 0.5)));
-      const newAcc = this.applyGravity(pos);
+      const newAcc = this.applyGravity(pos, time);
       vel.add(acc.add(newAcc).scale(delta * 0.5));
       pos = newPos;
       acc = newAcc;
+      time += daysPerFrame / 24 / 60;
     }
   }
 
-  private applyGravity(position: M.Vector2): M.Vector2 {
+  private applyGravity(position: M.Vector2, time: number): M.Vector2 {
     let acc = new M.Vector2();
     let pos = new M.Vector2();
     for (let body of this.wells) {
-      const distSqr = body.position.distanceSq(position);
+      const distSqr = body.positionAt(time).distanceSq(position);
       const force = RelativisticMath.GravitationalConstant * body.mass / distSqr;
-      acc.add(pos.copy(body.position).subtract(position).normalize().scale(force));
+      acc.add(pos.copy(body.positionAt(time)).subtract(position).normalize().scale(force));
     }
 
     return acc;
@@ -48,6 +51,6 @@ export class GravitySimulation {
 }
 
 export interface GravityWell {
-  readonly position: M.Vector2;
+  positionAt(minutes: number): M.Vector2;
   readonly mass: number;
 }
