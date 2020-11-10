@@ -123,10 +123,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const needsUpdate =
       !this.nextPredictions ||
       this.daysPassed != daysPassed ||
-      this.cursors.up.isDown ||
-      this.cursors.down.isDown ||
-      this.cursors.right.isDown ||
-      this.cursors.left.isDown;
+      this.cursors.up?.isDown ||
+      this.cursors.down?.isDown ||
+      this.cursors.right?.isDown ||
+      this.cursors.left?.isDown;
 
 
     if (needsUpdate) {
@@ -181,15 +181,15 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private nextAcc(): M.Vector2 {
     let x = 0;
     let y = 0;
-    if (this.cursors.up.isDown) {
+    if (this.cursors.up?.isDown) {
       y = 1;
-    } else if (this.cursors.down.isDown) {
+    } else if (this.cursors.down?.isDown) {
       y = -1;
     }
 
-    if (this.cursors.right.isDown) {
+    if (this.cursors.right?.isDown) {
       x = -1;
-    } else if (this.cursors.left.isDown) {
+    } else if (this.cursors.left?.isDown) {
       x = 1;
     }
     return new M.Vector2(x, y).normalize();

@@ -38,7 +38,6 @@ export const Sprites = {
   Planet: "planet",
   Ship: "ship",
   ShortGradient: "shortGradient",
-  SolidBackground: "solidBackground"
 }
 
 export const Resources = {

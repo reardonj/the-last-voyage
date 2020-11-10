@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import RelativisticMath from "../Logic/RelativisticMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { Planet, SolarSystemDefinition, Sun } from "./GameState";
+import GameState, { Planet, SolarSystemDefinition, SolarSystemObject, Sun } from "./GameState";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
@@ -17,13 +17,13 @@ export type ObjectInfo = {
 }
 
 export function createGameObjects(system: SolarSystemDefinition): ScalableObject[] {
-  const objects = [];
+  const objects: ScalableObject[] = [];
   // technically gets the mass of all suns, but that's fine
   const sunMass = Object.keys(system.objects)
     .filter(x => system.objects[x].type == "sun")
-    .map(x => system.objects[x].mass)
+    .map(x => (<Sun>system.objects[x]).mass)
     .reduce((a, x) => a + x, 0);
-  const planets = [];
+  const planets: Orbital[] = [];
   for (let key in system.objects) {
     const object = system.objects[key];
     switch (object.type) {
@@ -51,7 +51,7 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
 
   radii.sort((a, b) => a - b);
 
-  const levels = []
+  const levels: number[] = []
   for (let i = 1; i < radii.length; i++) {
     levels.push((radii[i - 1] + radii[i]) / 2);
   }
@@ -62,11 +62,11 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
 class InvisibleObjectIndicator implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
-  orbits: Planet[];
-  min: Planet;
+  orbits: Orbital[];
+  min: Orbital;
   interactionObject: Phaser.GameObjects.Arc;
 
-  constructor(planets: Planet[]) {
+  constructor(planets: Orbital[]) {
     this.position = new Phaser.Math.Vector2();
     this.mass = 0;
     this.orbits = planets.sort((a, b) => a.orbitalRadius - b.orbitalRadius);
@@ -90,7 +90,7 @@ class InvisibleObjectIndicator implements ScalableObject {
   }
 
   setScale(scale: number) {
-    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30);
+    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30)!;
     if (this.min == this.orbits[0]) {
       this.interactionObject.setVisible(false);
     } else {
@@ -136,6 +136,8 @@ class SunSprite implements ScalableObject {
     }
   }
 }
+
+type Orbital = (SolarSystemObject & { orbitalRadius: number });
 
 class PlanetSprite implements ScalableObject {
   position: Phaser.Math.Vector2;

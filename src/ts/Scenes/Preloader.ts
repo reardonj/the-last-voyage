@@ -1,6 +1,3 @@
-import SolarSystemNavigation from "./SolarSystemNavigation";
-import Hud from "./Hud";
-import GameState from "../GameData/GameState";
 import { Fonts, Sprites } from "../Utilities";
 import MainMenu from "./MainMenu";
 
@@ -17,7 +14,6 @@ export default class Preloader extends Phaser.Scene {
     this.load.image(Sprites.Planet, "planet.png");
     this.load.image(Sprites.Ship, "ship.png");
     this.load.image(Sprites.ShortGradient, "short-gradient.png");
-    this.load.image(Sprites.SolidBackground, "solid-background.png");
     this.load.bitmapFont(Fonts.Proportional24, "fonts/kenvector_future_thin_24.png", "fonts/kenvector_future_thin_24.xml");
     this.load.bitmapFont(Fonts.Proportional16, "fonts/kenvector_future_thin_16.png", "fonts/kenvector_future_thin_16.xml");
   }
