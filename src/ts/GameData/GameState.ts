@@ -87,7 +87,7 @@ export default class GameState implements SavedState {
   }
 
   useFuel(accelerationMagnitude: number, durationMinutes: number) {
-    this.fuel = Phaser.Math.Clamp(this.fuel - 10 * accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
+    this.fuel = Phaser.Math.Clamp(this.fuel - 0.1 * accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
   }
 
@@ -206,7 +206,12 @@ export const Events = {
    * A scene transition is beginning. 
    * The duration of the transition in ms is passed as an event parameter 
    */
-  SceneTransition: "sceneTransition"
+  SceneTransition: "sceneTransition",
+
+  /***
+   * Show info. A ObjectInfo is passed as an event parameter.
+   */
+  ShowInfo: "showInfo"
 }
 
 export interface TimePassedEvent {

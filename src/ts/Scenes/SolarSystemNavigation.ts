@@ -37,14 +37,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
-    this.events.on('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
-    const onStep = this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
+    this.events.once('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
+    this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
     this.events.on('destroy', () => this.game.events.off("step", undefined, this));
 
     this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1);
     this.zoomLevels = createZoomLevels(state.currentSystem());
     this.orbitalBodies = createGameObjects(state.currentSystem());
-    this.orbitalBodies.forEach(x => x.create(this));
+    this.orbitalBodies.forEach(x => this.setupScalableObject(x));
     this.sim = new GravitySimulation(this.orbitalBodies);
 
     const solarState = <SolarSystemState>state.currentScene[1];
@@ -64,6 +64,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
     this.toScale.push(this.currentPosition);
+  }
+
+  private setupScalableObject(obj: ScalableObject) {
+    obj.create(this);
+    obj.interactionObject.setInteractive({ useHandCursor: true });
+    obj.interactionObject.on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, obj.info()));
   }
 
   public update(time: number, delta: number) {

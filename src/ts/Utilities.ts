@@ -30,12 +30,15 @@ export const Fonts = {
 
 export const Colours = {
   TextTint: 0xccccff,
-  Highlight: 0xe0e0ff
+  Highlight: 0xe0e0ff,
+  PanelBackground: 0x292933
 }
 
 export const Sprites = {
   Planet: "planet",
-  Ship: "ship"
+  Ship: "ship",
+  ShortGradient: "shortGradient",
+  SolidBackground: "solidBackground"
 }
 
 export const Resources = {

@@ -7,6 +7,13 @@ export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
   update(scene: Phaser.Scene)
   setScale(scale: number)
+  info(): ObjectInfo
+  readonly interactionObject: Phaser.GameObjects.GameObject
+}
+
+export type ObjectInfo = {
+  name: string,
+  description: string
 }
 
 export function createGameObjects(system: SolarSystemDefinition): ScalableObject[] {
@@ -56,7 +63,8 @@ class InvisibleObjectIndicator implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
   orbits: Planet[];
-  graphic: Phaser.GameObjects.Arc;
+  min: Planet;
+  interactionObject: Phaser.GameObjects.Arc;
 
   constructor(planets: Planet[]) {
     this.position = new Phaser.Math.Vector2();
@@ -64,20 +72,32 @@ class InvisibleObjectIndicator implements ScalableObject {
     this.orbits = planets.sort((a, b) => a.orbitalRadius - b.orbitalRadius);
   }
 
+  info(): ObjectInfo {
+    const hidden = this.orbits.filter(x => x.orbitalRadius < this.min.orbitalRadius);
+    return {
+      name: `Unrenderable Objects (${hidden.length})`,
+      description: "Objects are too close to the sun to display at this resolution:\n" + hidden.map(x => "  - " + x.name).join("\n")
+    }
+  }
+
   create(scene: Phaser.Scene) {
-    this.graphic = scene.add.circle(0, 0, 0, Colours.TextTint).setAlpha(0.5);
+    this.interactionObject = scene.add.circle(0, 0, 0, Colours.TextTint).setAlpha(0.5)
+      .setInteractive(new Phaser.Geom.Circle(0, 0, 0), Phaser.Geom.Circle.Contains)
+      .disableInteractive();
   }
 
   update(scene: Phaser.Scene) {
   }
 
   setScale(scale: number) {
-    const min = this.orbits.find(x => x.orbitalRadius / scale > 30);
-    if (min == this.orbits[0]) {
-      this.graphic.setVisible(false);
+    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30);
+    if (this.min == this.orbits[0]) {
+      this.interactionObject.setVisible(false);
     } else {
-      this.graphic.setRadius(min.orbitalRadius);
-      this.graphic.setVisible(true);
+      this.interactionObject.setRadius(this.min.orbitalRadius);
+      this.interactionObject.setVisible(true).setInteractive();
+      this.interactionObject.input.hitArea =
+        new Phaser.Geom.Circle(this.min.orbitalRadius, this.min.orbitalRadius, this.min.orbitalRadius)
     }
   }
 }
@@ -86,6 +106,7 @@ class SunSprite implements ScalableObject {
   private toScale: Phaser.GameObjects.Components.Transform[] = [];
   position: Phaser.Math.Vector2;
   mass: number;
+  interactionObject: Phaser.GameObjects.GameObject;
 
   constructor(private definition: Sun) {
     this.position = definition.position;
@@ -93,8 +114,10 @@ class SunSprite implements ScalableObject {
   }
 
   create(scene: Phaser.Scene) {
-    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 12, Colours.TextTint));
+    const outerCircle = scene.add.circle(this.definition.position.x, this.definition.position.y, 12, Colours.TextTint);
+    this.toScale.push(outerCircle);
     this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 10, 0xeeeea0));
+    this.interactionObject = outerCircle;
   }
 
   update(scene: Phaser.Scene) {
@@ -105,6 +128,13 @@ class SunSprite implements ScalableObject {
       o.setScale(scale);
     }
   }
+
+  info() {
+    return {
+      name: this.definition.name,
+      description: "Local sun.",
+    }
+  }
 }
 
 class PlanetSprite implements ScalableObject {
@@ -113,6 +143,7 @@ class PlanetSprite implements ScalableObject {
   orbit: Phaser.GameObjects.Graphics;
   sprite: Phaser.GameObjects.Sprite;
   orbitalPeriod: number;
+  interactionObject: Phaser.GameObjects.GameObject;
 
   constructor(private definition: Planet, private sunMass: number) {
     this.mass = definition.mass;
@@ -122,6 +153,7 @@ class PlanetSprite implements ScalableObject {
   create(scene: Phaser.Scene) {
     this.orbit = scene.add.graphics();
     this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.TextTint);
+    this.interactionObject = this.sprite;
     this.orbitalPeriod =
       this.definition.orbitalSpeedMultiplier *
       24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
@@ -143,6 +175,13 @@ class PlanetSprite implements ScalableObject {
     const isVisible = this.definition.orbitalRadius / scale > 30;
     this.orbit.setVisible(isVisible);
     this.sprite.setVisible(isVisible);
+  }
+
+  info() {
+    return {
+      name: this.definition.name,
+      description: this.definition["description"] ?? "",
+    }
   }
 }
 

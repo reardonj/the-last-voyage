@@ -1,5 +1,6 @@
 import GameState, { Events, LocationChangedEvent, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
-import Utilities, { Colours, Fonts, Resources } from "../Utilities";
+import { ObjectInfo } from "../GameData/SolarSystemObject";
+import { Colours, Fonts, Resources, Sprites } from "../Utilities";
 
 const LeftMargin = 8;
 
@@ -38,6 +39,11 @@ export default class Hud extends Phaser.Scene {
   private fuelText: StatusItem;
   private populationText: StatusItem;
   private suppliesText: StatusItem;
+  infoContainer: Phaser.GameObjects.Container;
+  infoTitle: Phaser.GameObjects.BitmapText;
+  infoRect: Phaser.GameObjects.Rectangle;
+  infoBorder: Phaser.GameObjects.Image;
+  infoContent: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
     // Preload as needed.
@@ -52,9 +58,28 @@ export default class Hud extends Phaser.Scene {
     this.populationText = this.setupStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
     this.suppliesText = this.setupStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
 
+    this.infoRect = this.add.rectangle(0, 0, 4, 4, Colours.PanelBackground, 0.8).setOrigin(0, 0);
+    this.infoBorder = this.add.image(0, 0, Sprites.ShortGradient)
+      .setOrigin(0, 0)
+      .setTint(Colours.TextTint)
+      .setFlipX(true);
+    this.infoTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "")
+      .setTint(Colours.TextTint);
+    this.infoContent = this.add.bitmapText(LeftMargin, 0, Fonts.Proportional16, "")
+      .setTint(Colours.TextTint)
+      .setMaxWidth(400);
+
+    this.infoContainer = this.add.container(0, LeftMargin * 2);
+    this.infoContainer.add(this.infoRect);
+    this.infoContainer.add(this.infoTitle);
+    this.infoContainer.add(this.infoContent);
+    this.infoContainer.add(this.infoBorder);
+    this.hideInfo();
+
     state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
     state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
     state.eventSource.addListener(Events.FuelChanged, this.updateStatusText(this.fuelText), this);
+    state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
   }
 
   setupStatusText(y: number, name: string): StatusItem {
@@ -109,5 +134,58 @@ export default class Hud extends Phaser.Scene {
         item[3] = false;
       }
     };
+  }
+
+  showInfo(info: ObjectInfo) {
+
+    if (this.infoContainer.visible) {
+      this.tweens.add({
+        targets: this.infoContainer,
+        x: -this.infoRect.width,
+        ease: 'cubic.inout',
+        duration: 200,
+        repeat: 0,
+        onComplete: () => {
+          this.infoContainer.setVisible(false);
+          this.showInfo(info);
+        },
+        onCompleteScope: this
+      })
+    } else {
+      this.infoTitle.setText(info.name);
+      this.infoContent.setText(info.description);
+      this.infoContent.setY(this.infoTitle.height + LeftMargin);
+
+      const width = Math.max(this.infoTitle.width, this.infoContent.width);
+      const height = this.infoTitle.height + this.infoContent.height + LeftMargin;
+      this.infoRect.setSize(width + LeftMargin * 2, height + LeftMargin * 2);
+      this.infoBorder.displayHeight = this.infoRect.height;
+      this.infoBorder.setX(this.infoRect.width - 8);
+      this.infoContainer.setX(-this.infoRect.width);
+      this.infoContainer.setVisible(true);
+
+      this.tweens.add({
+        targets: this.infoContainer,
+        x: { from: -this.infoRect.width, to: 0 },
+        ease: 'cubic.inout',
+        duration: 200,
+        repeat: 0,
+      })
+
+    }
+  }
+
+  hideInfo() {
+    this.tweens.add({
+      targets: this.infoContainer,
+      x: -this.infoRect.width,
+      ease: 'cubic.inout',
+      duration: 200,
+      repeat: 0,
+      onComplete: () => {
+        this.infoContainer.setVisible(false);
+      },
+      onCompleteScope: this
+    })
   }
 }
