@@ -29,6 +29,7 @@ export default class GameState implements SavedState {
         {
           name: "Sol",
           initVelocity: new Phaser.Math.Vector2(5, 3),
+          initOrientation: new Phaser.Math.Vector2(5, 3).angle(),
           initPosition: new Phaser.Math.Vector2(-40, 146)
         }]
     },
@@ -156,6 +157,7 @@ export interface GameOverState {
 export interface SolarSystemState {
   initVelocity: Phaser.Math.Vector2;
   initPosition: Phaser.Math.Vector2;
+  initOrientation: number;
   name: string;
 }
 
@@ -198,7 +200,12 @@ export const Events = {
   /***
    * Show info. A ObjectInfo is passed as an event parameter.
    */
-  ShowInfo: "showInfo"
+  ShowInfo: "showInfo",
+
+  /***
+   * Update the HUD status text. The new text string is passed as an event parameter
+   */
+  UpdateStatus: "updateStatus"
 }
 
 export interface TimePassedEvent {

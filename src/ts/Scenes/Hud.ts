@@ -1,6 +1,6 @@
 import GameState, { Events, LocationChangedEvent, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { ObjectInfo } from "../GameData/SolarSystemObject";
-import { Colours, Fonts, Resources, Sprites } from "../Utilities";
+import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
 const LeftMargin = 8;
 
@@ -44,6 +44,8 @@ export default class Hud extends Phaser.Scene {
   infoRect: Phaser.GameObjects.Rectangle;
   infoBorder: Phaser.GameObjects.Image;
   infoContent: Phaser.GameObjects.BitmapText;
+  starMap: Phaser.GameObjects.BitmapText;
+  statusText: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
     // Preload as needed.
@@ -52,12 +54,27 @@ export default class Hud extends Phaser.Scene {
   public create(state: GameState): void {
     this.durationText = this.add.bitmapText(0, 696, Fonts.Proportional16, "").setTint(Colours.TextTint);
     this.locationText = this.add.bitmapText(0, 680, Fonts.Proportional24, "----").setTint(Colours.TextTint);
+    this.statusText = this.add.bitmapText(0, 660, Fonts.Proportional16, "----").setTint(Colours.TextTint);
+    this.rightAlign(this.statusText, LeftMargin);
 
-    this.integrityText = this.setupStatusText(LeftMargin / 2, Resources.Hud.Integrity);
-    this.fuelText = this.setupStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel);
-    this.populationText = this.setupStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
-    this.suppliesText = this.setupStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
+    this.integrityText = this.updateSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity);
+    this.fuelText = this.updateSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel);
+    this.populationText = this.updateSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
+    this.suppliesText = this.updateSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
 
+    this.starMap = this.add.bitmapText(LeftMargin, 696, Fonts.Proportional16, "[ Star Map ]");
+    UI.makeInteractive(this.starMap);
+
+    this.setupInfoPanel();
+
+    state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
+    state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
+    state.eventSource.addListener(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
+    state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
+    state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
+  }
+
+  private setupInfoPanel() {
     this.infoRect = this.add.rectangle(0, 0, 4, 4, Colours.PanelBackground, 0.8).setOrigin(0, 0);
     this.infoBorder = this.add.image(0, 0, Sprites.ShortGradient)
       .setOrigin(0, 0)
@@ -75,14 +92,9 @@ export default class Hud extends Phaser.Scene {
     this.infoContainer.add(this.infoContent);
     this.infoContainer.add(this.infoBorder);
     this.hideInfo();
-
-    state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
-    state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
-    state.eventSource.addListener(Events.FuelChanged, this.updateStatusText(this.fuelText), this);
-    state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
   }
 
-  setupStatusText(y: number, name: string): StatusItem {
+  updateSystemStatusText(y: number, name: string): StatusItem {
     const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " |||||").setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
 
@@ -119,7 +131,12 @@ export default class Hud extends Phaser.Scene {
     this.rightAlign(this.locationText, LeftMargin);
   }
 
-  updateStatusText(item: StatusItem): (state: number) => void {
+  updateStatus(state: string) {
+    this.statusText.setText(state);
+    this.rightAlign(this.statusText, LeftMargin);
+  }
+
+  updateSystemStatus(item: StatusItem): (state: number) => void {
     return (state: number) => {
       const bars = Phaser.Math.Clamp(5 * state / StatusMaxValue, 0, 5);
       const warning = bars < 0.5;

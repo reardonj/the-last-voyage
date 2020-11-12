@@ -119,7 +119,7 @@ export const Worlds = [
   },
   {
     name: "Celestia",
-    position: [-9, 3],
+    position: [20, 0],
     objects: [
       {
         type: "sun",

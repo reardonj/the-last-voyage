@@ -33,6 +33,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private daysPassed: number;
   private zoomLevels: number[] = [];
   private orbitalBodies: ScalableObject[];
+  orientation: number;
 
   public preload(): void {
   }
@@ -52,6 +53,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     const solarState = <SolarSystemState>state.currentScene[1];
     this.position = solarState.initPosition.clone();
+    this.orientation = solarState.initOrientation;
     this.nextVelocity = solarState.initVelocity.clone();
 
     this.cameras.main.centerOn(0, 0);
@@ -83,7 +85,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const daysPassed = this.updateShip();
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
-    this.currentPosition.setRotation(this.nextVelocity.angle());
 
     const minutesPassed = 60 * 24 * daysPassed;
     this.gameState().updateTime(
@@ -122,7 +123,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   private updateShip(): number {
-    const daysPassed = 1 / 24;
+    const daysPassed = 1 / 12;
     const needsUpdate =
       !this.nextPredictions ||
       this.daysPassed != daysPassed ||
@@ -131,19 +132,21 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       this.cursors.right?.isDown ||
       this.cursors.left?.isDown;
 
+    const acc = new Phaser.Math.Vector2();
+    if (this.nextPredictions) {
+      acc.add(this.nextPredictions[1][2]);
+    }
 
     if (needsUpdate) {
-      const acc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
-      this.gameState().useFuel(acc.length() / AstronomicalMath.Acceleration1GDay, daysPassed * 60 * 24);
-      if (this.nextPredictions) {
-        acc.add(this.nextPredictions[1][2]);
-      }
+      const ownAcc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
+      acc.add(ownAcc);
+      this.gameState().useFuel(acc.length() / AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed, daysPassed * 60 * 24);
       this.path = this.sim.calculate(
         this.gameState().earthTime,
         daysPassed,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
-        acc);
+        acc.clone());
       this.daysPassed = daysPassed;
       this.resetPredictions();
     }
@@ -154,6 +157,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.position = this.nextPredictions[1][0];
     this.nextVelocity = this.nextPredictions[1][1];
     this.currentPosition.setPosition(this.position.x, this.position.y);
+    this.currentPosition.setRotation(this.orientation);
+
+    const displayVelocity = (1000000 * this.nextVelocity.length() / 24 / 60 / 60).toFixed(0);
+    const displayAcceleration = (acc.length() / (AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed)).toFixed(2);
+    this.gameState().eventSource.emit(
+      Events.UpdateStatus,
+      `Velocity: ${displayVelocity} km/s  Acceleration: ${displayAcceleration} g`)
+
     return daysPassed;
   }
 
@@ -183,20 +194,19 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   private nextAcc(): M.Vector2 {
-    let x = 0;
     let y = 0;
     if (this.cursors.up?.isDown) {
-      y = 1;
+      y = 5;
     } else if (this.cursors.down?.isDown) {
       y = -1;
     }
 
     if (this.cursors.right?.isDown) {
-      x = -1;
+      this.orientation += (Math.PI / 90);
     } else if (this.cursors.left?.isDown) {
-      x = 1;
+      this.orientation += (-Math.PI / 90);
     }
-    return new M.Vector2(x, y).normalize();
+    return new Phaser.Math.Vector2(1, 0).setToPolar(this.orientation).scale(y);
   }
 
   private gameState() {

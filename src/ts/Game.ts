@@ -40,11 +40,11 @@ function resize(): void {
   const wratio = width / height;
   const ratio = Number(gameConfig.width) / Number(gameConfig.height);
   if (wratio < ratio) {
-    canvas.style.width = width + "px";
-    canvas.style.height = (width / ratio) + "px";
+    canvas!.style.width = width + "px";
+    canvas!.style.height = (width / ratio) + "px";
   } else {
-    canvas.style.width = (height * ratio) + "px";
-    canvas.style.height = height + "px";
+    canvas!.style.width = (height * ratio) + "px";
+    canvas!.style.height = height + "px";
   }
 }
 
