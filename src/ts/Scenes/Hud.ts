@@ -70,6 +70,7 @@ export default class Hud extends Phaser.Scene {
     state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
     state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
     state.eventSource.addListener(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
+    state.eventSource.addListener(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
     state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
     state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
   }

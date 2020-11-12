@@ -81,20 +81,28 @@ export default class GameState implements SavedState {
     }
   }
 
-  updateTime(earth: number, relative: number, minutesPerTick: number) {
-    this.earthTime += earth;
-    this.relativeTime += relative;
-    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: minutesPerTick });
-    this.useFuel(1 / 24 / 60, relative);
-  }
-
   /***
-   * Calculate fuel use.
-   * @param accelerationMagnitude as a percentage of 1g.
+   * Perform all calculations for advancing the game the given amount of time.
+   * @param thrusterAcceleration as a percentage of 1g.
    */
-  useFuel(accelerationMagnitude: number, durationMinutes: number) {
-    this.fuel = Phaser.Math.Clamp(this.fuel - accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
+  timeStep(
+    acceleration: number,
+    thrusterAcceleration: number,
+    durationEarthMinutes: number,
+    durationRelativeMinutes: number
+  ) {
+    this.earthTime += durationEarthMinutes;
+    this.relativeTime += durationRelativeMinutes;
+    this.fuel = clampStatusValue(this.fuel - (thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000));
+
+    // Accelerating beyond 1g causes damage.
+    if (acceleration > 1) {
+      this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
+      this.eventSource.emit(Events.IntegrityChanged, this.integrity);
+    }
+
     this.eventSource.emit(Events.FuelChanged, this.fuel);
+    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
   }
 
   doStateBasedTransitions(currentScene: Phaser.Scene) {
@@ -120,6 +128,10 @@ export default class GameState implements SavedState {
     this.transitionScene.startTransition(300);
   }
 
+}
+
+function clampStatusValue(value: number) {
+  return Phaser.Math.Clamp(value, 0, StatusMaxValue);
 }
 
 function createSystems(): { [id: string]: SolarSystemDefinition } {
@@ -190,6 +202,7 @@ export const Events = {
   TimePassed: "timePassed",
   LocationChanged: "locationChanged",
   FuelChanged: "fuelChanged",
+  IntegrityChanged: "integrityChanged",
 
   /*** 
    * A scene transition is beginning. 

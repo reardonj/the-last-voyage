@@ -86,11 +86,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
 
-    const minutesPassed = 60 * 24 * daysPassed;
-    this.gameState().updateTime(
-      minutesPassed,
-      Conversions.contractTime(minutesPassed, Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length())),
-      minutesPassed);
   }
 
   private updateScaledObjects(force?: boolean) {
@@ -132,15 +127,15 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       this.cursors.right?.isDown ||
       this.cursors.left?.isDown;
 
+    let ownAcc = new Phaser.Math.Vector2();
     const acc = new Phaser.Math.Vector2();
     if (this.nextPredictions) {
       acc.add(this.nextPredictions[1][2]);
     }
 
     if (needsUpdate) {
-      const ownAcc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
+      ownAcc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
       acc.add(ownAcc);
-      this.gameState().useFuel(acc.length() / AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed, daysPassed * 60 * 24);
       this.path = this.sim.calculate(
         this.gameState().earthTime,
         daysPassed,
@@ -159,8 +154,21 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.currentPosition.setPosition(this.position.x, this.position.y);
     this.currentPosition.setRotation(this.orientation);
 
+    const minutesPassed = 60 * 24 * daysPassed;
+    const relativeMinutes = Conversions.contractTime(
+      minutesPassed,
+      Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length()));
+    const totalAccelerationMagnitude = acc.length() / (AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
+
+    this.gameState().timeStep(
+      totalAccelerationMagnitude,
+      ownAcc.length() / AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed,
+      minutesPassed,
+      relativeMinutes,
+    );
+
     const displayVelocity = (1000000 * this.nextVelocity.length() / 24 / 60 / 60).toFixed(0);
-    const displayAcceleration = (acc.length() / (AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed)).toFixed(2);
+    const displayAcceleration = (totalAccelerationMagnitude).toFixed(2);
     this.gameState().eventSource.emit(
       Events.UpdateStatus,
       `Velocity: ${displayVelocity} km/s  Acceleration: ${displayAcceleration} g`)
