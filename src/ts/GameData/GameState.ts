@@ -27,7 +27,7 @@ export default class GameState implements SavedState {
       currentScene: [
         "solar-system",
         {
-          name: "Ovid",
+          name: "Sol",
           initVelocity: new Phaser.Math.Vector2(5, 3),
           initPosition: new Phaser.Math.Vector2(-40, 146)
         }]
@@ -87,8 +87,12 @@ export default class GameState implements SavedState {
     this.useFuel(1 / 24 / 60, relative);
   }
 
+  /***
+   * Calculate fuel use.
+   * @param accelerationMagnitude as a percentage of 1g.
+   */
   useFuel(accelerationMagnitude: number, durationMinutes: number) {
-    this.fuel = Phaser.Math.Clamp(this.fuel - 0.1 * accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
+    this.fuel = Phaser.Math.Clamp(this.fuel - accelerationMagnitude * durationMinutes, 0, StatusMaxValue);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
   }
 

@@ -5,6 +5,7 @@ import GameState, { Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Sprites } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
 import Hud from "./Hud";
+import AstronomicalMath from "../Logic/AstronomicalMath";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
@@ -45,7 +46,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       .setInteractive(true, () => true)
       .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));;
     this.zoomLevels = createZoomLevels(state.currentSystem());
-    this.orbitalBodies = createGameObjects(state.currentSystem());
+    this.orbitalBodies = createGameObjects(state.currentSystem(), state.systems);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
     this.sim = new GravitySimulation(this.orbitalBodies);
 
@@ -121,7 +122,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   private updateShip(): number {
-    const daysPassed = 0.01 / this.cameras.main.zoom;
+    const daysPassed = 1 / 24;
     const needsUpdate =
       !this.nextPredictions ||
       this.daysPassed != daysPassed ||
@@ -132,8 +133,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
 
     if (needsUpdate) {
-      const acc = this.nextAcc().scale(1 / 5 / daysPassed);
-      this.gameState().useFuel(acc.length(), daysPassed * 60 * 24);
+      const acc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
+      this.gameState().useFuel(acc.length() / AstronomicalMath.Acceleration1GDay, daysPassed * 60 * 24);
       if (this.nextPredictions) {
         acc.add(this.nextPredictions[1][2]);
       }

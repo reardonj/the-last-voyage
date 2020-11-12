@@ -1,5 +1,5 @@
 import { GravityWell } from "../Logic/GravitySimulation";
-import RelativisticMath from "../Logic/RelativisticMath";
+import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
 import GameState, { Planet, SolarSystemDefinition, SolarSystemObject, Sun } from "./GameState";
 
@@ -16,7 +16,7 @@ export type ObjectInfo = {
   description: string
 }
 
-export function createGameObjects(system: SolarSystemDefinition): ScalableObject[] {
+export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition }): ScalableObject[] {
   const objects: ScalableObject[] = [];
   // technically gets the mass of all suns, but that's fine
   const sunMass = Object.keys(system.objects)
@@ -37,6 +37,14 @@ export function createGameObjects(system: SolarSystemDefinition): ScalableObject
     }
   }
   objects.unshift(new InvisibleObjectIndicator(planets));
+
+  for (let id in others) {
+    if (id == system.name) {
+      continue;
+    }
+
+    objects.push(new InterstellarObject(system, others[id]));
+  }
   return objects;
 }
 
@@ -57,6 +65,49 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
   }
 
   return levels;
+}
+
+class InterstellarObject implements ScalableObject {
+  interactionObject: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform;
+  mass: number = 0;
+  position: Phaser.Math.Vector2;
+  distanceToOtherStar: number;
+
+  constructor(
+    private currentSystem: SolarSystemDefinition,
+    private otherSystem: SolarSystemDefinition
+  ) { }
+
+  create(scene: Phaser.Scene) {
+    const vectorToOtherStar = new Phaser.Math.Vector2(this.otherSystem.position[0], this.otherSystem.position[1])
+      .subtract(new Phaser.Math.Vector2(this.currentSystem.position[0], this.currentSystem.position[1]));
+    this.distanceToOtherStar = vectorToOtherStar.length();
+    vectorToOtherStar.normalize();
+    this.position = vectorToOtherStar.scale(6000 + Math.log(this.distanceToOtherStar) * 100);
+    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.TextTint);
+  }
+
+  update(scene: Phaser.Scene) {
+  }
+
+  setScale(scale: number) {
+    this.interactionObject.setScale(0.5 * scale);
+  }
+
+  info(): ObjectInfo {
+    const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar, 1.03);
+    return {
+      name: this.otherSystem.name,
+      description:
+        `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
+        `Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative\n` +
+        `Fuel ${((travelTime.relative * 365 + AstronomicalMath.Acceleration1GDay * travelTime.reference * 365) / 10000).toFixed(5)} % total`
+    }
+  }
+  positionAt(minutes: number): Phaser.Math.Vector2 {
+    return this.position;
+  }
+
 }
 
 class InvisibleObjectIndicator implements ScalableObject {
@@ -155,7 +206,7 @@ class PlanetSprite implements ScalableObject {
     this.position = new Phaser.Math.Vector2(-100000, -100000);
     this.orbitalPeriod =
       this.definition.orbitalSpeedMultiplier *
-      24 * 60 * RelativisticMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
+      24 * 60 * AstronomicalMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
   }
 
   positionAt(time: number) {
