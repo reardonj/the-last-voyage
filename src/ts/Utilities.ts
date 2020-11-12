@@ -11,6 +11,7 @@ export default class Utilities {
 export class UI {
   public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint) {
     obj.setInteractive({ useHandCursor: true });
+    obj.setTint(Colours.TextTint);
     obj.on("pointerover", () => obj.setTint(Colours.Highlight), this);
     obj.on("pointerout", () => obj.setTint(Colours.TextTint), this);
   }
@@ -37,6 +38,7 @@ export const Colours = {
 export const Sprites = {
   Planet: "planet",
   Ship: "ship",
+  Sun: "sun",
   ShortGradient: "shortGradient",
 }
 
@@ -54,3 +56,14 @@ export const Resources = {
     Fuel: "The ship's reactor shuts down as it consumes the last grams of fuel,\nleaving the Pilgrim adrift in space."
   }
 }
+
+export const SystemNames: string[] = [
+  "beta-Sol",
+  "Celestia",
+  "Avalon",
+  "Oasis",
+  "Haven",
+  "Sanctuary",
+  "Hope"
+]
+

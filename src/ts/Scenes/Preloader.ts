@@ -11,6 +11,7 @@ export default class Preloader extends Phaser.Scene {
     this.addProgressBar();
 
     this.load.path = "assets/";
+    this.load.image(Sprites.Sun, "sun.png");
     this.load.image(Sprites.Planet, "planet.png");
     this.load.image(Sprites.Ship, "ship.png");
     this.load.image(Sprites.ShortGradient, "short-gradient.png");

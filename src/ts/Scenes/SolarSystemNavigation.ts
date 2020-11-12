@@ -56,8 +56,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
 
-    this.updateScaledObjects(true);
-
     this.prediction = [];
     for (let i = 0; i < 20; i++) {
       const p = this.add.circle(50, 50, 1, 0xffffaa).setAlpha(1 - 0.8 * (i / 20));
@@ -66,6 +64,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
     this.toScale.push(this.currentPosition);
+
+    this.updateScaledObjects(true);
   }
 
   private setupScalableObject(obj: ScalableObject) {
@@ -98,10 +98,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const scale = Math.max(0.05, Math.min(1, Math.round(100 * baseScale / scaleDist) / 100));
 
     if (force || this.cameras.main.zoom != scale) {
-      if (!force) {
-        this.cameras.main.zoomTo(scale, 500);
-      } else {
+      if (force) {
         this.cameras.main.setZoom(scale);
+      } else {
+        this.cameras.main.zoomTo(scale, 500);
       }
       const scaleFactor = 1 / scale;
       for (let p of this.toScale) {

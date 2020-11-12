@@ -1,6 +1,7 @@
 import GameOver from "../Scenes/GameOver";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
+import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
   fuel: number;
@@ -26,7 +27,7 @@ export default class GameState implements SavedState {
       currentScene: [
         "solar-system",
         {
-          name: "Sol",
+          name: "Ovid",
           initVelocity: new Phaser.Math.Vector2(5, 3),
           initPosition: new Phaser.Math.Vector2(-40, 146)
         }]
@@ -117,19 +118,16 @@ export default class GameState implements SavedState {
 }
 
 function createSystems(): { [id: string]: SolarSystemDefinition } {
-  return {
-    "Sol": new SolarSystemDefinition("Sol", {
-      "Sol": sun("Sol", 20000000, new Phaser.Math.Vector2()),
-      "Mercury": planet("Mercury", 3, 57, 0, -1),
-      "Venus": planet("Venus", 49, 108, 1, -1),
-      "Earth": planet("Earth", 50, 149, 2, -1),
-      "Mars": planet("Mars", 6.4, 227, 3, -1),
-      "Jupiter": planet("Jupiter", 18987, 778, 4, -1),
-      "Saturn": planet("Saturn", 5685, 1426, 5, -1),
-      "Uranus": planet("Uranus", 868, 2870, 6, -1),
-      "Neptune": planet("Neptune", 1024, 4498, 7, -1)
-    })
-  };
+  return Worlds.map(x => new SolarSystemDefinition(
+    x.name,
+    <[number, number]>x.position,
+    x.objects.reduce((acc, obj) => {
+      acc[obj.name] = obj;
+      return acc;
+    }, {}))).reduce((acc, obj) => {
+      acc[obj.name] = obj
+      return acc;
+    }, {})
 }
 
 export type CurrentScene =
@@ -160,12 +158,7 @@ export interface SolarSystemState {
 export type Sun = {
   type: "sun",
   name: string,
-  mass: number,
-  position: Phaser.Math.Vector2
-}
-
-function sun(name: string, mass: number, position: Phaser.Math.Vector2): Sun {
-  return { type: "sun", name: name, mass: mass, position: position };
+  mass: number
 }
 
 export type Planet = {
@@ -177,22 +170,12 @@ export type Planet = {
   startAngle: number
 }
 
-function planet(name: string, mass: number, orbitalRadius: number, startAngle: number, orbitalSpeedMultiplier: number): Planet {
-  return {
-    type: "planet",
-    name: name,
-    mass: mass,
-    orbitalRadius: orbitalRadius,
-    startAngle,
-    orbitalSpeedMultiplier: orbitalSpeedMultiplier
-  };
-}
-
 export type SolarSystemObject = Sun | Planet;
 
 export class SolarSystemDefinition {
   constructor(
     public name: string,
+    public position: [number, number],
     public objects: { [id: string]: SolarSystemObject }
   ) { }
 }

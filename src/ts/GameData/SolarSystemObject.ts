@@ -92,7 +92,7 @@ class InvisibleObjectIndicator implements ScalableObject {
   }
 
   setScale(scale: number) {
-    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30)!;
+    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30) || this.orbits[this.orbits.length - 1];
     if (this.min == this.orbits[0]) {
       this.interactionObject.setVisible(false);
     } else {
@@ -111,16 +111,15 @@ class SunSprite implements ScalableObject {
   interactionObject: Phaser.GameObjects.GameObject;
 
   constructor(private definition: Sun) {
-    this.position = definition.position;
+    this.position = new Phaser.Math.Vector2();
     this.mass = definition.mass;
   }
 
   positionAt(time: number) { return this.position }
 
   create(scene: Phaser.Scene) {
-    const outerCircle = scene.add.circle(this.definition.position.x, this.definition.position.y, 12, Colours.TextTint);
+    const outerCircle = scene.add.image(0, 0, Sprites.Sun).setTint(0xeeeeaa);
     this.toScale.push(outerCircle);
-    this.toScale.push(scene.add.circle(this.definition.position.x, this.definition.position.y, 10, 0xeeeea0));
     this.interactionObject = outerCircle;
   }
 
