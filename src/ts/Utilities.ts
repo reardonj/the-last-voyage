@@ -19,8 +19,10 @@ export class UI {
   public static centre(
     left: number,
     right: number,
-    obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & { width: number }) {
+    obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & { width: number }
+  ) {
     obj.setX((left + right) / 2 - obj.width / 2);
+    return obj;
   }
 }
 
@@ -53,7 +55,8 @@ export const Resources = {
     RelativeDuration: "Relative"
   },
   GameOver: {
-    Fuel: "The ship's reactor shuts down as it consumes the last grams of fuel,\nleaving the Pilgrim adrift in space."
+    Fuel: "The ship's reactor shuts down as it consumes your last grams of fuel, leaving the Sojourner adrift in space.",
+    Integrity: "The Sojourner has sustained catastrophic damage, causing the ship to break up and scatter debris across the system."
   }
 }
 

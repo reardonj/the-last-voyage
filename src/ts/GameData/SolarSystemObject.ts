@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { Planet, SolarSystemDefinition, SolarSystemObject, Sun } from "./GameState";
+import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, Sun } from "./GameState";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
@@ -96,12 +96,13 @@ class InterstellarObject implements ScalableObject {
 
   info(): ObjectInfo {
     const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar, 1.03);
+    const fuelUsage = calculateFuelUsage(1, travelTime.reference, travelTime.relative);
     return {
       name: this.otherSystem.name,
       description:
         `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
-        `Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative\n` +
-        `Fuel ${((travelTime.relative * 365 + AstronomicalMath.Acceleration1GDay * travelTime.reference * 365) / 10000).toFixed(5)} % total`
+        `Fuel: ${fuelUsage.toFixed(0)}% total\n` +
+        `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`
     }
   }
   positionAt(minutes: number): Phaser.Math.Vector2 {

@@ -93,7 +93,7 @@ export default class GameState implements SavedState {
   ) {
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
-    this.fuel = clampStatusValue(this.fuel - (thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000));
+    this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
 
     // Accelerating beyond 1g causes damage.
     if (acceleration > 1) {
@@ -113,6 +113,9 @@ export default class GameState implements SavedState {
     if (this.fuel == 0) {
       this.currentScene = ["game-over", { reason: "fuel" }]
       this.transition(currentScene);
+    } else if (this.integrity == 0) {
+      this.currentScene = ["game-over", { reason: "integrity" }]
+      this.transition(currentScene);
     }
   }
 
@@ -122,12 +125,16 @@ export default class GameState implements SavedState {
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
-      duration: 300,
+      duration: 500,
       remove: true
     });
-    this.transitionScene.startTransition(300);
+    this.transitionScene.startTransition(500);
   }
 
+}
+
+export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
+  return (thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
 }
 
 function clampStatusValue(value: number) {
@@ -163,7 +170,7 @@ export interface SavedState {
 }
 
 export interface GameOverState {
-  reason: "fuel"
+  reason: "fuel" | "integrity"
 }
 
 export interface SolarSystemState {

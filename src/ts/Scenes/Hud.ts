@@ -3,6 +3,7 @@ import { ObjectInfo } from "../GameData/SolarSystemObject";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
 const LeftMargin = 8;
+const StatusBars = 20;
 
 function createTimeString(time: number, minutesPerTick: number): string {
   const years = Math.floor(time / 524160);
@@ -44,7 +45,6 @@ export default class Hud extends Phaser.Scene {
   infoRect: Phaser.GameObjects.Rectangle;
   infoBorder: Phaser.GameObjects.Image;
   infoContent: Phaser.GameObjects.BitmapText;
-  starMap: Phaser.GameObjects.BitmapText;
   statusText: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
@@ -53,17 +53,14 @@ export default class Hud extends Phaser.Scene {
 
   public create(state: GameState): void {
     this.durationText = this.add.bitmapText(0, 696, Fonts.Proportional16, "").setTint(Colours.TextTint);
-    this.locationText = this.add.bitmapText(0, 680, Fonts.Proportional24, "----").setTint(Colours.TextTint);
-    this.statusText = this.add.bitmapText(0, 660, Fonts.Proportional16, "----").setTint(Colours.TextTint);
+    this.locationText = this.add.bitmapText(0, 664, Fonts.Proportional24, "----").setTint(Colours.TextTint);
+    this.statusText = this.add.bitmapText(0, 680, Fonts.Proportional16, "----").setTint(Colours.TextTint);
     this.rightAlign(this.statusText, LeftMargin);
 
     this.integrityText = this.updateSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity);
     this.fuelText = this.updateSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel);
     this.populationText = this.updateSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
     this.suppliesText = this.updateSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
-
-    this.starMap = this.add.bitmapText(LeftMargin, 696, Fonts.Proportional16, "[ Star Map ]");
-    UI.makeInteractive(this.starMap);
 
     this.setupInfoPanel();
 
@@ -96,7 +93,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   updateSystemStatusText(y: number, name: string): StatusItem {
-    const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " |||||").setTint(Colours.TextTint);
+    const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " " + "|".repeat(StatusBars)).setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
 
     const tween = this.add.tween({
@@ -139,8 +136,8 @@ export default class Hud extends Phaser.Scene {
 
   updateSystemStatus(item: StatusItem): (state: number) => void {
     return (state: number) => {
-      const bars = Phaser.Math.Clamp(5 * state / StatusMaxValue, 0, 5);
-      const warning = bars < 0.5;
+      const bars = Phaser.Math.Clamp(StatusBars * state / StatusMaxValue, 0, StatusBars);
+      const warning = bars / 20 < 0.2;
 
       item[1].setText(item[0] + " " + "|".repeat(Math.ceil(bars)));
       if (warning && !item[3]) {
