@@ -59,12 +59,14 @@ export default class Hud extends Phaser.Scene {
     this.statusText = this.add.bitmapText(0, 680, Fonts.Proportional16, "----").setTint(Colours.TextTint);
     this.rightAlign(this.statusText, LeftMargin);
 
-    this.integrityText = this.updateSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity);
-    this.fuelText = this.updateSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel);
-    this.populationText = this.updateSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
-    this.suppliesText = this.updateSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
+    this.integrityText = this.createSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity, () => this.integrityHint());
+    this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
+    this.populationText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers, () => this.passengersHint());
+    this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies, () => this.suppliesHint());
 
-    this.hoverHint = this.add.bitmapText(0, LeftMargin, Fonts.Proportional16, "").setTint(Colours.TextTint);
+    this.hoverHint = this.add
+      .bitmapText(0, LeftMargin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setTint(Colours.TextTint);
 
     this.setupInfoPanel();
 
@@ -75,6 +77,24 @@ export default class Hud extends Phaser.Scene {
     state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
     state.eventSource.addListener(Events.HoverHint, this.showHoverHint, this);
     state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
+  }
+
+  suppliesHint(): string {
+    const suppliesPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
+    return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication`;
+  }
+  passengersHint(): string {
+    const passengers = Math.ceil(this.gameState().passengers).toLocaleString();
+    return `${passengers} live human passengers, in cryostasis`
+  }
+  fuelHint(): string {
+    const fuelPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
+    return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship`;
+  }
+
+  integrityHint(): string {
+    const integrityPercent = Math.max(1, 100 * this.gameState().integrity / StatusMaxValue).toFixed(0);
+    return `Hull integrity: ${integrityPercent}%\nLoss will result in injuries, deaths and ultimately the destruction of the ship`;
   }
 
   private setupInfoPanel() {
@@ -98,10 +118,10 @@ export default class Hud extends Phaser.Scene {
     this.hideInfo();
   }
 
-  updateSystemStatusText(y: number, name: string): StatusItem {
+  createSystemStatusText(y: number, name: string, hint: () => string): StatusItem {
     const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " " + "|".repeat(StatusBars)).setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
-
+    UI.showHoverHint(text, this.gameState().eventSource, hint);
     const tween = this.add.tween({
       targets: text,
       alpha: { from: 1, to: 0.2 },
@@ -237,5 +257,9 @@ export default class Hud extends Phaser.Scene {
   private showHoverHint(hint: string | null) {
     this.hoverHint.setText(hint ?? "");
     UI.centre(0, this.cameras.main.width, this.hoverHint);
+  }
+
+  private gameState() {
+    return (<GameState>this.scene.settings.data);
   }
 }

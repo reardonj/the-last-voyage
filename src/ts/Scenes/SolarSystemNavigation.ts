@@ -2,7 +2,7 @@ import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { Events, SolarSystemState } from "../GameData/GameState";
-import { Colours, Sprites, UI } from "../Utilities";
+import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
@@ -45,16 +45,11 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
     this.events.on('destroy', () => this.game.events.removeListener("step", undefined, this));
 
-    this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1)
+    this.add.rectangle(0, 0, 1000000, 1000000, 0x000000, 1)
       .setInteractive(true, () => true)
       .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));
 
-    this.farthestOrbit = Object
-      .keys(state.currentSystem()!.objects)
-      .reduce((max, x) => {
-        const obj = state.currentSystem()!.objects[x];
-        return obj.type == "planet" ? Math.max(max, obj.orbitalRadius) : max;
-      }, 0);
+    this.farthestOrbit = state.currentSystem()!.farthestOrbit();
     this.orbitalBodies = createGameObjects(state.currentSystem()!, state.systems);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
     this.sim = new GravitySimulation(this.orbitalBodies);
@@ -75,6 +70,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
     this.toScale.push(this.currentPosition);
+    UI.showHoverHint(this.currentPosition, this.gameState().eventSource, () => Resources.ShipName);
 
     this.updateScaledObjects(true);
   }
@@ -124,7 +120,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const scaleFactor = 1 / this.cameras.main.zoom;
     for (let p of this.toScale) {
       p.setScale(scaleFactor);
-      p.setVisible(scaleFactor < 100)
     }
     for (let p of this.orbitalBodies) {
       p.setScale(scaleFactor);

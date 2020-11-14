@@ -19,7 +19,7 @@ export class UI {
   }
 
   public static showHoverHint(obj: Phaser.GameObjects.GameObject, emitter: Phaser.Events.EventEmitter, hint: () => string) {
-    obj.setInteractive({ useHandCursor: true });
+    obj.setInteractive();
     obj.on("pointerover", () => emitter.emit(Events.HoverHint, hint()), this);
     obj.on("pointerout", () => emitter.emit(Events.HoverHint, null), this);
   }
@@ -54,6 +54,7 @@ export const Sprites = {
 }
 
 export const Resources = {
+  ShipName: "The Sojourner",
   Hud: {
     Fuel: "Fuel",
     Integrity: "Integrity",

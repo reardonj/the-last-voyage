@@ -267,6 +267,13 @@ export class SolarSystemDefinition {
     return new Phaser.Math.Vector2(other.position[0], other.position[1])
       .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
   }
+
+  farthestOrbit() {
+    return Object
+      .keys(this.objects)
+      .map(x => this.objects[x])
+      .reduce((max, x) => x.type == "planet" ? Math.max(max, x.orbitalRadius) : max, 0);
+  }
 }
 
 export const Events = {

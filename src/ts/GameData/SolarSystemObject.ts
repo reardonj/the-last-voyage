@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, SolarSystemState, StatusMaxValue, Sun } from "./GameState";
+import GameState, { calculateFuelUsage, Events, Planet, SolarSystemDefinition, SolarSystemObject, SolarSystemState, StatusMaxValue, Sun } from "./GameState";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
@@ -24,7 +24,7 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
     .filter(x => system.objects[x].type == "sun")
     .map(x => (<Sun>system.objects[x]).mass)
     .reduce((a, x) => a + x, 0);
-  const planets: Orbital[] = [];
+  const planets: PlanetSprite[] = [];
   for (let key in system.objects) {
     const object = system.objects[key];
     switch (object.type) {
@@ -32,8 +32,9 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
         objects.push(new SunSprite(object));
         break;
       case "planet":
-        planets.push(object);
-        objects.push(new PlanetSprite(object, sunMass));
+        const sprite = new PlanetSprite(object, sunMass);
+        planets.push(sprite);
+        objects.push(sprite);
         break;
     }
   }
@@ -95,18 +96,19 @@ class InterstellarObject implements ScalableObject {
   }
 
   info(): ObjectInfo {
+    const sameSystem = this.otherSystem.name === this.currentSystem.name;
     const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar);
-    const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative) / StatusMaxValue;
+    const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative);
     return {
       name: this.otherSystem.name,
       description:
         `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
-        `Fuel: ${(100 * fuelUsage).toFixed(0)}% total\n` +
+        `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total\n` +
         `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
       actions: [
         {
-          name: "Travel",
-          hint: "Begin the relativistic journey to " + this.otherSystem.name,
+          name: sameSystem ? "Return" : "Travel",
+          hint: sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
           action: x => this.travel(x)
         }
       ]
@@ -126,29 +128,41 @@ class InterstellarObject implements ScalableObject {
 class InvisibleObjectIndicator implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
-  orbits: Orbital[];
-  min: Orbital | null;
+  orbits: PlanetSprite[];
+  min: PlanetSprite | null;
   interactionObject: Phaser.GameObjects.Arc;
 
-  constructor(planets: Orbital[]) {
+  constructor(planets: PlanetSprite[]) {
     this.position = new Phaser.Math.Vector2();
     this.mass = 0;
-    this.orbits = planets.sort((a, b) => a.orbitalRadius - b.orbitalRadius);
+    this.orbits = planets.sort((a, b) => a.definition.orbitalRadius - b.definition.orbitalRadius);
   }
 
   positionAt(time: number) { return this.position }
 
   info(): ObjectInfo {
-    const hidden = this.orbits.filter(x => x.orbitalRadius < (this.min?.orbitalRadius ?? 0));
+    const hidden = this.orbits.filter(x => x.definition.orbitalRadius < (this.min?.definition.orbitalRadius ?? 0));
     return {
       name: `Unrenderable Objects (${hidden.length})`,
-      description: "Objects are too close to the sun to display at this resolution:\n" + hidden.map(x => "  - " + x.name).join("\n")
+      description: "Objects are too close to the sun to display at this resolution:",
+      actions: hidden.map(x => ({
+        name: x.definition.name,
+        hint: `Show info for ${x.definition.name}`,
+        action: state => {
+          state.eventSource.emit(Events.HoverHint, null)
+          state.eventSource.emit(Events.ShowInfo, x.info())
+        }
+      }))
     }
   }
 
   create(scene: Phaser.Scene) {
     this.interactionObject = scene.add.circle(0, 0, 0, Colours.TextTint).setAlpha(0.5)
-      .setInteractive(new Phaser.Geom.Circle(0, 0, 0), Phaser.Geom.Circle.Contains)
+      .setInteractive({
+        useHandCursor: true,
+        hitArea: new Phaser.Geom.Circle(0, 0, 0),
+        hitAreaCallback: Phaser.Geom.Circle.Contains
+      })
       .disableInteractive();
   }
 
@@ -156,14 +170,14 @@ class InvisibleObjectIndicator implements ScalableObject {
   }
 
   setScale(scale: number) {
-    this.min = this.orbits.find(x => x.orbitalRadius / scale > 30) || this.orbits[this.orbits.length - 1];
+    this.min = this.orbits.find(x => x.definition.orbitalRadius / scale > 30) || this.orbits[this.orbits.length - 1];
     if (this.min == this.orbits[0]) {
       this.interactionObject.setVisible(false);
     } else {
-      this.interactionObject.setRadius(this.min.orbitalRadius);
+      this.interactionObject.setRadius(this.min.definition.orbitalRadius);
       this.interactionObject.setVisible(scale < 100).setInteractive({ useHandCursor: true });
       this.interactionObject.input.hitArea =
-        new Phaser.Geom.Circle(this.min.orbitalRadius, this.min.orbitalRadius, this.min.orbitalRadius)
+        new Phaser.Geom.Circle(this.min.definition.orbitalRadius, this.min.definition.orbitalRadius, this.min.definition.orbitalRadius)
     }
   }
 }
@@ -205,8 +219,6 @@ class SunSprite implements ScalableObject {
   }
 }
 
-type Orbital = (SolarSystemObject & { orbitalRadius: number });
-
 class PlanetSprite implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
@@ -215,7 +227,7 @@ class PlanetSprite implements ScalableObject {
   orbitalPeriod: number;
   interactionObject: Phaser.GameObjects.GameObject;
 
-  constructor(private definition: Planet, private sunMass: number) {
+  constructor(public definition: Planet, private sunMass: number) {
     this.mass = definition.mass;
     this.position = new Phaser.Math.Vector2(-100000, -100000);
     this.orbitalPeriod =
