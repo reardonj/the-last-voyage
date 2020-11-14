@@ -12,5 +12,45 @@ export type Planet = {
   mass: number,
   orbitalRadius: number,
   orbitalSpeedMultiplier: number,
-  startAngle: number
+  startAngle: number,
+  composition: Composition,
+  atmosphere?: Atmosphere,
+  temperature?: Temperature,
+  biosphere?: Biosphere,
+  intelligenceSigns?: IntelligenceSigns
 }
+
+export type Composition =
+  "Ice/Water" |
+  "Rocky" |
+  "Gas Giant"
+
+export type Atmosphere =
+  "Thin" |
+  "Corrosive" |
+  "Breathable" |
+  "Inert" |
+  "Thick" |
+  "Toxic" |
+  "Radioactive Cinders"
+
+export type Temperature =
+  "Frozen" |
+  "Cold" |
+  "Temperate" |
+  "Warm" |
+  "Burning" |
+  "Molten"
+
+export type Biosphere =
+  "Remnant" |
+  "Microbial" |
+  "Miscible" |
+  "Immiscible"
+
+export type IntelligenceSigns =
+  "Neolithic" |
+  "Pre-industrial" |
+  "Industrial" |
+  "Intrastellar" |
+  "Interstellar"
