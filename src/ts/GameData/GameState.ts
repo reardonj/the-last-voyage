@@ -105,7 +105,8 @@ export default class GameState implements SavedState {
     this.integrity = clampStatusValue(this.integrity - durationRelativeMinutes / 1000);
 
     // Accelerating beyond 1g causes damage.
-    if (acceleration > 1) {
+    if (acceleration > 2) {
+      this.eventSource.emit(Events.Warning, "Warning: Acceleration is causing hull damage");
       this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
     }
 
@@ -114,8 +115,9 @@ export default class GameState implements SavedState {
     const damage = previousIntegrity - this.integrity;
     if (damage > 100 && this.integrity < 0.5 * StatusMaxValue) {
       const popPercent = this.passengers / StatusMaxValue;
-      this.passengers = clampStatusValue(this.passengers - popPercent * Phaser.Math.Between(1, damage / 10));
+      this.passengers = clampStatusValue(this.passengers - popPercent * Phaser.Math.Between(1, damage));
       this.eventSource.emit(Events.PassengersChanged, this.passengers);
+      this.eventSource.emit(Events.Warning, "Warning: Casualties incurred due to hull damage!");
     }
 
     this.eventSource.emit(Events.IntegrityChanged, this.integrity);
@@ -143,7 +145,7 @@ export default class GameState implements SavedState {
     const fuelUsage = calculateFuelUsage(1, travelTime.reference * 365 * 24 * 60, travelTime.relative * 365 * 24 * 60);
 
     if (fuelUsage >= this.fuel) {
-      this.eventSource.emit(Events.Warning, "Cannot travel to destination. Insufficient fuel.");
+      this.eventSource.emit(Events.Warning, "Error: Cannot travel to destination. Insufficient fuel.");
     } else {
       this.nextScene = ["interstellar", { travelTime, origin, destination, leavingPosition }]
     }

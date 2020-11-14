@@ -104,9 +104,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
     const scale = distFromCentre > this.farthestOrbit + 1000 ?
       0.001 :
-      Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.2)) / 100));
+      Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.5)) / 100));
 
-    if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.025) {
+    if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.01) {
       if (force) {
         this.cameras.main.setZoom(scale);
       } else {
@@ -185,11 +185,16 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const relativeMinutes = Conversions.contractTime(
       minutesPassed,
       Conversions.gigametersPerDayToLightSpeedPercent(this.nextVelocity.length()));
-    const totalAccelerationMagnitude = acc.length() / (AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
+
+    const acc1g = AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed;
+    const totalAccelerationMagnitude = acc.length() / (acc1g);
+    if (this.nextPredictions.reduce((v, c) => v || c[2].length() / acc1g > 2, false)) {
+      this.gameState().eventSource.emit(Events.Warning, "Warning: Dangerous acceleration predicted");
+    }
 
     this.gameState().timeStep(
       totalAccelerationMagnitude,
-      ownAcc.length() / AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed,
+      ownAcc.length() / acc1g,
       minutesPassed,
       relativeMinutes,
     );
@@ -221,6 +226,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
   private renderPredictions() {
     this.frame = (this.frame + 1) % this.predictionSpacing;
+
     for (let i = 0; i < this.prediction.length; i++) {
       this.prediction[i].setPosition(
         this.nextPredictions[(i + 1) * this.predictionSpacing - this.frame][0].x,

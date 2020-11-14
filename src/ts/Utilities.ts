@@ -43,7 +43,8 @@ export const Colours = {
   TextTint: 0xccccff,
   Highlight: 0xe0ffe0,
   PanelBackground: 0x292933,
-  SelectableTint: 0xccffcc
+  SelectableTint: 0xccffcc,
+  WarningTint: 0xffbbbb
 }
 
 export const Sprites = {

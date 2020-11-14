@@ -28,6 +28,8 @@ function pad(num: number, length: number) {
 
 type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, warning: Phaser.Tweens.Tween, running: boolean];
 
+type WarningItem = { text: Phaser.GameObjects.BitmapText; anim: Phaser.Tweens.Tween | null; };
+
 export default class Hud extends Phaser.Scene {
   /**
    * Unique name of the scene.
@@ -48,6 +50,8 @@ export default class Hud extends Phaser.Scene {
   infoActions: Phaser.GameObjects.BitmapText[];
   statusText: Phaser.GameObjects.BitmapText;
   hoverHint: Phaser.GameObjects.BitmapText;
+  warningText: WarningItem;
+  pendingWarnings = new Set<string>();
 
   public preload(): void {
     // Preload as needed.
@@ -63,6 +67,7 @@ export default class Hud extends Phaser.Scene {
     this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
     this.populationText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers, () => this.passengersHint());
     this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies, () => this.suppliesHint());
+    this.warningText = this.createWarningText();
 
     this.hoverHint = this.add
       .bitmapText(0, LeftMargin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
@@ -75,6 +80,7 @@ export default class Hud extends Phaser.Scene {
     state.eventSource.addListener(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
     state.eventSource.addListener(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
     state.eventSource.addListener(Events.PassengersChanged, this.updateSystemStatus(this.populationText), this);
+    state.eventSource.addListener(Events.Warning, this.updateWarning(this.warningText), this);
     state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
     state.eventSource.addListener(Events.HoverHint, this.showHoverHint, this);
     state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
@@ -136,11 +142,38 @@ export default class Hud extends Phaser.Scene {
     return [name, text, tween, false];
   }
 
+  createWarningText(): WarningItem {
+    const text = this.add.bitmapText(0, 600, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setTint(Colours.WarningTint)
+      .setAlpha(0);
+
+    return { text, anim: null };
+  }
+
   rightAlign(text: Phaser.GameObjects.BitmapText, margin: number) {
     text.setX(this.cameras.main.width - text.width - margin);
   }
 
   public update() {
+    if (this.pendingWarnings.size > 0) {
+      const warningList: string[] = [];
+      for (const warning of this.pendingWarnings) {
+        warningList.push(warning);
+      }
+      this.pendingWarnings.clear();
+      const warnings = warningList.join("\n");
+      this.warningText.text.setText(warnings);
+      UI.centre(0, this.cameras.main.width, this.warningText.text);
+      this.warningText.anim?.stop();
+      this.warningText.anim = this.add.tween({
+        targets: this.warningText.text,
+        alpha: { start: 1, to: 0 },
+        ease: 'Sin',
+        duration: 2000,
+        repeat: 0,
+        delay: 3500
+      });
+    }
   }
 
   updateTime(state: TimePassedEvent) {
@@ -161,7 +194,7 @@ export default class Hud extends Phaser.Scene {
     this.rightAlign(this.statusText, LeftMargin);
   }
 
-  updateSystemStatus(item: StatusItem): (state: number) => void {
+  private updateSystemStatus(item: StatusItem): (state: number) => void {
     return (state: number) => {
       const bars = Phaser.Math.Clamp(StatusBars * state / StatusMaxValue, 0, StatusBars);
       const warning = bars / 20 < 0.2;
@@ -175,6 +208,12 @@ export default class Hud extends Phaser.Scene {
         item[1].setAlpha(1);
         item[3] = false;
       }
+    };
+  }
+
+  private updateWarning(item: WarningItem): (warning: string) => void {
+    return (warning: string) => {
+      this.pendingWarnings.add(warning);
     };
   }
 
