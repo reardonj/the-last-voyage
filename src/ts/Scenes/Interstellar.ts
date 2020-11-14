@@ -36,16 +36,22 @@ export default class Interstellar extends Phaser.Scene {
         const obj = this.sceneState.destination.objects[x];
         return obj.type == "planet" ? Math.max(max, obj.orbitalRadius) : max;
       }, 0);
-    const initPosition = this.sceneState.destination
+
+    let initPosition = this.sceneState.destination
       .vectorTo(this.sceneState.origin)
       .normalize();
+    // If reentering the same system, use the departure position.
+    if (this.sceneState.destination.name == this.sceneState.origin.name) {
+      initPosition = this.sceneState.leavingPosition.clone().normalize()
+    }
+
     const nextState = {
-      initVelocity: initPosition.clone().scale(-5),
-      initPosition: initPosition.scale(farthestOrbit + 1000),
-      initOrientation: initPosition.angle(),
+      velocity: initPosition.clone().scale(-5),
+      position: initPosition.scale(farthestOrbit + 800),
+      orientation: initPosition.angle(),
       name: this.sceneState.destination.name
     }
-    const animationLength = this.sceneState.travelTime.reference * 300;
+    const animationLength = Math.max(5000, this.sceneState.travelTime.reference * 800);
 
     this.tweens.addCounter({
       from: 0,
@@ -78,8 +84,8 @@ export default class Interstellar extends Phaser.Scene {
     this.tweens.add({
       targets: ship,
       angle: { from: 0, to: 180 },
-      ease: 'Quad.easeInOut',
-      duration: 200,
+      ease: 'Sin.easeInOut',
+      duration: 400,
       delay: (animationLength - 500) / 2
     });
   }

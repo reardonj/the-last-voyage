@@ -60,9 +60,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.sim = new GravitySimulation(this.orbitalBodies);
 
     const solarState = <SolarSystemState>state.currentScene[1];
-    this.position = solarState.initPosition.clone();
-    this.orientation = solarState.initOrientation;
-    this.nextVelocity = solarState.initVelocity.clone();
+    this.position = solarState.position.clone();
+    this.orientation = solarState.orientation;
+    this.nextVelocity = solarState.velocity.clone();
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -92,6 +92,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     if (this.cameras.main.zoom > 0.01) {
       this.updateShip();
+    } else {
+      this.gameState().eventSource.emit(
+        Events.UpdateStatus,
+        "Select a destination, or return to the current system.")
     }
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
@@ -111,6 +115,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       } else {
         this.cameras.main.zoomTo(scale, 500);
       }
+      if (scale == 0.01) {
+        this.gameState().eventSource.emit(Events.ShowInfo, null);
+      }
     }
     const scaleFactor = 1 / this.cameras.main.zoom;
     for (let p of this.toScale) {
@@ -121,12 +128,15 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       p.setScale(scaleFactor);
     }
 
-    const location =
-      scale == 0.01 ? "Interstellar Space" :
-        scale == 0.05 ? "Outer System" :
-          scale == 1 ? "Inner System" :
-            "Mid System";
-    this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
+    if (scale == 0.01) {
+      this.gameState().eventSource.emit(
+        Events.LocationChanged,
+        [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);
+    } else {
+      const location = scale == 1 ? "Inner System" : "Outer System";
+      this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
+
+    }
     return scale;
   }
 
@@ -166,6 +176,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.nextVelocity = this.nextPredictions[1][1];
     this.currentPosition.setPosition(this.position.x, this.position.y);
     this.currentPosition.setRotation(this.orientation);
+
+    const scene = this.gameState().currentScene;
+    if (scene[0] == "solar-system") {
+      scene[1].orientation = this.orientation;
+      scene[1].position = this.position.clone();
+      scene[1].velocity = this.nextVelocity.clone();
+    }
 
     const minutesPassed = 60 * 24 * daysPassed;
     const relativeMinutes = Conversions.contractTime(

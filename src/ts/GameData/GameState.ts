@@ -32,9 +32,9 @@ export default class GameState implements SavedState {
         "solar-system",
         {
           name: "Sol",
-          initVelocity: new Phaser.Math.Vector2(5, 3),
-          initOrientation: new Phaser.Math.Vector2(5, 3).angle(),
-          initPosition: new Phaser.Math.Vector2(-40, 146)
+          velocity: new Phaser.Math.Vector2(5, 3),
+          orientation: new Phaser.Math.Vector2(5, 3).angle(),
+          position: new Phaser.Math.Vector2(-40, 146)
         }]
     },
       transitionScene);
@@ -116,7 +116,7 @@ export default class GameState implements SavedState {
    * Begin travel to another star system.
    * @param destination The destination system.
    */
-  travelTo(destination: SolarSystemDefinition) {
+  travelTo(destination: SolarSystemDefinition, leavingPosition: Phaser.Math.Vector2) {
     const origin = this.currentSystem();
     if (!origin) {
       Utilities.Log("Tried to travel when no current system!");
@@ -134,7 +134,7 @@ export default class GameState implements SavedState {
     if (fuelUsage >= this.fuel) {
       this.eventSource.emit(Events.Warning, "Cannot travel to destination. Insufficient fuel.");
     } else {
-      this.nextScene = ["interstellar", { travelTime, origin, destination }]
+      this.nextScene = ["interstellar", { travelTime, origin, destination, leavingPosition }]
     }
 
   }
@@ -223,7 +223,8 @@ export interface SavedState {
 export interface InterstellarState {
   travelTime: { reference: number; relative: number; },
   origin: SolarSystemDefinition,
-  destination: SolarSystemDefinition
+  destination: SolarSystemDefinition,
+  leavingPosition: Phaser.Math.Vector2
 }
 
 export interface GameOverState {
@@ -231,9 +232,9 @@ export interface GameOverState {
 }
 
 export interface SolarSystemState {
-  initVelocity: Phaser.Math.Vector2;
-  initPosition: Phaser.Math.Vector2;
-  initOrientation: number;
+  velocity: Phaser.Math.Vector2;
+  position: Phaser.Math.Vector2;
+  orientation: number;
   name: string;
 }
 

@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, StatusMaxValue, Sun } from "./GameState";
+import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, SolarSystemState, StatusMaxValue, Sun } from "./GameState";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
@@ -40,10 +40,6 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
   objects.unshift(new InvisibleObjectIndicator(planets));
 
   for (let id in others) {
-    if (id == system.name) {
-      continue;
-    }
-
     objects.push(new InterstellarObject(system, others[id]));
   }
   return objects;
@@ -83,9 +79,10 @@ class InterstellarObject implements ScalableObject {
 
   create(scene: Phaser.Scene) {
     const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
-    this.distanceToOtherStar = vectorToOtherStar.length();
+    this.distanceToOtherStar = Math.max(0.0001, vectorToOtherStar.length());
     this.position = vectorToOtherStar.scale(1000);
-    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.SelectableTint);
+    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun)
+      .setTint(Colours.SelectableTint);
   }
 
   update(scene: Phaser.Scene) {
@@ -117,7 +114,7 @@ class InterstellarObject implements ScalableObject {
   }
 
   private travel(state: GameState) {
-    state.travelTo(this.otherSystem);
+    state.travelTo(this.otherSystem, (<SolarSystemState>state.currentScene[1]).position.clone());
   }
 
 }
@@ -168,7 +165,7 @@ class InvisibleObjectIndicator implements ScalableObject {
 }
 
 class SunSprite implements ScalableObject {
-  private toScale: Phaser.GameObjects.Components.Transform[] = [];
+  private toScale: (Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Visible)[] = [];
   position: Phaser.Math.Vector2;
   mass: number;
   interactionObject: Phaser.GameObjects.GameObject;
@@ -192,6 +189,7 @@ class SunSprite implements ScalableObject {
   setScale(scale: number) {
     for (const o of this.toScale) {
       o.setScale(scale);
+      o.setVisible(scale < 100)
     }
   }
 

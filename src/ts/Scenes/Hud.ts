@@ -127,7 +127,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   updateLocation(state: LocationChangedEvent) {
-    this.locationText.setText(state.reverse().join("."));
+    this.locationText.setText([...state].reverse().join("."));
     this.rightAlign(this.locationText, LeftMargin);
   }
 
