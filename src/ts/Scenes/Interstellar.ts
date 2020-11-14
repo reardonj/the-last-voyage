@@ -50,21 +50,27 @@ export default class Interstellar extends Phaser.Scene {
     }
     const animationLength = Math.max(5000, this.sceneState.travelTime.reference * 800);
 
-    this.tweens.addCounter({
+    this.tweens.add({
+      targets: this,
+      nextReference: { from: 0, to: reference },
       from: 0,
       to: reference,
       ease: 'Linear',
-      duration: animationLength,
-      onUpdate: (tween: Phaser.Tweens.Tween) => this.nextReference = tween.getValue()
+      duration: animationLength
     })
 
-    this.tweens.addCounter({
+    this.tweens.add({
+      targets: this,
+      nextRelative: { from: 0, to: relative },
       from: 0,
       to: relative,
       ease: 'Quad.easeInOut',
       duration: animationLength,
-      onUpdate: (tween: Phaser.Tweens.Tween) => this.nextRelative = tween.getValue(),
       onComplete: () => {
+        // Going back doesn't trigger an update??
+        if (this.lastReference == 0) {
+          this.gameState.timeStep(1, 1, reference, relative);
+        }
         this.gameState.transitionTo(["solar-system", nextState]);
         this.game.events.once("step", () => this.gameState.doStateBasedTransitions(this), this);
       },

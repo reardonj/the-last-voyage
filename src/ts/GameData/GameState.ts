@@ -98,16 +98,27 @@ export default class GameState implements SavedState {
     durationEarthMinutes: number,
     durationRelativeMinutes: number
   ) {
+    const previousIntegrity = this.integrity;
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
+    this.integrity = clampStatusValue(this.integrity - durationRelativeMinutes / 1000);
 
     // Accelerating beyond 1g causes damage.
     if (acceleration > 1) {
       this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
-      this.eventSource.emit(Events.IntegrityChanged, this.integrity);
     }
 
+    // If the ship sustains serious damage while having <50% hull integrity, 
+    // people will die. The more people aboard, the more likely deaths occur.
+    const damage = previousIntegrity - this.integrity;
+    if (damage > 100 && this.integrity < 0.5 * StatusMaxValue) {
+      const popPercent = this.passengers / StatusMaxValue;
+      this.passengers = clampStatusValue(this.passengers - popPercent * Phaser.Math.Between(1, damage / 10));
+      this.eventSource.emit(Events.PassengersChanged, this.passengers);
+    }
+
+    this.eventSource.emit(Events.IntegrityChanged, this.integrity);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
     this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
   }
@@ -282,6 +293,7 @@ export const Events = {
   FuelChanged: "fuelChanged",
   HoverHint: "hoverHint",
   IntegrityChanged: "integrityChanged",
+  PassengersChanged: "passengersChanged",
 
   /*** 
    * A scene transition is beginning. 

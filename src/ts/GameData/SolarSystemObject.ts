@@ -80,7 +80,7 @@ class InterstellarObject implements ScalableObject {
 
   create(scene: Phaser.Scene) {
     const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
-    this.distanceToOtherStar = Math.max(0.0001, vectorToOtherStar.length());
+    this.distanceToOtherStar = Math.max(0.0005, vectorToOtherStar.length());
     this.position = vectorToOtherStar.scale(10000);
     this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun)
       .setTint(Colours.SelectableTint);

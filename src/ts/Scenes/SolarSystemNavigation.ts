@@ -231,9 +231,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private nextAcc(): M.Vector2 {
     let y = 0;
     if (this.cursors.up?.isDown) {
-      y = 5;
+      y = 1;
     } else if (this.cursors.down?.isDown) {
-      y = -1;
+      y = -0.5;
     }
 
     if (this.cursors.right?.isDown) {
