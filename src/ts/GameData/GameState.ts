@@ -171,6 +171,7 @@ export default class GameState implements SavedState {
     const newScene = currentScene.scene.add(this.currentSceneName(), this.currentSceneType(), false, this);
     newScene.scene.sendToBack(this.currentSceneName());
     this.eventSource.emit(Events.ShowInfo, null);
+    this.eventSource.emit(Events.HoverHint, null);
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
@@ -272,6 +273,7 @@ export const Events = {
   TimePassed: "timePassed",
   LocationChanged: "locationChanged",
   FuelChanged: "fuelChanged",
+  HoverHint: "hoverHint",
   IntegrityChanged: "integrityChanged",
 
   /*** 

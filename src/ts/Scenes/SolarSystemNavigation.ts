@@ -2,7 +2,7 @@ import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { Events, SolarSystemState } from "../GameData/GameState";
-import { Colours, Sprites } from "../Utilities";
+import { Colours, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
@@ -83,6 +83,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     obj.create(this);
     obj.interactionObject.setInteractive({ useHandCursor: true });
     obj.interactionObject.on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, obj.info()));
+    UI.showHoverHint(obj.interactionObject, this.gameState().eventSource, () => obj.info().name);
   }
 
   public update(time: number, delta: number) {
@@ -106,7 +107,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const baseScale = this.game.canvas.height / 2;
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
     const scale = distFromCentre > this.farthestOrbit + 1000 ?
-      0.01 :
+      0.001 :
       Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.2)) / 100));
 
     if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.025) {
@@ -115,8 +116,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       } else {
         this.cameras.main.zoomTo(scale, 500);
       }
-      if (scale == 0.01) {
+      if (scale == 0.001) {
         this.gameState().eventSource.emit(Events.ShowInfo, null);
+        this.gameState().eventSource.emit(Events.HoverHint, null);
       }
     }
     const scaleFactor = 1 / this.cameras.main.zoom;
@@ -128,7 +130,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       p.setScale(scaleFactor);
     }
 
-    if (scale == 0.01) {
+    if (scale == 0.001) {
       this.gameState().eventSource.emit(
         Events.LocationChanged,
         [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);

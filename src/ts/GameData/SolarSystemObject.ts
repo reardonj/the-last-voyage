@@ -14,7 +14,7 @@ export interface ScalableObject extends GravityWell {
 export type ObjectInfo = {
   name: string,
   description: string,
-  actions?: { name: string, action: (state: GameState) => void }[]
+  actions?: { name: string, hint: string, action: (state: GameState) => void }[]
 }
 
 export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition }): ScalableObject[] {
@@ -80,7 +80,7 @@ class InterstellarObject implements ScalableObject {
   create(scene: Phaser.Scene) {
     const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
     this.distanceToOtherStar = Math.max(0.0001, vectorToOtherStar.length());
-    this.position = vectorToOtherStar.scale(1000);
+    this.position = vectorToOtherStar.scale(10000);
     this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun)
       .setTint(Colours.SelectableTint);
   }
@@ -104,7 +104,11 @@ class InterstellarObject implements ScalableObject {
         `Fuel: ${(100 * fuelUsage).toFixed(0)}% total\n` +
         `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
       actions: [
-        { name: "Travel", action: x => this.travel(x) }
+        {
+          name: "Travel",
+          hint: "Begin the relativistic journey to " + this.otherSystem.name,
+          action: x => this.travel(x)
+        }
       ]
     }
   }
@@ -123,7 +127,7 @@ class InvisibleObjectIndicator implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
   orbits: Orbital[];
-  min: Orbital;
+  min: Orbital | null;
   interactionObject: Phaser.GameObjects.Arc;
 
   constructor(planets: Orbital[]) {
@@ -135,7 +139,7 @@ class InvisibleObjectIndicator implements ScalableObject {
   positionAt(time: number) { return this.position }
 
   info(): ObjectInfo {
-    const hidden = this.orbits.filter(x => x.orbitalRadius < this.min.orbitalRadius);
+    const hidden = this.orbits.filter(x => x.orbitalRadius < (this.min?.orbitalRadius ?? 0));
     return {
       name: `Unrenderable Objects (${hidden.length})`,
       description: "Objects are too close to the sun to display at this resolution:\n" + hidden.map(x => "  - " + x.name).join("\n")

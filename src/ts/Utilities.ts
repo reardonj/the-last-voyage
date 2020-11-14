@@ -1,3 +1,5 @@
+import { Events } from "./GameData/GameState";
+
 export default class Utilities {
   /**
    * Logs a particular message to the console.
@@ -14,6 +16,12 @@ export class UI {
     obj.setTint(Colours.SelectableTint);
     obj.on("pointerover", () => obj.setTint(Colours.Highlight), this);
     obj.on("pointerout", () => obj.setTint(Colours.SelectableTint), this);
+  }
+
+  public static showHoverHint(obj: Phaser.GameObjects.GameObject, emitter: Phaser.Events.EventEmitter, hint: () => string) {
+    obj.setInteractive({ useHandCursor: true });
+    obj.on("pointerover", () => emitter.emit(Events.HoverHint, hint()), this);
+    obj.on("pointerout", () => emitter.emit(Events.HoverHint, null), this);
   }
 
   public static centre(

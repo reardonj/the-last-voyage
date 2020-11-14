@@ -47,6 +47,7 @@ export default class Hud extends Phaser.Scene {
   infoContent: Phaser.GameObjects.BitmapText;
   infoActions: Phaser.GameObjects.BitmapText[];
   statusText: Phaser.GameObjects.BitmapText;
+  hoverHint: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
     // Preload as needed.
@@ -63,6 +64,8 @@ export default class Hud extends Phaser.Scene {
     this.populationText = this.updateSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers);
     this.suppliesText = this.updateSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies);
 
+    this.hoverHint = this.add.bitmapText(0, LeftMargin, Fonts.Proportional16, "").setTint(Colours.TextTint);
+
     this.setupInfoPanel();
 
     state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
@@ -70,6 +73,7 @@ export default class Hud extends Phaser.Scene {
     state.eventSource.addListener(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
     state.eventSource.addListener(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
     state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
+    state.eventSource.addListener(Events.HoverHint, this.showHoverHint, this);
     state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
   }
 
@@ -177,12 +181,15 @@ export default class Hud extends Phaser.Scene {
       this.infoContent.setY(yOffset);
       yOffset += this.infoContent.height + LeftMargin;
 
+      const gameState = <GameState>this.scene.settings.data;
       for (const action of info.actions ?? []) {
         const control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${action.name} ]`);
         UI.makeInteractive(control);
+        UI.showHoverHint(control, gameState.eventSource, () => action.hint);
+
         this.infoContainer.add(control);
         this.infoActions.push(control);
-        control.on('pointerdown', () => action.action(<GameState>this.scene.settings.data));
+        control.on('pointerdown', () => action.action(gameState));
         yOffset += control.height + LeftMargin;
       }
 
@@ -225,5 +232,10 @@ export default class Hud extends Phaser.Scene {
     this.infoContainer.remove(this.infoActions);
     this.infoActions.forEach(x => x.destroy());
     this.infoActions = [];
+  }
+
+  private showHoverHint(hint: string | null) {
+    this.hoverHint.setText(hint ?? "");
+    UI.centre(0, this.cameras.main.width, this.hoverHint);
   }
 }
