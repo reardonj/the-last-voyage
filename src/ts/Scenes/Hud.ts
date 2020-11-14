@@ -45,6 +45,7 @@ export default class Hud extends Phaser.Scene {
   infoRect: Phaser.GameObjects.Rectangle;
   infoBorder: Phaser.GameObjects.Image;
   infoContent: Phaser.GameObjects.BitmapText;
+  infoActions: Phaser.GameObjects.BitmapText[];
   statusText: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
@@ -83,6 +84,7 @@ export default class Hud extends Phaser.Scene {
     this.infoContent = this.add.bitmapText(LeftMargin, 0, Fonts.Proportional16, "")
       .setTint(Colours.TextTint)
       .setMaxWidth(400);
+    this.infoActions = [];
 
     this.infoContainer = this.add.container(0, LeftMargin * 2);
     this.infoContainer.add(this.infoRect);
@@ -162,7 +164,7 @@ export default class Hud extends Phaser.Scene {
         duration: 200,
         repeat: 0,
         onComplete: () => {
-          this.infoContainer.setVisible(false);
+          this.clearInfoPanel();
           this.showInfo(info);
         },
         onCompleteScope: this
@@ -170,10 +172,23 @@ export default class Hud extends Phaser.Scene {
     } else {
       this.infoTitle.setText(info.name);
       this.infoContent.setText(info.description);
-      this.infoContent.setY(this.infoTitle.height + LeftMargin);
+      let yOffset = this.infoTitle.height + LeftMargin;
 
-      const width = Math.max(this.infoTitle.width, this.infoContent.width);
-      const height = this.infoTitle.height + this.infoContent.height + LeftMargin;
+      this.infoContent.setY(yOffset);
+      yOffset += this.infoContent.height + LeftMargin;
+
+      for (const action of info.actions ?? []) {
+        const control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${action.name} ]`);
+        UI.makeInteractive(control);
+        this.infoContainer.add(control);
+        this.infoActions.push(control);
+        control.on('pointerdown', () => action.action(<GameState>this.scene.settings.data));
+        yOffset += control.height + LeftMargin;
+      }
+
+      const width = [this.infoTitle.width, this.infoContent.width, ...this.infoActions.map(x => x.width)]
+        .reduce((max, x) => Math.max(max, x), 0);
+      const height = yOffset;
       this.infoRect.setSize(width + LeftMargin * 2, height + LeftMargin * 2);
       this.infoBorder.displayHeight = this.infoRect.height;
       this.infoBorder.setX(this.infoRect.width - 8);
@@ -199,9 +214,16 @@ export default class Hud extends Phaser.Scene {
       duration: 200,
       repeat: 0,
       onComplete: () => {
-        this.infoContainer.setVisible(false);
+        this.clearInfoPanel();
       },
       onCompleteScope: this
     })
+  }
+
+  private clearInfoPanel() {
+    this.infoContainer.setVisible(false);
+    this.infoContainer.remove(this.infoActions);
+    this.infoActions.forEach(x => x.destroy());
+    this.infoActions = [];
   }
 }

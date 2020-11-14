@@ -11,9 +11,9 @@ export default class Utilities {
 export class UI {
   public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint) {
     obj.setInteractive({ useHandCursor: true });
-    obj.setTint(Colours.TextTint);
+    obj.setTint(Colours.SelectableTint);
     obj.on("pointerover", () => obj.setTint(Colours.Highlight), this);
-    obj.on("pointerout", () => obj.setTint(Colours.TextTint), this);
+    obj.on("pointerout", () => obj.setTint(Colours.SelectableTint), this);
   }
 
   public static centre(
@@ -33,8 +33,9 @@ export const Fonts = {
 
 export const Colours = {
   TextTint: 0xccccff,
-  Highlight: 0xe0e0ff,
-  PanelBackground: 0x292933
+  Highlight: 0xe0ffe0,
+  PanelBackground: 0x292933,
+  SelectableTint: 0xccffcc
 }
 
 export const Sprites = {

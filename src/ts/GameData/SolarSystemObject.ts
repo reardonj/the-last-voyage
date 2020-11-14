@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, Sun } from "./GameState";
+import GameState, { calculateFuelUsage, Planet, SolarSystemDefinition, SolarSystemObject, StatusMaxValue, Sun } from "./GameState";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)
@@ -13,7 +13,8 @@ export interface ScalableObject extends GravityWell {
 
 export type ObjectInfo = {
   name: string,
-  description: string
+  description: string,
+  actions?: { name: string, action: (state: GameState) => void }[]
 }
 
 export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition }): ScalableObject[] {
@@ -68,7 +69,9 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
 }
 
 class InterstellarObject implements ScalableObject {
-  interactionObject: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform;
+  interactionObject: Phaser.GameObjects.GameObject
+    & Phaser.GameObjects.Components.Transform
+    & Phaser.GameObjects.Components.Visible;
   mass: number = 0;
   position: Phaser.Math.Vector2;
   distanceToOtherStar: number;
@@ -79,34 +82,42 @@ class InterstellarObject implements ScalableObject {
   ) { }
 
   create(scene: Phaser.Scene) {
-    const vectorToOtherStar = new Phaser.Math.Vector2(this.otherSystem.position[0], this.otherSystem.position[1])
-      .subtract(new Phaser.Math.Vector2(this.currentSystem.position[0], this.currentSystem.position[1]));
+    const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
     this.distanceToOtherStar = vectorToOtherStar.length();
-    vectorToOtherStar.normalize();
-    this.position = vectorToOtherStar.scale(6000 + Math.log(this.distanceToOtherStar) * 100);
-    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.TextTint);
+    this.position = vectorToOtherStar.scale(1000);
+    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.SelectableTint);
   }
 
   update(scene: Phaser.Scene) {
   }
 
   setScale(scale: number) {
-    this.interactionObject.setScale(0.5 * scale);
+    this.interactionObject.setScale(scale);
+    this.interactionObject.setVisible(scale >= 100)
+
   }
 
   info(): ObjectInfo {
-    const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar, 1.03);
-    const fuelUsage = calculateFuelUsage(1, travelTime.reference, travelTime.relative);
+    const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar);
+    const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative) / StatusMaxValue;
     return {
       name: this.otherSystem.name,
       description:
         `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
-        `Fuel: ${fuelUsage.toFixed(0)}% total\n` +
-        `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`
+        `Fuel: ${(100 * fuelUsage).toFixed(0)}% total\n` +
+        `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
+      actions: [
+        { name: "Travel", action: x => this.travel(x) }
+      ]
     }
   }
+
   positionAt(minutes: number): Phaser.Math.Vector2 {
     return this.position;
+  }
+
+  private travel(state: GameState) {
+    state.travelTo(this.otherSystem);
   }
 
 }
@@ -149,7 +160,7 @@ class InvisibleObjectIndicator implements ScalableObject {
       this.interactionObject.setVisible(false);
     } else {
       this.interactionObject.setRadius(this.min.orbitalRadius);
-      this.interactionObject.setVisible(true).setInteractive();
+      this.interactionObject.setVisible(scale < 100).setInteractive({ useHandCursor: true });
       this.interactionObject.input.hitArea =
         new Phaser.Geom.Circle(this.min.orbitalRadius, this.min.orbitalRadius, this.min.orbitalRadius)
     }
@@ -217,8 +228,8 @@ class PlanetSprite implements ScalableObject {
   }
 
   create(scene: Phaser.Scene) {
-    this.orbit = scene.add.graphics();
-    this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.TextTint);
+    this.orbit = scene.add.graphics().setAlpha(0.8);
+    this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.SelectableTint);
     this.interactionObject = this.sprite;
   }
 
@@ -235,7 +246,7 @@ class PlanetSprite implements ScalableObject {
     this.orbit.strokeCircle(0, 0, this.definition.orbitalRadius);
     this.sprite.setScale(scale);
 
-    const isVisible = this.definition.orbitalRadius / scale > 30;
+    const isVisible = scale < 100 && this.definition.orbitalRadius / scale > 30;
     this.orbit.setVisible(isVisible);
     this.sprite.setVisible(isVisible);
   }

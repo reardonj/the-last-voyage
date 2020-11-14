@@ -25,7 +25,8 @@ export default class AstronomicalMath {
    * @param acceleration in g.
    * @returns the travel times, in years.
    */
-  public static travelTime(distance: number, acceleration: number): { reference: number, relative: number } {
+  public static travelTime(distance: number): { reference: number, relative: number } {
+    const acceleration = 1.03;
     return {
       reference: 2 * (Math.sqrt(Math.pow(0.5 * distance, 2) + distance / acceleration)),
       relative: (2 / acceleration) * Math.acosh(acceleration * distance / 2 + 1)

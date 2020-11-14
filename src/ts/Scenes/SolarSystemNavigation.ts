@@ -9,6 +9,7 @@ import AstronomicalMath from "../Logic/AstronomicalMath";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
+  Phaser.GameObjects.Components.Visible &
   Phaser.GameObjects.Components.AlphaSingle &
   Phaser.GameObjects.GameObject;
 
@@ -34,6 +35,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private zoomLevels: number[] = [];
   private orbitalBodies: ScalableObject[];
   orientation: number;
+  farthestOrbit: number;
 
   public preload(): void {
   }
@@ -41,13 +43,19 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   public create(state: GameState): void {
     this.events.once('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
-    this.events.on('destroy', () => this.game.events.off("step", undefined, this));
+    this.events.on('destroy', () => this.game.events.removeListener("step", undefined, this));
 
     this.add.rectangle(0, 0, 60000, 60000, 0x000000, 1)
       .setInteractive(true, () => true)
-      .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));;
-    this.zoomLevels = createZoomLevels(state.currentSystem());
-    this.orbitalBodies = createGameObjects(state.currentSystem(), state.systems);
+      .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));
+
+    this.farthestOrbit = Object
+      .keys(state.currentSystem()!.objects)
+      .reduce((max, x) => {
+        const obj = state.currentSystem()!.objects[x];
+        return obj.type == "planet" ? Math.max(max, obj.orbitalRadius) : max;
+      }, 0);
+    this.orbitalBodies = createGameObjects(state.currentSystem()!, state.systems);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
     this.sim = new GravitySimulation(this.orbitalBodies);
 
@@ -82,7 +90,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       return;
     }
 
-    const daysPassed = this.updateShip();
+    if (this.cameras.main.zoom > 0.01) {
+      this.updateShip();
+    }
     this.updateScaledObjects();
     this.orbitalBodies.forEach(x => x.update(this));
 
@@ -91,29 +101,32 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private updateScaledObjects(force?: boolean) {
     const baseScale = this.game.canvas.height / 2;
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
-    const scaleDist = Math.ceil(this.zoomLevels.reduceRight((c, w) => w > distFromCentre ? w : c, 1000000) * 1.1);
-    const scale = Math.max(0.05, Math.min(1, Math.round(100 * baseScale / scaleDist) / 100));
+    const scale = distFromCentre > this.farthestOrbit + 1000 ?
+      0.01 :
+      Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.2)) / 100));
 
-    if (force || this.cameras.main.zoom != scale) {
+    if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.025) {
       if (force) {
         this.cameras.main.setZoom(scale);
       } else {
         this.cameras.main.zoomTo(scale, 500);
       }
-      const scaleFactor = 1 / scale;
-      for (let p of this.toScale) {
-        p.setScale(scaleFactor);
-      }
-      for (let p of this.orbitalBodies) {
-        p.setScale(scaleFactor);
-      }
+    }
+    const scaleFactor = 1 / this.cameras.main.zoom;
+    for (let p of this.toScale) {
+      p.setScale(scaleFactor);
+      p.setVisible(scaleFactor < 100)
+    }
+    for (let p of this.orbitalBodies) {
+      p.setScale(scaleFactor);
     }
 
     const location =
-      scale == 0.05 ? "Outer System" :
-        scale == 1 ? "Inner System" :
-          "Mid System";
-    this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem().name, location]);
+      scale == 0.01 ? "Interstellar Space" :
+        scale == 0.05 ? "Outer System" :
+          scale == 1 ? "Inner System" :
+            "Mid System";
+    this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
     return scale;
   }
 

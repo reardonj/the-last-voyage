@@ -13,7 +13,7 @@ export default class MainMenu extends Phaser.Scene {
   public create(): void {
     this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, 0x000000, 1);
 
-    const newGameText = this.add.bitmapText(0, 200, Fonts.Proportional24, "[ A New Beginning ]", 32).setTint(Colours.TextTint);
+    const newGameText = this.add.bitmapText(0, 200, Fonts.Proportional24, "[ A New Beginning ]", 32);
     UI.centre(0, this.cameras.main.width, newGameText);
     UI.makeInteractive(newGameText);
     newGameText.on("pointerdown", () => {

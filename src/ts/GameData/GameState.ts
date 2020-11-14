@@ -1,6 +1,9 @@
+import AstronomicalMath from "../Logic/AstronomicalMath";
 import GameOver from "../Scenes/GameOver";
+import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
+import Utilities from "../Utilities";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -13,6 +16,7 @@ export default class GameState implements SavedState {
   currentScene: CurrentScene;
   systems: { [id: string]: SolarSystemDefinition; };
   eventSource: Phaser.Events.EventEmitter;
+  nextScene: CurrentScene | null = null;
 
   static newGame(transitionScene: Transition) {
     const systems = createSystems();
@@ -49,14 +53,14 @@ export default class GameState implements SavedState {
     this.eventSource = new Phaser.Events.EventEmitter();
   }
 
-  currentSceneName() {
+  currentSceneName(): string {
     switch (this.currentScene[0]) {
       case "solar-system":
         return SolarSystemNavigation.Name;
+      case "interstellar":
+        return Interstellar.Name;
       case "game-over":
         return GameOver.Name;
-      default:
-        throw new Error("Current scene is unkown.");
     }
   }
 
@@ -64,6 +68,8 @@ export default class GameState implements SavedState {
     switch (this.currentScene[0]) {
       case "solar-system":
         return SolarSystemNavigation;
+      case "interstellar":
+        return Interstellar;
       case "game-over":
         return GameOver;
       default:
@@ -71,13 +77,14 @@ export default class GameState implements SavedState {
     }
   }
 
-  currentSystem(): SolarSystemDefinition {
+  currentSystem(): SolarSystemDefinition | null {
     switch (this.currentScene[0]) {
       case "solar-system":
         return this.systems[this.currentScene[1].name];
+      case "interstellar":
+        return null;
       case "game-over":
-      default:
-        throw new Error("Current scene is unknown.");
+        return null;
     }
   }
 
@@ -105,6 +112,33 @@ export default class GameState implements SavedState {
     this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
   }
 
+  /**
+   * Begin travel to another star system.
+   * @param destination The destination system.
+   */
+  travelTo(destination: SolarSystemDefinition) {
+    const origin = this.currentSystem();
+    if (!origin) {
+      Utilities.Log("Tried to travel when no current system!");
+      return;
+    }
+
+    if (this.nextScene) {
+      Utilities.Log("Tried but there is already a pending transition!");
+      return;
+    }
+
+    const travelTime = AstronomicalMath.travelTime(origin.vectorTo(destination).length());
+    const fuelUsage = calculateFuelUsage(1, travelTime.reference * 365 * 24 * 60, travelTime.relative * 365 * 24 * 60);
+
+    if (fuelUsage >= this.fuel) {
+      this.eventSource.emit(Events.Warning, "Cannot travel to destination. Insufficient fuel.");
+    } else {
+      this.nextScene = ["interstellar", { travelTime, origin, destination }]
+    }
+
+  }
+
   doStateBasedTransitions(currentScene: Phaser.Scene) {
     if (this.currentScene[0] == "game-over") {
       return;
@@ -116,17 +150,33 @@ export default class GameState implements SavedState {
     } else if (this.integrity == 0) {
       this.currentScene = ["game-over", { reason: "integrity" }]
       this.transition(currentScene);
+    } else if (this.nextScene) {
+      this.currentScene = this.nextScene;
+      this.nextScene = null;
+      this.transition(currentScene);
     }
   }
 
+  transitionTo(next: CurrentScene) {
+    if (this.nextScene) {
+      Utilities.Log(`Tried to transition to ${next[0]} but transition to ${this.nextScene[0]}`);
+      return;
+    }
+
+    this.nextScene = next;
+  }
+
   transition(currentScene: Phaser.Scene) {
+    Utilities.Log(`Transitioning to ${this.currentSceneName()}`);
     const newScene = currentScene.scene.add(this.currentSceneName(), this.currentSceneType(), false, this);
     newScene.scene.sendToBack(this.currentSceneName());
+    this.eventSource.emit(Events.ShowInfo, null);
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
       duration: 500,
-      remove: true
+      remove: true,
+      allowInput: false
     });
     this.transitionScene.startTransition(500);
   }
@@ -134,7 +184,7 @@ export default class GameState implements SavedState {
 }
 
 export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
-  return (thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
+  return (0.05 * thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
 }
 
 function clampStatusValue(value: number) {
@@ -156,7 +206,8 @@ function createSystems(): { [id: string]: SolarSystemDefinition } {
 
 export type CurrentScene =
   ["solar-system", SolarSystemState] |
-  ["game-over", GameOverState];
+  ["game-over", GameOverState] |
+  ["interstellar", InterstellarState]
 
 export interface SavedState {
   systems: { [id: string]: SolarSystemDefinition }
@@ -167,6 +218,12 @@ export interface SavedState {
   passengers: number,
   integrity: number,
   supplies: number,
+}
+
+export interface InterstellarState {
+  travelTime: { reference: number; relative: number; },
+  origin: SolarSystemDefinition,
+  destination: SolarSystemDefinition
 }
 
 export interface GameOverState {
@@ -203,6 +260,11 @@ export class SolarSystemDefinition {
     public position: [number, number],
     public objects: { [id: string]: SolarSystemObject }
   ) { }
+
+  vectorTo(other: SolarSystemDefinition) {
+    return new Phaser.Math.Vector2(other.position[0], other.position[1])
+      .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
+  }
 }
 
 export const Events = {
@@ -225,7 +287,12 @@ export const Events = {
   /***
    * Update the HUD status text. The new text string is passed as an event parameter
    */
-  UpdateStatus: "updateStatus"
+  UpdateStatus: "updateStatus",
+
+  /**
+   * Show a warning message to the player. The message is passed as the event parameter
+   */
+  Warning: "warning"
 }
 
 export interface TimePassedEvent {
