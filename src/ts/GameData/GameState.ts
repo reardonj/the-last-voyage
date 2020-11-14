@@ -4,6 +4,7 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import { SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -251,23 +252,6 @@ export interface SolarSystemState {
   orientation: number;
   name: string;
 }
-
-export type Sun = {
-  type: "sun",
-  name: string,
-  mass: number
-}
-
-export type Planet = {
-  type: "planet"
-  name: string,
-  mass: number,
-  orbitalRadius: number,
-  orbitalSpeedMultiplier: number,
-  startAngle: number
-}
-
-export type SolarSystemObject = Sun | Planet;
 
 export class SolarSystemDefinition {
   constructor(

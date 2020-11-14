@@ -1,7 +1,8 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { calculateFuelUsage, Events, Planet, SolarSystemDefinition, SolarSystemObject, SolarSystemState, StatusMaxValue, Sun } from "./GameState";
+import GameState, { calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
+import { Planet, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell {
   create(scene: Phaser.Scene)

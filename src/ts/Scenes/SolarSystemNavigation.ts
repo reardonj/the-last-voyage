@@ -3,7 +3,7 @@ import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Resources, Sprites, UI } from "../Utilities";
-import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/SolarSystemObject";
+import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 

@@ -1,5 +1,5 @@
 import GameState, { Events, LocationChangedEvent, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
-import { ObjectInfo } from "../GameData/SolarSystemObject";
+import { ObjectInfo } from "../GameData/NavigationObjects";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
 const LeftMargin = 8;
