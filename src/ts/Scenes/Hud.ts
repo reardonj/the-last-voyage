@@ -185,9 +185,9 @@ export default class Hud extends Phaser.Scene {
   public update() {
     // Update active animations for ship systems
     for (const [sys, label, anim] of this.systems) {
-      if (sys.isActive && !anim.isPlaying()) {
+      if (sys.needsAttention && !anim.isPlaying()) {
         anim.resume();
-      } else if (!sys.isActive && anim.isPlaying()) {
+      } else if (!sys.needsAttention && anim.isPlaying()) {
         anim.pause();
         label.setAlpha(1);
       }

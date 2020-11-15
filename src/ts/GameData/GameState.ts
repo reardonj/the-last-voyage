@@ -121,6 +121,9 @@ export default class GameState implements SavedState {
     durationRelativeMinutes: number
   ) {
     const previousIntegrity = this.integrity;
+    this.shipSystemObjects.forEach(x => x.timeStep(durationEarthMinutes, durationRelativeMinutes));
+
+
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
@@ -271,7 +274,8 @@ export interface SavedState {
 }
 
 export interface ShipSystem extends InteractiveObject {
-  isActive: boolean
+  timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void;
+  needsAttention: boolean
   name: string
   transformInfo(info: ObjectInfo): void
 }
@@ -301,6 +305,13 @@ export class SolarSystemDefinition {
   vectorTo(other: SolarSystemDefinition) {
     return new Phaser.Math.Vector2(other.position[0], other.position[1])
       .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
+  }
+
+  solarMass() {
+    return Object
+      .keys(this.objects)
+      .map(x => this.objects[x])
+      .reduce((total, x) => x.type == "sun" ? x.mass + total : total, 0);
   }
 
   farthestOrbit() {

@@ -2,7 +2,7 @@ import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
-import { Planet, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import { Planet, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
 export interface InteractiveObject {
   info(): ObjectInfo
@@ -250,21 +250,15 @@ class PlanetSprite implements ScalableObject {
   mass: number;
   orbit: Phaser.GameObjects.Graphics;
   sprite: Phaser.GameObjects.Sprite;
-  orbitalPeriod: number;
   interactionObject: Phaser.GameObjects.GameObject;
 
   constructor(public definition: Planet, private sunMass: number) {
     this.mass = definition.mass;
     this.position = new Phaser.Math.Vector2(-100000, -100000);
-    this.orbitalPeriod =
-      this.definition.orbitalSpeedMultiplier *
-      24 * 60 * AstronomicalMath.orbitalPeriod(this.definition.orbitalRadius, this.sunMass);
   }
 
   positionAt(time: number) {
-    return new Phaser.Math.Vector2().setToPolar(
-      this.definition.startAngle + 2 * Math.PI * (time / this.orbitalPeriod),
-      this.definition.orbitalRadius)
+    return planetPositionAt(this.definition, this.sunMass, time);
   }
 
   create(scene: Phaser.Scene) {
@@ -275,8 +269,7 @@ class PlanetSprite implements ScalableObject {
 
   update(scene: Phaser.Scene) {
     const minutes = gameState(scene).earthTime;
-    const positionInOrbit = this.definition.startAngle + 2 * Math.PI * (minutes / this.orbitalPeriod);
-    this.position.setToPolar(positionInOrbit, this.definition.orbitalRadius);
+    this.position = this.positionAt(minutes);
     this.sprite.setPosition(this.position.x, this.position.y);
   }
 
@@ -296,9 +289,10 @@ class PlanetSprite implements ScalableObject {
   }
 
   info() {
+    const description = this.definition["description"] ? this.definition["description"] + "\n" : "";
     return {
       name: this.definition.name,
-      description: this.definition["description"] ?? "",
+      description: description + `Composition: ${this.definition.composition}`,
       definition: this.definition
     }
   }
