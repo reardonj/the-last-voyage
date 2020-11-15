@@ -4,6 +4,8 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import { InteractiveObject, ObjectInfo } from "./NavigationObjects";
+import Scanner from "./Scanner";
 import { SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
@@ -17,8 +19,11 @@ export default class GameState implements SavedState {
   currentScene: CurrentScene;
   ship: MobileObject;
   systems: { [id: string]: SolarSystemDefinition; };
+  shipSystems: ShipSystems;
+
   private eventSource: Phaser.Events.EventEmitter;
   nextScene: CurrentScene | null = null;
+  shipSystemObjects: ShipSystem[];
 
   static newGame(transitionScene: Transition) {
     const systems = createSystems();
@@ -30,6 +35,7 @@ export default class GameState implements SavedState {
       earthTime: 0,
       relativeTime: 0,
       systems: systems,
+      shipSystems: {},
       ship: {
         velocity: [5, 3],
         orientation: new Phaser.Math.Vector2(5, 3).angle(),
@@ -41,6 +47,8 @@ export default class GameState implements SavedState {
   }
 
   constructor(savedState: SavedState, public transitionScene: Transition) {
+    this.eventSource = new Phaser.Events.EventEmitter();
+
     this.fuel = savedState.fuel;
     this.passengers = savedState.passengers;
     this.integrity = savedState.integrity;
@@ -51,10 +59,15 @@ export default class GameState implements SavedState {
     this.currentScene = savedState.currentScene;
     this.systems = savedState.systems;
     this.ship = savedState.ship;
-    this.eventSource = new Phaser.Events.EventEmitter();
+    this.shipSystems = savedState.shipSystems;
+    this.shipSystemObjects = [new Scanner(this)];
+
   }
 
   emit(event: string, params: any) {
+    if (event === Events.ShowInfo && params) {
+      this.shipSystemObjects.forEach(x => x.transformInfo(params));
+    }
     this.eventSource.emit(event, params);
   }
 
@@ -242,16 +255,25 @@ export type CurrentScene =
   ["game-over", GameOverState] |
   ["interstellar", InterstellarState]
 
+export type ShipSystems = { [id: string]: { [id: string]: any; }; };
+
 export interface SavedState {
   systems: { [id: string]: SolarSystemDefinition }
-  earthTime: number,
-  relativeTime: number,
-  currentScene: CurrentScene,
-  fuel: number,
-  passengers: number,
-  integrity: number,
-  supplies: number,
+  shipSystems: ShipSystems
+  earthTime: number
+  relativeTime: number
+  currentScene: CurrentScene
+  fuel: number
+  passengers: number
+  integrity: number
+  supplies: number
   ship: MobileObject
+}
+
+export interface ShipSystem extends InteractiveObject {
+  isActive: boolean
+  name: string
+  transformInfo(info: ObjectInfo): void
 }
 
 export interface InterstellarState {

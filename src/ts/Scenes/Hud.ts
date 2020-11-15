@@ -1,4 +1,4 @@
-import GameState, { Events, LocationChangedEvent, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
+import GameState, { Events, LocationChangedEvent, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { ObjectInfo } from "../GameData/NavigationObjects";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
@@ -52,6 +52,7 @@ export default class Hud extends Phaser.Scene {
   hoverHint: Phaser.GameObjects.BitmapText;
   warningText: WarningItem;
   pendingWarnings = new Set<string>();
+  systems: [ShipSystem, Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween][];
 
   public preload(): void {
     // Preload as needed.
@@ -65,8 +66,8 @@ export default class Hud extends Phaser.Scene {
 
     this.integrityText = this.createSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity, () => this.integrityHint());
     this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
-    this.populationText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Passengers, () => this.passengersHint());
-    this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Supplies, () => this.suppliesHint());
+    this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
+    this.populationText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
     this.warningText = this.createWarningText();
 
     this.hoverHint = this.add
@@ -74,6 +75,7 @@ export default class Hud extends Phaser.Scene {
       .setTint(Colours.TextTint);
 
     this.setupInfoPanel();
+    this.setupShipSystems(state);
 
     state.watch(Events.TimePassed, this.updateTime, this);
     state.watch(Events.LocationChanged, this.updateLocation, this);
@@ -84,6 +86,30 @@ export default class Hud extends Phaser.Scene {
     state.watch(Events.ShowInfo, this.showInfo, this);
     state.watch(Events.HoverHint, this.showHoverHint, this);
     state.watch(Events.UpdateStatus, this.updateStatus, this);
+  }
+
+  setupShipSystems(state: GameState) {
+    let yOffset = this.populationText[1].y + this.populationText[1].height + LeftMargin;
+    this.systems = [];
+    for (const system of state.shipSystemObjects) {
+      const label = this.add.bitmapText(0, yOffset, Fonts.Proportional16, `[ ${system.name} ]`);
+      UI.makeInteractive(label);
+      UI.showHoverHint(label, state, () => system.hint())
+      label.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, system.info()));
+      this.rightAlign(label, LeftMargin);
+
+      const activeAnimation = this.add.tween({
+        targets: label,
+        alpha: { from: 1, to: 0.2 },
+        ease: 'Linear',
+        duration: 1000,
+        repeat: -1,
+        yoyo: true,
+        paused: true
+      });
+
+      this.systems.push([system, label, activeAnimation]);
+    }
   }
 
   suppliesHint(): string {
@@ -157,6 +183,17 @@ export default class Hud extends Phaser.Scene {
   }
 
   public update() {
+    // Update active animations for ship systems
+    for (const [sys, label, anim] of this.systems) {
+      if (sys.isActive && !anim.isPlaying()) {
+        anim.resume();
+      } else if (!sys.isActive && anim.isPlaying()) {
+        anim.pause();
+        label.setAlpha(1);
+      }
+    }
+
+    // Update warnings
     if (this.pendingWarnings.size > 0) {
       const warningList: string[] = [];
       for (const warning of this.pendingWarnings) {

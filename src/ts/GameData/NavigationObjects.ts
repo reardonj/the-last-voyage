@@ -2,19 +2,24 @@ import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
-import { Planet, Sun } from "./SolarSystemObjects";
+import { Planet, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
-export interface ScalableObject extends GravityWell {
+export interface InteractiveObject {
+  info(): ObjectInfo
+  hint(): string
+}
+
+export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene)
   update(scene: Phaser.Scene)
   setScale(scale: number)
-  info(): ObjectInfo
   readonly interactionObject: Phaser.GameObjects.GameObject
 }
 
 export type ObjectInfo = {
   name: string,
   description: string,
+  definition: SolarSystemObject | SolarSystemDefinition | null,
   actions?: { name: string, hint: string, action: (state: GameState) => void }[]
 }
 
@@ -96,6 +101,10 @@ class InterstellarObject implements ScalableObject {
 
   }
 
+  hint() {
+    return this.otherSystem.name;
+  }
+
   info(): ObjectInfo {
     const sameSystem = this.otherSystem.name === this.currentSystem.name;
     const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar);
@@ -106,6 +115,7 @@ class InterstellarObject implements ScalableObject {
         `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
         `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total\n` +
         `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
+      definition: this.otherSystem,
       actions: [
         {
           name: sameSystem ? "Return" : "Travel",
@@ -142,11 +152,16 @@ class InvisibleObjectIndicator implements ScalableObject {
 
   positionAt(time: number) { return this.position }
 
+  hint() {
+    return `Unrenderable Objects (${this.hiddenObjects().length})`;
+  }
+
   info(): ObjectInfo {
-    const hidden = this.orbits.filter(x => x.definition.orbitalRadius < (this.min?.definition.orbitalRadius ?? 0));
+    const hidden = this.hiddenObjects();
     return {
       name: `Unrenderable Objects (${hidden.length})`,
       description: "Objects are too close to the sun to display at this resolution:",
+      definition: null,
       actions: hidden.map(x => ({
         name: x.definition.name,
         hint: `Show info for ${x.definition.name}`,
@@ -156,6 +171,10 @@ class InvisibleObjectIndicator implements ScalableObject {
         }
       }))
     }
+  }
+
+  private hiddenObjects() {
+    return this.orbits.filter(x => x.definition.orbitalRadius < (this.min?.definition.orbitalRadius ?? 0));
   }
 
   create(scene: Phaser.Scene) {
@@ -213,10 +232,15 @@ class SunSprite implements ScalableObject {
     }
   }
 
+  hint() {
+    return this.definition.name;
+  }
+
   info() {
     return {
       name: this.definition.name,
       description: "Local sun.",
+      definition: this.definition
     }
   }
 }
@@ -267,10 +291,15 @@ class PlanetSprite implements ScalableObject {
     this.sprite.setVisible(isVisible);
   }
 
+  hint() {
+    return this.definition.name;
+  }
+
   info() {
     return {
       name: this.definition.name,
       description: this.definition["description"] ?? "",
+      definition: this.definition
     }
   }
 }

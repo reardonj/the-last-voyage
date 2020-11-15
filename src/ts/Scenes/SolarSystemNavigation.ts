@@ -79,7 +79,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     obj.create(this);
     obj.interactionObject.setInteractive({ useHandCursor: true });
     obj.interactionObject.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, obj.info()));
-    UI.showHoverHint(obj.interactionObject, this.gameState(), () => obj.info().name);
+    UI.showHoverHint(obj.interactionObject, this.gameState(), () => obj.hint());
   }
 
   public update(time: number, delta: number) {
