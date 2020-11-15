@@ -44,7 +44,7 @@ export default class Interstellar extends Phaser.Scene {
 
     const nextState = {
       velocity: initPosition.clone().scale(-5),
-      position: initPosition.scale(farthestOrbit + 800),
+      position: initPosition.scale(farthestOrbit + 500),
       orientation: initPosition.angle(),
       name: this.sceneState.destination.name
     }
@@ -71,7 +71,11 @@ export default class Interstellar extends Phaser.Scene {
         if (this.lastReference == 0) {
           this.gameState.timeStep(1, 1, reference, relative);
         }
-        this.gameState.transitionTo(["solar-system", nextState]);
+        this.gameState.ship.orientation = nextState.orientation;
+        this.gameState.ship.position = [nextState.position.x, nextState.position.y];
+        this.gameState.ship.velocity = [nextState.velocity.x, nextState.velocity.y];
+
+        this.gameState.transitionTo(["solar-system", { name: nextState.name }]);
         this.game.events.once("step", () => this.gameState.doStateBasedTransitions(this), this);
       },
       onCompleteScope: this,
