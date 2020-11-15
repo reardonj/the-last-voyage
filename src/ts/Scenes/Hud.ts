@@ -75,25 +75,27 @@ export default class Hud extends Phaser.Scene {
 
     this.setupInfoPanel();
 
-    state.eventSource.addListener(Events.TimePassed, this.updateTime, this);
-    state.eventSource.addListener(Events.LocationChanged, this.updateLocation, this);
-    state.eventSource.addListener(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
-    state.eventSource.addListener(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
-    state.eventSource.addListener(Events.PassengersChanged, this.updateSystemStatus(this.populationText), this);
-    state.eventSource.addListener(Events.Warning, this.updateWarning(this.warningText), this);
-    state.eventSource.addListener(Events.ShowInfo, this.showInfo, this);
-    state.eventSource.addListener(Events.HoverHint, this.showHoverHint, this);
-    state.eventSource.addListener(Events.UpdateStatus, this.updateStatus, this);
+    state.watch(Events.TimePassed, this.updateTime, this);
+    state.watch(Events.LocationChanged, this.updateLocation, this);
+    state.watch(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
+    state.watch(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
+    state.watch(Events.PassengersChanged, this.updateSystemStatus(this.populationText), this);
+    state.watch(Events.Warning, this.updateWarning(this.warningText), this);
+    state.watch(Events.ShowInfo, this.showInfo, this);
+    state.watch(Events.HoverHint, this.showHoverHint, this);
+    state.watch(Events.UpdateStatus, this.updateStatus, this);
   }
 
   suppliesHint(): string {
     const suppliesPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
     return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication`;
   }
+
   passengersHint(): string {
     const passengers = Math.ceil(this.gameState().passengers).toLocaleString();
     return `${passengers} live human passengers, in cryostasis`
   }
+
   fuelHint(): string {
     const fuelPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
     return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship`;
@@ -128,7 +130,7 @@ export default class Hud extends Phaser.Scene {
   createSystemStatusText(y: number, name: string, hint: () => string): StatusItem {
     const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " " + "|".repeat(StatusBars)).setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
-    UI.showHoverHint(text, this.gameState().eventSource, hint);
+    UI.showHoverHint(text, this.gameState(), hint);
     const tween = this.add.tween({
       targets: text,
       alpha: { from: 1, to: 0.2 },
@@ -245,7 +247,7 @@ export default class Hud extends Phaser.Scene {
       for (const action of info.actions ?? []) {
         const control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${action.name} ]`);
         UI.makeInteractive(control);
-        UI.showHoverHint(control, gameState.eventSource, () => action.hint);
+        UI.showHoverHint(control, gameState, () => action.hint);
 
         this.infoContainer.add(control);
         this.infoActions.push(control);

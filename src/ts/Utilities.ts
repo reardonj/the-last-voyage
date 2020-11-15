@@ -1,4 +1,4 @@
-import { Events } from "./GameData/GameState";
+import GameState, { Events } from "./GameData/GameState";
 
 export default class Utilities {
   /**
@@ -18,7 +18,7 @@ export class UI {
     obj.on("pointerout", () => obj.setTint(Colours.SelectableTint), this);
   }
 
-  public static showHoverHint(obj: Phaser.GameObjects.GameObject, emitter: Phaser.Events.EventEmitter, hint: () => string) {
+  public static showHoverHint(obj: Phaser.GameObjects.GameObject, emitter: GameState, hint: () => string) {
     obj.setInteractive();
     obj.on("pointerover", () => emitter.emit(Events.HoverHint, hint()), this);
     obj.on("pointerout", () => emitter.emit(Events.HoverHint, null), this);

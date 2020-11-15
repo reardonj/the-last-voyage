@@ -15,8 +15,9 @@ export default class GameState implements SavedState {
   earthTime: number;
   relativeTime: number;
   currentScene: CurrentScene;
+  ship: MobileObject;
   systems: { [id: string]: SolarSystemDefinition; };
-  eventSource: Phaser.Events.EventEmitter;
+  private eventSource: Phaser.Events.EventEmitter;
   nextScene: CurrentScene | null = null;
 
   static newGame(transitionScene: Transition) {
@@ -29,14 +30,12 @@ export default class GameState implements SavedState {
       earthTime: 0,
       relativeTime: 0,
       systems: systems,
-      currentScene: [
-        "solar-system",
-        {
-          name: "Sol",
-          velocity: new Phaser.Math.Vector2(5, 3),
-          orientation: new Phaser.Math.Vector2(5, 3).angle(),
-          position: new Phaser.Math.Vector2(-40, 146)
-        }]
+      ship: {
+        velocity: [5, 3],
+        orientation: new Phaser.Math.Vector2(5, 3).angle(),
+        position: [-40, 146]
+      },
+      currentScene: ["solar-system", { name: "Sol" }]
     },
       transitionScene);
   }
@@ -51,7 +50,16 @@ export default class GameState implements SavedState {
     this.relativeTime = savedState.relativeTime;
     this.currentScene = savedState.currentScene;
     this.systems = savedState.systems;
+    this.ship = savedState.ship;
     this.eventSource = new Phaser.Events.EventEmitter();
+  }
+
+  emit(event: string, params: any) {
+    this.eventSource.emit(event, params);
+  }
+
+  watch(event: string, handler: Function, ctx: any) {
+    this.eventSource.addListener(event, handler, ctx)
   }
 
   currentSceneName(): string {
@@ -219,6 +227,16 @@ function createSystems(): { [id: string]: SolarSystemDefinition } {
     }, {})
 }
 
+export interface MobileObject {
+  position: [number, number],
+  velocity: [number, number],
+  orientation: number
+}
+
+export function arrayToPosition(pos: [number, number]): Phaser.Math.Vector2 {
+  return new Phaser.Math.Vector2(pos[0], pos[1]);
+}
+
 export type CurrentScene =
   ["solar-system", SolarSystemState] |
   ["game-over", GameOverState] |
@@ -233,6 +251,7 @@ export interface SavedState {
   passengers: number,
   integrity: number,
   supplies: number,
+  ship: MobileObject
 }
 
 export interface InterstellarState {
@@ -247,9 +266,6 @@ export interface GameOverState {
 }
 
 export interface SolarSystemState {
-  velocity: Phaser.Math.Vector2;
-  position: Phaser.Math.Vector2;
-  orientation: number;
   name: string;
 }
 

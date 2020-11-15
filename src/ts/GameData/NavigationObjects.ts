@@ -1,7 +1,7 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
+import GameState, { arrayToPosition, calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
 import { Planet, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell {
@@ -121,7 +121,8 @@ class InterstellarObject implements ScalableObject {
   }
 
   private travel(state: GameState) {
-    state.travelTo(this.otherSystem, (<SolarSystemState>state.currentScene[1]).position.clone());
+    const shipPosition = arrayToPosition(state.ship.position);
+    state.travelTo(this.otherSystem, shipPosition);
   }
 
 }
@@ -150,8 +151,8 @@ class InvisibleObjectIndicator implements ScalableObject {
         name: x.definition.name,
         hint: `Show info for ${x.definition.name}`,
         action: state => {
-          state.eventSource.emit(Events.HoverHint, null)
-          state.eventSource.emit(Events.ShowInfo, x.info())
+          state.emit(Events.HoverHint, null)
+          state.emit(Events.ShowInfo, x.info())
         }
       }))
     }

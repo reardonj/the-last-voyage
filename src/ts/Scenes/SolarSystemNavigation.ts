@@ -1,7 +1,7 @@
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
-import GameState, { Events, SolarSystemState } from "../GameData/GameState";
+import GameState, { arrayToPosition, Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
@@ -47,7 +47,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.add.rectangle(0, 0, 1000000, 1000000, 0x000000, 1)
       .setInteractive(true, () => true)
-      .on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, null));
+      .on("pointerdown", () => this.gameState().emit(Events.ShowInfo, null));
 
     this.farthestOrbit = state.currentSystem()!.farthestOrbit();
     this.orbitalBodies = createGameObjects(state.currentSystem()!, state.systems);
@@ -55,9 +55,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.sim = new GravitySimulation(this.orbitalBodies);
 
     const solarState = <SolarSystemState>state.currentScene[1];
-    this.position = solarState.position.clone();
-    this.orientation = solarState.orientation;
-    this.nextVelocity = solarState.velocity.clone();
+    this.position = arrayToPosition(state.ship.position);
+    this.nextVelocity = arrayToPosition(state.ship.velocity);
+    this.orientation = state.ship.orientation;
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
@@ -70,7 +70,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
     this.toScale.push(this.currentPosition);
-    UI.showHoverHint(this.currentPosition, this.gameState().eventSource, () => Resources.ShipName);
+    UI.showHoverHint(this.currentPosition, this.gameState(), () => Resources.ShipName);
 
     this.updateScaledObjects(true);
   }
@@ -78,8 +78,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private setupScalableObject(obj: ScalableObject) {
     obj.create(this);
     obj.interactionObject.setInteractive({ useHandCursor: true });
-    obj.interactionObject.on("pointerdown", () => this.gameState().eventSource.emit(Events.ShowInfo, obj.info()));
-    UI.showHoverHint(obj.interactionObject, this.gameState().eventSource, () => obj.info().name);
+    obj.interactionObject.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, obj.info()));
+    UI.showHoverHint(obj.interactionObject, this.gameState(), () => obj.info().name);
   }
 
   public update(time: number, delta: number) {
@@ -90,7 +90,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     if (this.cameras.main.zoom > 0.01) {
       this.updateShip();
     } else {
-      this.gameState().eventSource.emit(
+      this.gameState().emit(
         Events.UpdateStatus,
         "Select a destination, or return to the current system.")
     }
@@ -113,8 +113,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
         this.cameras.main.zoomTo(scale, 500);
       }
       if (scale == 0.001) {
-        this.gameState().eventSource.emit(Events.ShowInfo, null);
-        this.gameState().eventSource.emit(Events.HoverHint, null);
+        this.gameState().emit(Events.ShowInfo, null);
+        this.gameState().emit(Events.HoverHint, null);
       }
     }
     const scaleFactor = 1 / this.cameras.main.zoom;
@@ -126,12 +126,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
 
     if (scale == 0.001) {
-      this.gameState().eventSource.emit(
+      this.gameState().emit(
         Events.LocationChanged,
         [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);
     } else {
       const location = scale == 1 ? "Inner System" : "Outer System";
-      this.gameState().eventSource.emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
+      this.gameState().emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
 
     }
     return scale;
@@ -174,11 +174,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.currentPosition.setPosition(this.position.x, this.position.y);
     this.currentPosition.setRotation(this.orientation);
 
-    const scene = this.gameState().currentScene;
-    if (scene[0] == "solar-system") {
-      scene[1].orientation = this.orientation;
-      scene[1].position = this.position.clone();
-      scene[1].velocity = this.nextVelocity.clone();
+    const state = this.gameState();
+    if (state.currentScene[0] == "solar-system") {
+      state.ship = {
+        orientation: this.orientation,
+        position: [this.position.x, this.position.y],
+        velocity: [this.nextVelocity.x, this.nextVelocity.y]
+      }
     }
 
     const minutesPassed = 60 * 24 * daysPassed;
@@ -189,7 +191,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const acc1g = AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed;
     const totalAccelerationMagnitude = acc.length() / (acc1g);
     if (this.nextPredictions.reduce((v, c) => v || c[2].length() / acc1g > 2, false)) {
-      this.gameState().eventSource.emit(Events.Warning, "Warning: Dangerous acceleration predicted");
+      this.gameState().emit(Events.Warning, "Warning: Dangerous acceleration predicted");
     }
 
     this.gameState().timeStep(
@@ -201,7 +203,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     const displayVelocity = (1000000 * this.nextVelocity.length() / 24 / 60 / 60).toFixed(0);
     const displayAcceleration = (totalAccelerationMagnitude).toFixed(2);
-    this.gameState().eventSource.emit(
+    this.gameState().emit(
       Events.UpdateStatus,
       `Velocity: ${displayVelocity} km/s  Acceleration: ${displayAcceleration} g`)
 

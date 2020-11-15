@@ -26,8 +26,8 @@ export default class Interstellar extends Phaser.Scene {
     UI.centre(0, this.cameras.main.width, title);
     const ship = this.add.image(-50, this.cameras.main.height / 2, Sprites.Ship);
 
-    state.eventSource.emit(Events.UpdateStatus, "Acceleration: 1.00 g");
-    state.eventSource.emit(Events.LocationChanged, ["Interstellar Space"]);
+    state.emit(Events.UpdateStatus, "Acceleration: 1.00 g");
+    state.emit(Events.LocationChanged, ["Interstellar Space"]);
 
     let reference = this.sceneState.travelTime.reference * 365 * 24 * 60;
     let relative = this.sceneState.travelTime.relative * 365 * 24 * 60;
