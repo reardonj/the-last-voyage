@@ -1,5 +1,4 @@
-import GameState, { Events, LocationChangedEvent, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
-import { ObjectInfo } from "../GameData/NavigationObjects";
+import GameState, { Events, LocationChangedEvent, ObjectInfo, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
 const LeftMargin = 8;
@@ -53,6 +52,7 @@ export default class Hud extends Phaser.Scene {
   warningText: WarningItem;
   pendingWarnings = new Set<string>();
   systems: [ShipSystem, Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween][];
+  currentInfo: ObjectInfo | null;
 
   public preload(): void {
     // Preload as needed.
@@ -259,7 +259,12 @@ export default class Hud extends Phaser.Scene {
   showInfo(info: ObjectInfo | null) {
     if (!info) {
       this.hideInfo();
+    } else if (info.onlyUpdate && info.definition !== this.currentInfo?.definition) {
+      // If the info is an update request, ignore unless showing the same info or nothing.
+      return;
     } else if (this.infoContainer.visible) {
+
+
       this.tweens.add({
         targets: this.infoContainer,
         x: -this.infoRect.width,
@@ -273,6 +278,7 @@ export default class Hud extends Phaser.Scene {
         onCompleteScope: this
       })
     } else {
+      this.currentInfo = info;
       this.infoTitle.setText(info.name);
       this.infoContent.setText(info.description);
       let yOffset = this.infoTitle.height + LeftMargin;
@@ -313,6 +319,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   hideInfo() {
+    this.currentInfo = null;
     this.tweens.add({
       targets: this.infoContainer,
       x: -this.infoRect.width,

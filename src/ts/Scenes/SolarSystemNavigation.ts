@@ -73,6 +73,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     UI.showHoverHint(this.currentPosition, this.gameState(), () => Resources.ShipName);
 
     this.updateScaledObjects(true);
+    state.emit(Events.EnteredSystem, null);
   }
 
   private setupScalableObject(obj: ScalableObject) {

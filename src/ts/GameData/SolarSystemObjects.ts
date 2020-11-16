@@ -1,4 +1,5 @@
 import AstronomicalMath from "../Logic/AstronomicalMath";
+import { ObjectInfo } from "./GameState";
 
 export type SolarSystemObject = Sun | Planet;
 
@@ -39,6 +40,15 @@ export function planetPositionAt(planet: Planet, sunMass: number, earthMinutes: 
   return new Phaser.Math.Vector2().setToPolar(
     planet.startAngle + 2 * Math.PI * (earthMinutes / orbitalPeriod),
     planet.orbitalRadius);
+}
+
+export function planetInfo(planet: Planet): ObjectInfo {
+  const description = planet["description"] ? planet["description"] + "\n" : "";
+  return {
+    name: planet.name,
+    description: description + `Composition: ${planet.composition}`,
+    definition: planet
+  }
 }
 
 export type Composition =

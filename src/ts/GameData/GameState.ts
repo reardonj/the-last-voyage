@@ -4,9 +4,8 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
-import { InteractiveObject, ObjectInfo } from "./NavigationObjects";
 import Scanner from "./Scanner";
-import { SolarSystemObject } from "./SolarSystemObjects";
+import { Planet, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -41,7 +40,7 @@ export default class GameState implements SavedState {
         orientation: new Phaser.Math.Vector2(5, 3).angle(),
         position: [-40, 146]
       },
-      currentScene: ["solar-system", { name: "Sol" }]
+      currentScene: ["solar-system", { name: "Ovid" }]
     },
       transitionScene);
   }
@@ -88,7 +87,7 @@ export default class GameState implements SavedState {
 
   currentSceneType() {
     switch (this.currentScene[0]) {
-      case "solar-system":
+      case "solar-system": ``
         return SolarSystemNavigation;
       case "interstellar":
         return Interstellar;
@@ -213,11 +212,11 @@ export default class GameState implements SavedState {
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
-      duration: 500,
+      duration: 400,
       remove: true,
       allowInput: false
     });
-    this.transitionScene.startTransition(500);
+    this.transitionScene.startTransition(400);
   }
 
 }
@@ -273,6 +272,19 @@ export interface SavedState {
   ship: MobileObject
 }
 
+export type ObjectInfo = {
+  name: string,
+  description: string,
+  definition: SolarSystemObject | SolarSystemDefinition | null,
+  actions?: { name: string, hint: string, action: (state: GameState) => void }[]
+  onlyUpdate?: boolean
+}
+
+export interface InteractiveObject {
+  info(): ObjectInfo
+  hint(): string
+}
+
 export interface ShipSystem extends InteractiveObject {
   timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void;
   needsAttention: boolean
@@ -307,6 +319,13 @@ export class SolarSystemDefinition {
       .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
   }
 
+  planets(): Planet[] {
+    return Object
+      .keys(this.objects)
+      .map(x => this.objects[x])
+      .filter<Planet>((x): x is Planet => x.type === "planet")
+  }
+
   solarMass() {
     return Object
       .keys(this.objects)
@@ -331,10 +350,9 @@ export const Events = {
   PassengersChanged: "passengersChanged",
 
   /*** 
-   * A scene transition is beginning. 
-   * The duration of the transition in ms is passed as an event parameter 
+   * A new system has been entered. 
    */
-  SceneTransition: "sceneTransition",
+  EnteredSystem: "enteredSystem",
 
   /***
    * Show info. A ObjectInfo is passed as an event parameter.

@@ -1,26 +1,14 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { Colours, Sprites } from "../Utilities";
-import GameState, { arrayToPosition, calculateFuelUsage, Events, SolarSystemDefinition, SolarSystemState, StatusMaxValue } from "./GameState";
-import { Planet, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
-
-export interface InteractiveObject {
-  info(): ObjectInfo
-  hint(): string
-}
+import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
+import { Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene)
   update(scene: Phaser.Scene)
   setScale(scale: number)
   readonly interactionObject: Phaser.GameObjects.GameObject
-}
-
-export type ObjectInfo = {
-  name: string,
-  description: string,
-  definition: SolarSystemObject | SolarSystemDefinition | null,
-  actions?: { name: string, hint: string, action: (state: GameState) => void }[]
 }
 
 export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition }): ScalableObject[] {
@@ -289,12 +277,7 @@ class PlanetSprite implements ScalableObject {
   }
 
   info() {
-    const description = this.definition["description"] ? this.definition["description"] + "\n" : "";
-    return {
-      name: this.definition.name,
-      description: description + `Composition: ${this.definition.composition}`,
-      definition: this.definition
-    }
+    return planetInfo(this.definition);
   }
 }
 

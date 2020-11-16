@@ -1,7 +1,5 @@
-import { Sprites } from "../Utilities";
-import GameState, { Events, ShipSystem, ShipSystems, SolarSystemDefinition } from "./GameState";
-import { ObjectInfo } from "./NavigationObjects";
-import { Atmosphere, Planet, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
+import GameState, { Events, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition } from "./GameState";
+import { Atmosphere, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
 export default class Scanner implements ShipSystem {
   public needsAttention: boolean = true;
@@ -14,11 +12,11 @@ export default class Scanner implements ShipSystem {
       this.systems["scanner"] = { "scanning": null };
     }
 
-    state.watch(Events.SceneTransition, () => this.stopScanning(), this);
+    state.watch(Events.EnteredSystem, () => this.stopScanning(), this);
   }
 
   hint() {
-    return "Long range telescopes, radar and other sensing instruments" +
+    return "Long range sensing instruments. They still work better closer to their target." +
       `\nScanning: ${this.systems["scanner"]?.["scanning"] ?? "Nothing"}`
   }
 
@@ -26,8 +24,26 @@ export default class Scanner implements ShipSystem {
     return {
       name: this.name,
       description: this.hint(),
-      definition: null
+      definition: null,
+      actions: this.buildActions()
     }
+  }
+
+  buildActions(): { name: string; hint: string; action: (state: GameState) => void; }[] {
+    return this.state.currentSystem()?.planets()
+      .map(x => {
+        const scanComplete = this.isScanComplete(this.scanTime(x), x);
+        const isScanning = this.systems["scanner"]["scanning"] === x.name;
+        if (!scanComplete && !isScanning) {
+          return this.createScanAction(x);
+        } else {
+          return {
+            name: `View ${x.name}${isScanning ? " (scanning)" : ""}`,
+            hint: scanComplete ? "View scan results" : "View scan progress",
+            action: () => this.state.emit(Events.ShowInfo, planetInfo(x))
+          }
+        }
+      }) ?? []
   }
 
   transformInfo(info: ObjectInfo): void {
@@ -39,10 +55,7 @@ export default class Scanner implements ShipSystem {
       return;
     }
 
-    const name = info.definition.name;
-    const scanState = info.definition.details["scanner"];
-    const scanTime = typeof (scanState) === "number" ?
-      scanState : 0;
+    const scanTime = this.scanTime(info.definition);
     let scansComplete = 0;
 
     if (!info.actions) {
@@ -74,18 +87,31 @@ export default class Scanner implements ShipSystem {
       scansComplete++;
     }
 
-    if (scansComplete < 4) {
-      info.actions.push({
-        name: "Scan",
-        hint: `Target ${info.definition.name} with ship scanners`,
-        action: state => {
-          this.systems["scanner"]["scanning"] = name;
-          this.needsAttention = false;
-        }
-      });
-    } else {
+    if (this.systems["scanner"]["scanning"] === info.definition.name) {
+      info.description += "\n(scan in progress)"
+    } else if (scansComplete == 4) {
       info.description += "\n(scan complete)"
+    } else {
+      info.description += "\n(scan incomplete)"
     }
+  }
+
+  private createScanAction(planet: Planet): { name: string; hint: string; action: (state: GameState) => void; } {
+    return {
+      name: `Scan ${planet.name}`,
+      hint: `Target ${planet.name} with ship scanners`,
+      action: state => {
+        this.systems["scanner"]["scanning"] = planet.name;
+        this.needsAttention = false;
+        this.state.emit(Events.ShowInfo, this.info());
+      }
+    };
+  }
+
+  private scanTime(definition: Planet) {
+    const scanState = definition.details["scanner"];
+    return typeof (scanState) === "number" ?
+      scanState : 0;
   }
 
   timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void {
@@ -110,20 +136,34 @@ export default class Scanner implements ShipSystem {
 
     target.details["scanner"] = nextScanTime;
     if (
-      scannedAtmosphere(nextScanTime, target.atmosphere) &&
-      scannedBiosphere(nextScanTime, target) &&
-      scannedTemperature(nextScanTime, target.temperature) &&
-      scannedCivilization(nextScanTime, target)
+      this.isScanComplete(nextScanTime, target)
     ) {
       this.stopScanning();
+      const updateScannerInfo = this.info();
+      updateScannerInfo.onlyUpdate = true;
+      const updatePlanetInfo = planetInfo(target);
+      updatePlanetInfo.onlyUpdate = true;
+
+      this.state.emit(Events.ShowInfo, updateScannerInfo);
+      this.state.emit(Events.ShowInfo, updatePlanetInfo);
     }
 
   }
 
+  private isScanComplete(scanTime: number, target: Planet) {
+    return scannedAtmosphere(scanTime, target.atmosphere) &&
+      scannedBiosphere(scanTime, target) &&
+      scannedTemperature(scanTime, target.temperature) &&
+      scannedCivilization(scanTime, target);
+  }
 
   private stopScanning() {
     this.systems["scanner"]["scanning"] = null;
-    this.needsAttention = true;
+    this.needsAttention =
+      this.state.currentSystem()?.planets()
+        .map(x => !this.isScanComplete(this.scanTime(x), x))
+        .reduce((acc, x) => acc || x, false)
+      ?? false;
   }
 
 
