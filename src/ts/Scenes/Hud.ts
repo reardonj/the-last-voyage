@@ -259,7 +259,7 @@ export default class Hud extends Phaser.Scene {
   showInfo(info: ObjectInfo | null) {
     if (!info) {
       this.hideInfo();
-    } else if (info.onlyUpdate && info.definition !== this.currentInfo?.definition) {
+    } else if (info.onlyUpdate && this.currentInfo && info.definition !== this.currentInfo?.definition) {
       // If the info is an update request, ignore unless showing the same info or nothing.
       return;
     } else if (this.infoContainer.visible) {

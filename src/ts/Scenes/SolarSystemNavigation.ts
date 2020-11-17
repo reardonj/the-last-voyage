@@ -6,6 +6,7 @@ import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
+import SavedGames from "../GameData/SavedGames";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
@@ -50,11 +51,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       .on("pointerdown", () => this.gameState().emit(Events.ShowInfo, null));
 
     this.farthestOrbit = state.currentSystem()!.farthestOrbit();
-    this.orbitalBodies = createGameObjects(state.currentSystem()!, state.systems);
+    this.orbitalBodies = createGameObjects(state.currentSystem()!, state.worlds);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
     this.sim = new GravitySimulation(this.orbitalBodies);
 
-    const solarState = <SolarSystemState>state.currentScene[1];
     this.position = arrayToPosition(state.ship.position);
     this.nextVelocity = arrayToPosition(state.ship.velocity);
     this.orientation = state.ship.orientation;
@@ -73,7 +73,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     UI.showHoverHint(this.currentPosition, this.gameState(), () => Resources.ShipName);
 
     this.updateScaledObjects(true);
-    state.emit(Events.EnteredSystem, null);
+
+    SavedGames.saveGame(state);
+    this.time.addEvent({
+      delay: 1000,
+      loop: true,
+      callback: () => SavedGames.saveGame(state),
+      callbackScope: this
+    })
   }
 
   private setupScalableObject(obj: ScalableObject) {

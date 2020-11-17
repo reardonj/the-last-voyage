@@ -2,7 +2,7 @@ import GameState, { Events, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefi
 import { Atmosphere, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
 export default class Scanner implements ShipSystem {
-  public needsAttention: boolean = true;
+  public needsAttention: boolean = this.isScanTargetAvailable();
   public readonly name = "Scanners";
   private systems: ShipSystems;
 
@@ -125,6 +125,7 @@ export default class Scanner implements ShipSystem {
     if (!target || target.type != "planet") {
       return;
     }
+    this.needsAttention = false;
 
     // Scanning is faster closer to the target.
     const timeScaling = Math.max(0.5, Math.log10(
@@ -159,15 +160,18 @@ export default class Scanner implements ShipSystem {
 
   private stopScanning() {
     this.systems["scanner"]["scanning"] = null;
-    this.needsAttention =
-      this.state.currentSystem()?.planets()
-        .map(x => !this.isScanComplete(this.scanTime(x), x))
-        .reduce((acc, x) => acc || x, false)
-      ?? false;
+    this.needsAttention = this.isScanTargetAvailable();
   }
 
 
 
+
+  private isScanTargetAvailable(): boolean {
+    return this.state.currentSystem()?.planets()
+      .map(x => !this.isScanComplete(this.scanTime(x), x))
+      .reduce((acc, x) => acc || x, false)
+      ?? false;
+  }
 }
 
 function scannedAtmosphere(scanTime: number, atmosphere?: Atmosphere): boolean {

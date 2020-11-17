@@ -76,6 +76,7 @@ export default class Interstellar extends Phaser.Scene {
         this.gameState.ship.velocity = [nextState.velocity.x, nextState.velocity.y];
 
         this.gameState.transitionTo(["solar-system", { name: nextState.name }]);
+        state.emit(Events.EnteredSystem, null);
         this.game.events.once("step", () => this.gameState.doStateBasedTransitions(this), this);
       },
       onCompleteScope: this,

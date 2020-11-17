@@ -1,6 +1,8 @@
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { ObjectInfo } from "./GameState";
 
+export type SolarSystem = { name: string, position: number[], objects: SolarSystemObject[] }
+
 export type SolarSystemObject = Sun | Planet;
 
 export type Sun = {

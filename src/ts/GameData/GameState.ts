@@ -4,8 +4,9 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
-import { Planet, SolarSystemObject } from "./SolarSystemObjects";
+import { Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -17,15 +18,15 @@ export default class GameState implements SavedState {
   relativeTime: number;
   currentScene: CurrentScene;
   ship: MobileObject;
-  systems: { [id: string]: SolarSystemDefinition; };
+  systems: SolarSystem[];
   shipSystems: ShipSystems;
+  worlds: { [id: string]: SolarSystemDefinition; }
 
   private eventSource: Phaser.Events.EventEmitter;
   nextScene: CurrentScene | null = null;
   shipSystemObjects: ShipSystem[];
 
   static newGame(transitionScene: Transition) {
-    const systems = createSystems();
     return new GameState({
       fuel: StatusMaxValue,
       passengers: StatusMaxValue,
@@ -33,7 +34,7 @@ export default class GameState implements SavedState {
       supplies: StatusMaxValue,
       earthTime: 0,
       relativeTime: 0,
-      systems: systems,
+      systems: Worlds,
       shipSystems: {},
       ship: {
         velocity: [5, 3],
@@ -59,14 +60,31 @@ export default class GameState implements SavedState {
     this.systems = savedState.systems;
     this.ship = savedState.ship;
     this.shipSystems = savedState.shipSystems;
-    this.shipSystemObjects = [new Scanner(this)];
+    this.worlds = createSystems(this.systems);
 
+    this.shipSystemObjects = [new Scanner(this)];
+  }
+
+  toSavedState(): SavedState {
+    return {
+      fuel: this.fuel,
+      passengers: this.passengers,
+      integrity: this.integrity,
+      supplies: this.supplies,
+      earthTime: this.earthTime,
+      relativeTime: this.relativeTime,
+      currentScene: this.currentScene,
+      systems: this.systems,
+      ship: this.ship,
+      shipSystems: this.shipSystems
+    }
   }
 
   emit(event: string, params: any) {
     if (event === Events.ShowInfo && params) {
       this.shipSystemObjects.forEach(x => x.transformInfo(params));
     }
+
     this.eventSource.emit(event, params);
   }
 
@@ -101,7 +119,7 @@ export default class GameState implements SavedState {
   currentSystem(): SolarSystemDefinition | null {
     switch (this.currentScene[0]) {
       case "solar-system":
-        return this.systems[this.currentScene[1].name];
+        return this.worlds[this.currentScene[1].name];
       case "interstellar":
         return null;
       case "game-over":
@@ -229,8 +247,8 @@ function clampStatusValue(value: number) {
   return Phaser.Math.Clamp(value, 0, StatusMaxValue);
 }
 
-function createSystems(): { [id: string]: SolarSystemDefinition } {
-  return Worlds.map(x => new SolarSystemDefinition(
+function createSystems(worlds: SolarSystem[]): { [id: string]: SolarSystemDefinition } {
+  return worlds.map(x => new SolarSystemDefinition(
     x.name,
     <[number, number]>x.position,
     x.objects.reduce((acc, obj) => {
@@ -260,7 +278,7 @@ export type CurrentScene =
 export type ShipSystems = { [id: string]: { [id: string]: any; }; };
 
 export interface SavedState {
-  systems: { [id: string]: SolarSystemDefinition }
+  systems: SolarSystem[]
   shipSystems: ShipSystems
   earthTime: number
   relativeTime: number
