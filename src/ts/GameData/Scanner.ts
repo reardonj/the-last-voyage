@@ -115,9 +115,14 @@ export default class Scanner implements ShipSystem {
   }
 
   timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void {
-    const targetName = this.systems["scanner"]["scanning"];
     const system = this.state.currentSystem()
-    if (typeof (targetName) !== "string" || !system) {
+    if (!system) {
+      this.needsAttention = false;
+      return;
+    }
+
+    const targetName = this.systems["scanner"]["scanning"];
+    if (typeof (targetName) !== "string") {
       return;
     }
 
@@ -162,9 +167,6 @@ export default class Scanner implements ShipSystem {
     this.systems["scanner"]["scanning"] = null;
     this.needsAttention = this.isScanTargetAvailable();
   }
-
-
-
 
   private isScanTargetAvailable(): boolean {
     return this.state.currentSystem()?.planets()
