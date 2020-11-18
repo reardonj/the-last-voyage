@@ -23,9 +23,8 @@ export default class Scanner implements ShipSystem {
   info(): ObjectInfo {
     return {
       name: this.name,
-      description: this.hint(),
-      definition: null,
-      actions: this.buildActions()
+      details: [this.hint(), ...this.buildActions()],
+      definition: null
     }
   }
 
@@ -58,41 +57,39 @@ export default class Scanner implements ShipSystem {
     const scanTime = this.scanTime(info.definition);
     let scansComplete = 0;
 
-    if (!info.actions) {
-      info.actions = [];
-    }
-
-    info.description += `\nSurface Gravity: ${relativeEarthGravity(info.definition).toFixed(2)} g`;
+    info.details.push(`Surface Gravity: ${relativeEarthGravity(info.definition).toFixed(2)} g`)
 
     if (scannedAtmosphere(scanTime, info.definition.atmosphere)) {
-      info.description += `\nAtmosphere: ${info.definition.atmosphere ?? "None"}`
+      info.details.push(`Atmosphere: ${info.definition.atmosphere ?? "None"}`);
       scansComplete++;
     }
 
     if (scannedTemperature(scanTime, info.definition.temperature)) {
-      info.description += `\nTemperature: ${info.definition.temperature ?? "Variable Extreme"}`
+      info.details.push(`Temperature: ${info.definition.temperature ?? "Variable Extreme"}`);
       scansComplete++;
     }
 
     if (scannedBiosphere(scanTime, info.definition)) {
-      info.description += `\nBiosphere: ${info.definition.biosphere ?? "None"}`
+      info.details.push(`Biosphere: ${info.definition.biosphere ?? "None"}`);
       scansComplete++;
     }
 
     if (scannedCivilization(scanTime, info.definition)) {
       if (info.definition.civilization) {
-        info.description += `\nTechnology: ${info.definition.civilization[0]}`
-        info.description += `\nPopulation (est.): ${info.definition.civilization[1].toFixed(0)} mil`
+        info.details.push(
+          `Technology: ${info.definition.civilization[0]}`,
+          `Population (est.): ${info.definition.civilization[1].toFixed(0)} mil`
+        );
       }
       scansComplete++;
     }
 
     if (this.systems["scanner"]["scanning"] === info.definition.name) {
-      info.description += "\n(scan in progress)"
+      info.details.push("(scan in progress)");
     } else if (scansComplete == 4) {
-      info.description += "\n(scan complete)"
+      info.details.push("(scan complete)");
     } else {
-      info.description += "\n(scan incomplete)"
+      info.details.push("(scan incomplete)");
     }
   }
 

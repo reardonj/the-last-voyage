@@ -45,8 +45,7 @@ export default class Hud extends Phaser.Scene {
   infoTitle: Phaser.GameObjects.BitmapText;
   infoRect: Phaser.GameObjects.Rectangle;
   infoBorder: Phaser.GameObjects.Image;
-  infoContent: Phaser.GameObjects.BitmapText;
-  infoActions: Phaser.GameObjects.BitmapText[];
+  infoDetails: Phaser.GameObjects.BitmapText[];
   statusText: Phaser.GameObjects.BitmapText;
   hoverHint: Phaser.GameObjects.BitmapText;
   warningText: WarningItem;
@@ -140,15 +139,11 @@ export default class Hud extends Phaser.Scene {
       .setFlipX(true);
     this.infoTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "")
       .setTint(Colours.TextTint);
-    this.infoContent = this.add.bitmapText(LeftMargin, 0, Fonts.Proportional16, "")
-      .setTint(Colours.TextTint)
-      .setMaxWidth(400);
-    this.infoActions = [];
+    this.infoDetails = [];
 
     this.infoContainer = this.add.container(0, LeftMargin * 2);
     this.infoContainer.add(this.infoRect);
     this.infoContainer.add(this.infoTitle);
-    this.infoContainer.add(this.infoContent);
     this.infoContainer.add(this.infoBorder);
     this.hideInfo();
   }
@@ -280,25 +275,27 @@ export default class Hud extends Phaser.Scene {
     } else {
       this.currentInfo = info;
       this.infoTitle.setText(info.name);
-      this.infoContent.setText(info.description);
       let yOffset = this.infoTitle.height + LeftMargin;
 
-      this.infoContent.setY(yOffset);
-      yOffset += this.infoContent.height + LeftMargin;
-
       const gameState = <GameState>this.scene.settings.data;
-      for (const action of info.actions ?? []) {
-        const control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${action.name} ]`);
-        UI.makeInteractive(control);
-        UI.showHoverHint(control, gameState, () => action.hint);
-
+      for (const line of info.details ?? []) {
+        let control: Phaser.GameObjects.BitmapText;
+        if (typeof (line) === "string") {
+          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, line)
+            .setTint(Colours.TextTint)
+            .setMaxWidth(400);
+        } else {
+          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${line.name} ]`);
+          UI.makeInteractive(control);
+          UI.showHoverHint(control, gameState, () => line.hint);
+          control.on('pointerdown', () => line.action(gameState));
+        }
+        yOffset += control.height + LeftMargin / 2;
         this.infoContainer.add(control);
-        this.infoActions.push(control);
-        control.on('pointerdown', () => action.action(gameState));
-        yOffset += control.height + LeftMargin;
+        this.infoDetails.push(control);
       }
 
-      const width = [this.infoTitle.width, this.infoContent.width, ...this.infoActions.map(x => x.width)]
+      const width = [this.infoTitle.width, ...this.infoDetails.map(x => x.width)]
         .reduce((max, x) => Math.max(max, x), 0);
       const height = yOffset;
       this.infoRect.setSize(width + LeftMargin * 2, height + LeftMargin * 2);
@@ -335,9 +332,9 @@ export default class Hud extends Phaser.Scene {
 
   private clearInfoPanel() {
     this.infoContainer.setVisible(false);
-    this.infoContainer.remove(this.infoActions);
-    this.infoActions.forEach(x => x.destroy());
-    this.infoActions = [];
+    this.infoContainer.remove(this.infoDetails);
+    this.infoDetails.forEach(x => x.destroy());
+    this.infoDetails = [];
   }
 
   private showHoverHint(hint: string | null) {

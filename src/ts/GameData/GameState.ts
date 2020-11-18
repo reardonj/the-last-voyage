@@ -290,11 +290,12 @@ export interface SavedState {
   ship: MobileObject
 }
 
+export type ObjectAction = { name: string, hint: string, action: (state: GameState) => void };
+
 export type ObjectInfo = {
   name: string,
-  description: string,
+  details: (string | ObjectAction)[]
   definition: SolarSystemObject | SolarSystemDefinition | null,
-  actions?: { name: string, hint: string, action: (state: GameState) => void }[]
   onlyUpdate?: boolean
 }
 

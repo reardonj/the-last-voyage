@@ -48,7 +48,7 @@ export function planetInfo(planet: Planet): ObjectInfo {
   const description = planet["description"] ? planet["description"] + "\n" : "";
   return {
     name: planet.name,
-    description: description + `Composition: ${planet.composition}`,
+    details: [description + `Composition: ${planet.composition}`],
     definition: planet
   }
 }

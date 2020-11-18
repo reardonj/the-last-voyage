@@ -99,18 +99,17 @@ class InterstellarObject implements ScalableObject {
     const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative);
     return {
       name: this.otherSystem.name,
-      description:
-        `Distance: ${this.distanceToOtherStar.toFixed(1)} ly \n` +
-        `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total\n` +
+      details: [
+        `Distance: ${this.distanceToOtherStar.toFixed(1)} ly`,
+        `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total`,
         `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
-      definition: this.otherSystem,
-      actions: [
         {
           name: sameSystem ? "Return" : "Travel",
           hint: sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
           action: x => this.travel(x)
         }
-      ]
+      ],
+      definition: this.otherSystem
     }
   }
 
@@ -148,16 +147,18 @@ class InvisibleObjectIndicator implements ScalableObject {
     const hidden = this.hiddenObjects();
     return {
       name: `Unrenderable Objects (${hidden.length})`,
-      description: "Objects are too close to the sun to display at this resolution:",
-      definition: null,
-      actions: hidden.map(x => ({
-        name: x.definition.name,
-        hint: `Show info for ${x.definition.name}`,
-        action: state => {
-          state.emit(Events.HoverHint, null)
-          state.emit(Events.ShowInfo, x.info())
-        }
-      }))
+      details: [
+        "Objects are too close to the sun to display at this resolution:",
+        ...hidden.map(x => ({
+          name: x.definition.name,
+          hint: `Show info for ${x.definition.name}`,
+          action: (state: GameState) => {
+            state.emit(Events.HoverHint, null)
+            state.emit(Events.ShowInfo, x.info())
+          }
+        }))
+      ],
+      definition: null
     }
   }
 
@@ -227,7 +228,7 @@ class SunSprite implements ScalableObject {
   info() {
     return {
       name: this.definition.name,
-      description: "Local sun.",
+      details: ["Local sun."],
       definition: this.definition
     }
   }
