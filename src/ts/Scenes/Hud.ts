@@ -112,7 +112,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   suppliesHint(): string {
-    const suppliesPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
+    const suppliesPercent = Math.max(1, 100 * this.gameState().supplies / StatusMaxValue).toFixed(0);
     return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication`;
   }
 
