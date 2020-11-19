@@ -4,7 +4,6 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
-import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
 import { Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
@@ -294,7 +293,7 @@ export type ObjectAction = { name: string, hint: string, action: (state: GameSta
 
 export type ObjectInfo = {
   name: string,
-  details: (string | ObjectAction)[]
+  details: (string | [string, () => string] | ObjectAction)[]
   definition: SolarSystemObject | SolarSystemDefinition | null,
   onlyUpdate?: boolean
 }

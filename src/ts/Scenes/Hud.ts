@@ -141,7 +141,7 @@ export default class Hud extends Phaser.Scene {
       .setTint(Colours.TextTint);
     this.infoDetails = [];
 
-    this.infoContainer = this.add.container(0, LeftMargin * 2);
+    this.infoContainer = this.add.container(0, LeftMargin * 4);
     this.infoContainer.add(this.infoRect);
     this.infoContainer.add(this.infoTitle);
     this.infoContainer.add(this.infoBorder);
@@ -284,6 +284,11 @@ export default class Hud extends Phaser.Scene {
           control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, line)
             .setTint(Colours.TextTint)
             .setMaxWidth(400);
+        } else if (Array.isArray(line)) {
+          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, line[0])
+            .setTint(Colours.TextTint)
+            .setMaxWidth(400);
+          UI.showHoverHint(control, gameState, line[1])
         } else {
           control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${line.name} ]`);
           UI.makeInteractive(control);

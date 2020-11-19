@@ -60,7 +60,8 @@ export default class Scanner implements ShipSystem {
     info.details.push(`Surface Gravity: ${relativeEarthGravity(info.definition).toFixed(2)} g`)
 
     if (scannedAtmosphere(scanTime, info.definition.atmosphere)) {
-      info.details.push(`Atmosphere: ${info.definition.atmosphere ?? "None"}`);
+      const atmosphere = info.definition.atmosphere;
+      info.details.push([`Atmosphere: ${atmosphere ?? "None"}`, () => atmosphereHint(atmosphere)]);
       scansComplete++;
     }
 
@@ -170,6 +171,28 @@ export default class Scanner implements ShipSystem {
       .map(x => !this.isScanComplete(this.scanTime(x), x))
       .reduce((acc, x) => acc || x, false)
       ?? false;
+  }
+}
+
+function atmosphereHint(atmosphere?: Atmosphere): string {
+  if (!atmosphere) {
+    return "This world has no atmosphere.";
+  }
+  switch (atmosphere) {
+    case "Breathable":
+      return "Atmosphere has a human breathable oxygen/nitrogen mix.";
+    case "Corrosive":
+      return "Atmosphere will cause burns and damage organic materials after brief exposure."
+    case "Inert":
+      return "Atmosphere is safe, but contains insufficient oxygen for human respiration."
+    case "Thick":
+      return "Atmosphere is safe, but too dense for human respiration."
+    case "Toxic":
+      return "Atmosphere contains high levels of carcinogens or heavy metals."
+    case "Radioactive Cinders":
+      return "Atmosphere is laced with dust from radioactive fallout."
+    case "Thin":
+      return "Atmosphere is breathable, but too thin for human respiration."
   }
 }
 
