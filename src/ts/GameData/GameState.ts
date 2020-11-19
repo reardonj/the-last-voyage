@@ -247,16 +247,17 @@ function clampStatusValue(value: number) {
 }
 
 function createSystems(worlds: SolarSystem[]): { [id: string]: SolarSystemDefinition } {
+  const toReturn: { [id: string]: SolarSystemDefinition } = {};
   return worlds.map(x => new SolarSystemDefinition(
     x.name,
     <[number, number]>x.position,
     x.objects.reduce((acc, obj) => {
       acc[obj.name] = obj;
       return acc;
-    }, {}))).reduce((acc, obj) => {
+    }, <{ [id: string]: SolarSystemObject }>{}))).reduce((acc, obj) => {
       acc[obj.name] = obj
       return acc;
-    }, {})
+    }, toReturn)
 }
 
 export interface MobileObject {

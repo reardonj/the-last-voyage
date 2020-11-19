@@ -5,9 +5,9 @@ import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObje
 import { Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
-  create(scene: Phaser.Scene)
-  update(scene: Phaser.Scene)
-  setScale(scale: number)
+  create(scene: Phaser.Scene): void
+  update(scene: Phaser.Scene): void
+  setScale(scale: number): void
   readonly interactionObject: Phaser.GameObjects.GameObject
 }
 

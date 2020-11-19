@@ -15,6 +15,7 @@ export type Sun = {
 export type Planet = {
   type: "planet"
   name: string,
+  description?: string,
   mass: number,
   orbitalRadius: number,
   equatorialRadius: number, // In multiples of Earth's radius
@@ -45,10 +46,16 @@ export function planetPositionAt(planet: Planet, sunMass: number, earthMinutes: 
 }
 
 export function planetInfo(planet: Planet): ObjectInfo {
-  const description = planet["description"] ? planet["description"] + "\n" : "";
+  const details = [];
+  if (planet.description) {
+    details.push(planet.description);
+  }
+
+  details.push(`Composition: ${planet.composition}`)
+
   return {
     name: planet.name,
-    details: [description + `Composition: ${planet.composition}`],
+    details: details,
     definition: planet
   }
 }
