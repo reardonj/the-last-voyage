@@ -4,6 +4,7 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import { Hanger } from "./Hanger";
 import Scanner from "./Scanner";
 import { Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
@@ -61,7 +62,7 @@ export default class GameState implements SavedState {
     this.shipSystems = savedState.shipSystems;
     this.worlds = createSystems(this.systems);
 
-    this.shipSystemObjects = [new Scanner(this)];
+    this.shipSystemObjects = [new Scanner(this), new Hanger(this)];
   }
 
   toSavedState(): SavedState {
@@ -138,7 +139,6 @@ export default class GameState implements SavedState {
   ) {
     const previousIntegrity = this.integrity;
     this.shipSystemObjects.forEach(x => x.timeStep(durationEarthMinutes, durationRelativeMinutes));
-
 
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
@@ -236,6 +236,14 @@ export default class GameState implements SavedState {
     this.transitionScene.startTransition(400);
   }
 
+  useSupplies(amount: number) {
+    this.supplies = clampStatusValue(this.supplies - amount);
+    this.emit(Events.SuppliesChanged, this.supplies);
+  }
+
+  useIntegrity(amount: number) {
+    this.integrity = clampStatusValue(this.integrity - amount);
+  }
 }
 
 export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
@@ -291,10 +299,11 @@ export interface SavedState {
 }
 
 export type ObjectAction = { name: string, hint: string, action: (state: GameState) => void };
+export type ObjectDetail = string | [string, () => string] | ObjectAction;
 
 export type ObjectInfo = {
   name: string,
-  details: (string | [string, () => string] | ObjectAction)[]
+  details: ObjectDetail[]
   definition: SolarSystemObject | SolarSystemDefinition | null,
   onlyUpdate?: boolean
 }
@@ -305,10 +314,39 @@ export interface InteractiveObject {
 }
 
 export interface ShipSystem extends InteractiveObject {
-  timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void;
-  needsAttention: boolean
   name: string
+  needsAttention: boolean
+
+  timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void
   transformInfo(info: ObjectInfo): void
+  isHabitable(planet: Planet): Habitability
+}
+
+/**
+ * A world is habitable if at least one system thinks it is habitable, and no system 
+ * thinks it is uninhabitable. If a system has no judgment, it should report undefined.
+ */
+export type Habitability = {
+  gravity?: boolean,
+  composition?: boolean,
+  atmosphere?: boolean,
+  temperature?: boolean,
+  biosphere?: boolean,
+}
+
+/**
+ * Combine two habitability scores.
+ * @param a One habitability score
+ * @param b Another habitability score
+ */
+export function sumHabitabilities(a: Habitability, b: Habitability): Habitability {
+  return {
+    gravity: a.gravity || b.gravity,
+    composition: a.composition || b.composition,
+    atmosphere: a.atmosphere || b.atmosphere,
+    temperature: a.temperature || b.temperature,
+    biosphere: a.biosphere || b.biosphere
+  }
 }
 
 export interface InterstellarState {
@@ -364,6 +402,7 @@ export const Events = {
   TimePassed: "timePassed",
   LocationChanged: "locationChanged",
   FuelChanged: "fuelChanged",
+  SuppliesChanged: "suppliesChanged",
   HoverHint: "hoverHint",
   IntegrityChanged: "integrityChanged",
   PassengersChanged: "passengersChanged",

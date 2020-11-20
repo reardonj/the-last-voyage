@@ -71,6 +71,7 @@ export default class Hud extends Phaser.Scene {
 
     this.hoverHint = this.add
       .bitmapText(0, LeftMargin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setMaxWidth(800)
       .setTint(Colours.TextTint);
 
     this.setupInfoPanel();
@@ -81,6 +82,7 @@ export default class Hud extends Phaser.Scene {
     state.watch(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
     state.watch(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
     state.watch(Events.PassengersChanged, this.updateSystemStatus(this.populationText), this);
+    state.watch(Events.SuppliesChanged, this.updateSystemStatus(this.suppliesText), this);
     state.watch(Events.Warning, this.updateWarning(this.warningText), this);
     state.watch(Events.ShowInfo, this.showInfo, this);
     state.watch(Events.HoverHint, this.showHoverHint, this);
@@ -108,6 +110,7 @@ export default class Hud extends Phaser.Scene {
       });
 
       this.systems.push([system, label, activeAnimation]);
+      yOffset += label.height + LeftMargin / 2
     }
   }
 
@@ -166,7 +169,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   createWarningText(): WarningItem {
-    const text = this.add.bitmapText(0, 600, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+    const text = this.add.bitmapText(0, 0, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
       .setTint(Colours.WarningTint)
       .setAlpha(0);
 
@@ -196,7 +199,7 @@ export default class Hud extends Phaser.Scene {
       }
       this.pendingWarnings.clear();
       const warnings = warningList.join("\n");
-      this.warningText.text.setText(warnings);
+      this.warningText.text.setText(warnings).setY(this.hoverHint.height + LeftMargin);
       UI.centre(0, this.cameras.main.width, this.warningText.text);
       this.warningText.anim?.stop();
       this.warningText.anim = this.add.tween({
@@ -258,8 +261,6 @@ export default class Hud extends Phaser.Scene {
       // If the info is an update request, ignore unless showing the same info or nothing.
       return;
     } else if (this.infoContainer.visible) {
-
-
       this.tweens.add({
         targets: this.infoContainer,
         x: -this.infoRect.width,
@@ -274,6 +275,7 @@ export default class Hud extends Phaser.Scene {
       })
     } else {
       this.currentInfo = info;
+      this.currentInfo.onlyUpdate = false;
       this.infoTitle.setText(info.name);
       let yOffset = this.infoTitle.height + LeftMargin;
 
@@ -345,6 +347,7 @@ export default class Hud extends Phaser.Scene {
   private showHoverHint(hint: string | null) {
     this.hoverHint.setText(hint ?? "");
     UI.centre(0, this.cameras.main.width, this.hoverHint);
+    this.warningText.text.setY(this.hoverHint.height + LeftMargin);
   }
 
   private gameState() {

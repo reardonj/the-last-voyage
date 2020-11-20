@@ -1,4 +1,4 @@
-import GameState, { Events, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition } from "./GameState";
+import GameState, { Events, Habitability, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, sumHabitabilities } from "./GameState";
 import { Atmosphere, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
 export default class Scanner implements ShipSystem {
@@ -18,6 +18,24 @@ export default class Scanner implements ShipSystem {
   hint() {
     return "Long range sensing instruments. They still work better closer to their target." +
       `\nScanning: ${this.systems["scanner"]?.["scanning"] ?? "Nothing"}`
+  }
+
+  isHabitable(planet: Planet): Habitability {
+    if (!this.isScanComplete(this.scanTime(planet), planet)) {
+      return {}
+    } else {
+      const gravity = relativeEarthGravity(planet);
+      return {
+        gravity: gravity >= 0.7 && gravity <= 1.2 ? true : undefined,
+        composition: planet.composition === "Rocky" ? true : undefined,
+        atmosphere: planet.atmosphere === "Breathable" ? true : undefined,
+        biosphere: planet.biosphere === "Miscible" ? true : undefined,
+        temperature: (planet.temperature === "Temperate"
+          || planet.temperature === "Cold"
+          || planet.temperature === "Warm")
+          ? true : undefined
+      }
+    }
   }
 
   info(): ObjectInfo {
@@ -89,8 +107,38 @@ export default class Scanner implements ShipSystem {
       info.details.push("(scan in progress)");
     } else if (scansComplete == 4) {
       info.details.push("(scan complete)");
+      info.details.push(this.showHabitability(info.definition));
     } else {
       info.details.push("(scan incomplete)");
+    }
+
+  }
+
+  private showHabitability(planet: Planet): (string | [string, () => string]) {
+    const habitability = this.state.shipSystemObjects.reduce(
+      (acc, s) => sumHabitabilities(acc, s.isHabitable(planet)), <Habitability>{});
+    const issues: string[] = [];
+
+    if (!habitability.composition) {
+      issues.push("composition");
+    }
+    if (!habitability.gravity) {
+      issues.push("gravity");
+    }
+    if (!habitability.temperature) {
+      issues.push("temperature");
+    }
+    if (!habitability.atmosphere) {
+      issues.push("atmosphere");
+    }
+    if (!habitability.biosphere) {
+      issues.push("biosphere");
+    }
+
+    if (issues.length == 0) {
+      return "Habitable";
+    } else {
+      return ["Not Habitable", () => `Uninhabitable becaue of incompatible: ${issues.join(", ")}`];
     }
   }
 

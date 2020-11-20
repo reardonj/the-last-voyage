@@ -46,7 +46,7 @@ export function planetPositionAt(planet: Planet, sunMass: number, earthMinutes: 
 }
 
 export function planetInfo(planet: Planet): ObjectInfo {
-  const details = [];
+  const details: string[] = [];
   if (planet.description) {
     details.push(planet.description);
   }

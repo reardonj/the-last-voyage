@@ -42,7 +42,12 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   public create(state: GameState): void {
-    this.events.once('transitioncomplete', () => this.scene.launch(Hud.Name, state), this);
+    this.events.once('transitioncomplete', () => {
+      if (!this.scene.get(Hud.Name)?.scene.isActive()) {
+        this.scene.launch(Hud.Name, state);
+      }
+    }, this);
+
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
     this.events.on('destroy', () => this.game.events.removeListener("step", undefined, this));
 
