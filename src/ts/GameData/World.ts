@@ -47,7 +47,7 @@ export const Worlds: { name: string, position: number[], objects: SolarSystemObj
         atmosphere: "Toxic",
         temperature: "Warm",
         biosphere: "Remnant",
-        civilization: ["Intrastellar", 100],
+        civilizations: [{ established: 0, population: 5, technology: "Interstellar", scanned: true, species: "human" }],
         details: { "scanner": 1000000 }
       },
       {
@@ -247,14 +247,15 @@ export const Worlds: { name: string, position: number[], objects: SolarSystemObj
       {
         type: "planet",
         name: "Fasti",
-        mass: 130,
+        mass: 148,
         orbitalRadius: 176,
         equatorialRadius: 1.8,
         startAngle: 7,
         orbitalSpeedMultiplier: -1,
         composition: "Rocky",
-        atmosphere: "Inert",
+        atmosphere: "Breathable",
         temperature: "Temperate",
+        biosphere: "Miscible",
         details: {}
       },
       {

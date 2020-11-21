@@ -26,6 +26,7 @@ export class Hanger implements ShipSystem {
       remaining -= durationRelativeMinutes;
       this.state.useSupplies(durationRelativeMinutes);
       if (remaining <= 0) {
+        this.state.useFuel(100000);
         this.systems["hanger"][building]++;
         this.stopBuilding();
       } else {
@@ -46,6 +47,28 @@ export class Hanger implements ShipSystem {
   }
 
   transformInfo(info: ObjectInfo): void {
+    const system = this.state.currentSystem();
+    const planet = info.definition;
+    if (
+      !system ||
+      !planet ||
+      planet instanceof SolarSystemDefinition ||
+      planet.type != "planet" ||
+      !this.state.isHabitable(planet)
+    ) {
+      return;
+    }
+
+    if (this.colonyShips() > 0)
+      info.details.push({
+        name: "Launch Colony Ship",
+        hint: `Send a ship to 100,000 colonists to ${planet.name}`,
+        action: () => this.launchColonyShip(planet)
+      });
+  }
+
+  launchColonyShip(planet: Planet): void {
+
   }
 
   isHabitable(planet: Planet): Habitability {
@@ -62,7 +85,7 @@ export class Hanger implements ShipSystem {
 
   private currentAction(): ObjectDetail[] {
     const state: ObjectDetail[] = [
-      `Colony Ships: ${this.systems["hanger"]["colony ship"]}`
+      `Colony Ships: ${this.colonyShips()}`
     ]
     if (this.systems["hanger"]["building"] === "repair") {
       state.push(
@@ -86,13 +109,17 @@ export class Hanger implements ShipSystem {
           action: () => this.repairShip()
         },
         {
-          name: "Provision Colony Ship",
-          hint: "Prepare a short-range vessel and supplies to colonize a habitable world (25% supplies)",
+          name: "Provision Colonization Fleet",
+          hint: "Prepare short-range vessels and supplies to colonize a habitable world\n(25% supplies, 10% fuel)",
           action: () => this.provisionColonyShip()
         });
     }
 
     return state;
+  }
+
+  private colonyShips() {
+    return this.systems["hanger"]["colony ship"];
   }
 
   private provisionColonyShip(): void {
@@ -122,7 +149,7 @@ export class Hanger implements ShipSystem {
   }
 
   hint(): string {
-    return "Automatic provisioning and repair facilities. Use to ready installations, support ships and repair the ship."
+    return "Automatic provisioning and repair facilities. Use to repair the ship or build short-range ships and orbitals."
   }
 
 }

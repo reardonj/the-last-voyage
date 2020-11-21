@@ -1,5 +1,5 @@
 import GameState, { Events, Habitability, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, sumHabitabilities } from "./GameState";
-import { Atmosphere, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
+import { Atmosphere, civilizationHint, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
 export default class Scanner implements ShipSystem {
   public needsAttention: boolean = this.isScanTargetAvailable();
@@ -94,11 +94,13 @@ export default class Scanner implements ShipSystem {
     }
 
     if (scannedCivilization(scanTime, info.definition)) {
-      if (info.definition.civilization) {
-        info.details.push(
-          `Technology: ${info.definition.civilization[0]}`,
-          `Population (est.): ${info.definition.civilization[1].toFixed(0)} mil`
-        );
+      if (info.definition.civilizations) {
+        info.details.push("Civilizations:");
+        for (const civ of info.definition.civilizations ?? []) {
+          info.details.push("- " + civilizationHint(civ))
+        }
+      } else {
+        info.details.push("Civilizations: None");
       }
       scansComplete++;
     }
@@ -109,7 +111,7 @@ export default class Scanner implements ShipSystem {
       info.details.push("(scan complete)");
       info.details.push(this.showHabitability(info.definition));
     } else {
-      info.details.push("(scan incomplete)");
+      info.details.push(this.createScanAction(info.definition));
     }
 
   }
@@ -187,14 +189,13 @@ export default class Scanner implements ShipSystem {
       + (durationRelativeMinutes / timeScaling);
 
     target.details["scanner"] = nextScanTime;
-    if (
-      this.isScanComplete(nextScanTime, target)
-    ) {
+    if (this.isScanComplete(nextScanTime, target)) {
       this.stopScanning();
       const updateScannerInfo = this.info();
       updateScannerInfo.onlyUpdate = true;
       const updatePlanetInfo = planetInfo(target);
       updatePlanetInfo.onlyUpdate = true;
+      target.civilizations?.forEach(x => x.scanned = true);
 
       this.state.emit(Events.ShowInfo, updateScannerInfo);
       this.state.emit(Events.ShowInfo, updatePlanetInfo);
@@ -274,28 +275,25 @@ function scannedTemperature(scanTime: number, temperature?: Temperature): boolea
 }
 
 function scannedBiosphere(scanTime: number, definition: Planet): boolean {
-  return scanTime > (definition.civilization ? 60 * 24 * 7 : 60 * 24 * 14);
+  return scanTime > (definition.civilizations ? 60 * 24 * 7 : 60 * 24 * 14);
 }
 
 function scannedCivilization(scanTime: number, definition: Planet): boolean {
-  let time: number;
-  if (!definition.civilization) {
-    time = 60 * 24 * 21;
-  } else {
-    switch (definition.civilization[0]) {
-      case "Neolithic":
-        time = 60 * 24 * 21;
-        break;
-      case "Pre-industrial":
-        time = 60 * 24 * 14;
-        break;
-      case "Industrial":
-        time = 60 * 24;
-        break;
-      case "Intrastellar":
-      case "Interstellar":
-        time = 0;
-    }
+  let time = 60 * 24 * 21;
+  if (definition.civilizations) {
+    time = definition.civilizations.reduce((min, civ) => {
+      switch (civ.technology) {
+        case "Neolithic":
+          return 60 * 24 * 21;
+        case "Pre-industrial":
+          return 60 * 24 * 14;
+        case "Industrial":
+          return 60 * 24;
+        case "Intrastellar":
+        case "Interstellar":
+          return 0;
+      }
+    }, time);
   }
   return scanTime > time;
 }

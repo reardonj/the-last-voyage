@@ -27,8 +27,22 @@ export type Planet = {
   biosphere?: Biosphere,
 
   /** Technology level and population (millions) */
-  civilization?: [IntelligenceSigns, number]
+  civilizations?: [Civilization]
   details: { [id: string]: any }
+}
+
+export type Civilization = {
+  technology: TechLevel
+  population: number
+  species: string
+  /** The time, in earth minutes from launch, when the civilization began, or 0 for pre-existing ones. */
+  established: number
+  scanned: boolean
+}
+
+export function civilizationHint(civ: Civilization): string {
+  const popDecimals = civ.population < 1000000 ? 2 : 0;
+  return `${civ.technology}, ${civ.species}, population approx. ${(civ.population / 1000000).toFixed(popDecimals)} million`
 }
 
 export function relativeEarthGravity(planet: Planet) {
@@ -89,7 +103,7 @@ export type Biosphere =
   "Miscible" |
   "Immiscible"
 
-export type IntelligenceSigns =
+export type TechLevel =
   "Neolithic" |
   "Pre-industrial" |
   "Industrial" |

@@ -41,7 +41,7 @@ export default class GameState implements SavedState {
         orientation: new Phaser.Math.Vector2(5, 3).angle(),
         position: [-40, 146]
       },
-      currentScene: ["solar-system", { name: "Ovid" }]
+      currentScene: ["solar-system", { name: "Sol" }]
     },
       transitionScene);
   }
@@ -125,6 +125,18 @@ export default class GameState implements SavedState {
       case "game-over":
         return null;
     }
+  }
+
+  isHabitable(planet: Planet): boolean {
+    const habitability = this.shipSystemObjects.reduce(
+      (acc, s) => sumHabitabilities(acc, s.isHabitable(planet)), <Habitability>{});
+
+    return (habitability.atmosphere &&
+      habitability.biosphere &&
+      habitability.composition &&
+      habitability.gravity &&
+      habitability.temperature)
+      ?? false;
   }
 
   /***
@@ -239,6 +251,11 @@ export default class GameState implements SavedState {
   useSupplies(amount: number) {
     this.supplies = clampStatusValue(this.supplies - amount);
     this.emit(Events.SuppliesChanged, this.supplies);
+  }
+
+  useFuel(amount: number) {
+    this.fuel = clampStatusValue(this.fuel - amount);
+    this.emit(Events.FuelChanged, this.fuel);
   }
 
   useIntegrity(amount: number) {

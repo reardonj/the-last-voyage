@@ -1,8 +1,8 @@
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
-import { Colours, Sprites } from "../Utilities";
+import Utilities, { Colours, Sprites, UI } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
-import { Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import { Civilization, civilizationHint, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene): void
@@ -239,6 +239,7 @@ class PlanetSprite implements ScalableObject {
   mass: number;
   orbit: Phaser.GameObjects.Graphics;
   sprite: Phaser.GameObjects.Sprite;
+  civilizations: { sprite: Phaser.GameObjects.Sprite, civ: Civilization, established: boolean, inView: boolean }[] = [];
   interactionObject: Phaser.GameObjects.GameObject;
 
   constructor(public definition: Planet, private sunMass: number) {
@@ -254,12 +255,54 @@ class PlanetSprite implements ScalableObject {
     this.orbit = scene.add.graphics().setAlpha(0.8);
     this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.SelectableTint);
     this.interactionObject = this.sprite;
+
+    this.createCivilizationSprites(scene);
   }
+
+  private createCivilizationSprites(scene: Phaser.Scene) {
+    const locations = [[1, 1], [1, 0], [0, 0], [0, 1]];
+    for (const civ of this.definition.civilizations ?? []) {
+      const pos = locations.pop();
+      if (!pos) {
+        Utilities.Log("Too many civilizations to display");
+      } else {
+        const sprite = scene.add.sprite(-10000, -10000, Sprites.Civilization)
+          .setOrigin(pos[0], pos[1])
+          .setTint(Colours.TextTint);
+
+        const state = <GameState>scene.scene.settings.data;
+        sprite.setInteractive({ useHandCursor: true });
+        UI.showHoverHint(sprite, state, () => this.hint());
+        sprite.on("pointerdown", () => state.emit(Events.ShowInfo, this.info()));
+        this.civilizations.push({ sprite, civ, established: false, inView: true });
+      }
+    }
+  }
+
+  private destroyCivilizationSprites() {
+    for (const civ of this.civilizations) {
+      civ.sprite.destroy();
+    }
+    this.civilizations = [];
+  }
+
 
   update(scene: Phaser.Scene) {
     const minutes = gameState(scene).earthTime;
     this.position = this.positionAt(minutes);
     this.sprite.setPosition(this.position.x, this.position.y);
+
+    if (this.civilizations.length != (this.definition.civilizations?.length ?? 0)) {
+      this.destroyCivilizationSprites();
+      this.createCivilizationSprites(scene);
+    }
+
+    for (const civ of this.civilizations) {
+      civ.established = civ.civ.established <= minutes;
+      civ.sprite
+        .setVisible(civ.established && this.sprite.visible)
+        .setPosition(this.position.x, this.position.y)
+    }
   }
 
   setScale(scale: number) {
@@ -271,6 +314,10 @@ class PlanetSprite implements ScalableObject {
     const isVisible = scale < 100 && this.definition.orbitalRadius / scale > 30;
     this.orbit.setVisible(isVisible);
     this.sprite.setVisible(isVisible);
+    for (const civ of this.civilizations) {
+      civ.inView = isVisible;
+      civ.sprite.setScale(scale).setVisible(civ.established && civ.inView);
+    }
   }
 
   hint() {
