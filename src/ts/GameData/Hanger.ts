@@ -1,5 +1,5 @@
 import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, StatusMaxValue, sumHabitabilities } from "./GameState";
-import { Planet } from "./SolarSystemObjects";
+import { Civilization, Planet, planetInfo, planetPositionAt } from "./SolarSystemObjects";
 
 export class Hanger implements ShipSystem {
   name: string = "Fabricators";
@@ -9,7 +9,7 @@ export class Hanger implements ShipSystem {
   constructor(private state: GameState) {
     this.systems = state.shipSystems;
     if (!this.systems["hanger"]) {
-      this.systems["hanger"] = { "building": undefined, "colony ship": 0 };
+      this.systems["hanger"] = { "building": undefined, "colonization fleet": 0 };
     }
   }
 
@@ -61,14 +61,51 @@ export class Hanger implements ShipSystem {
 
     if (this.colonyShips() > 0)
       info.details.push({
-        name: "Launch Colony Ship",
-        hint: `Send a ship to 100,000 colonists to ${planet.name}`,
+        name: "Launch Colonization Fleet",
+        hint: `Send 100,000 colonists to ${planet.name}`,
         action: () => this.launchColonyShip(planet)
       });
   }
 
   launchColonyShip(planet: Planet): void {
+    const passengers = Math.min(100000, this.state.passengers);
 
+    if (passengers <= 0) {
+      this.state.emit(Events.Warning, "Warning: Cannot launch. No colonists available.");
+      return;
+    }
+
+    if (!this.systems["hanger"]["colonization fleet"]) {
+      this.state.emit(Events.Warning, "Error: No ships available.");
+      this.state.emit(Events.ShowInfo, planetInfo(planet))
+      return;
+    }
+
+    const establishTime = this.state.earthTime + 60 * 24 * 20;
+    const planetPosition = planetPositionAt(planet, this.state.currentSystem()!.solarMass(), establishTime);
+    const distance = planetPosition.distance(new Phaser.Math.Vector2(this.state.ship.position[0], this.state.ship.position[1]));
+    if (distance > 200) {
+      this.state.emit(Events.Warning, "Warning: Cannot launch. Destination too far.");
+      return;
+    }
+
+    this.systems["hanger"]["colonization fleet"]--;
+    this.state.usePassengers(passengers);
+    const newCiv: Civilization = {
+      established: establishTime,
+      population: passengers,
+      scanned: true,
+      species: "human",
+      technology: "Interstellar"
+    };
+    if (planet.civilizations) {
+      planet.civilizations.push(newCiv);
+    } else {
+      planet.civilizations = [newCiv];
+    }
+
+    this.state.emit(Events.LaunchColonizationFleet, planet)
+    this.state.emit(Events.ShowInfo, planetInfo(planet))
   }
 
   isHabitable(planet: Planet): Habitability {
@@ -85,7 +122,7 @@ export class Hanger implements ShipSystem {
 
   private currentAction(): ObjectDetail[] {
     const state: ObjectDetail[] = [
-      `Colony Ships: ${this.colonyShips()}`
+      `Colonization Fleets: ${this.colonyShips()}`
     ]
     if (this.systems["hanger"]["building"] === "repair") {
       state.push(
@@ -119,7 +156,7 @@ export class Hanger implements ShipSystem {
   }
 
   private colonyShips() {
-    return this.systems["hanger"]["colony ship"];
+    return this.systems["hanger"]["colonization fleet"];
   }
 
   private provisionColonyShip(): void {
@@ -127,7 +164,7 @@ export class Hanger implements ShipSystem {
     if (this.state.supplies < supplies) {
       this.state.emit(Events.Warning, "Insufficient supplies.");
     } else {
-      this.systems["hanger"]["building"] = "colony ship";
+      this.systems["hanger"]["building"] = "colonization fleet";
       this.systems["hanger"]["remaining"] = supplies;
       this.refreshInfo();
     }

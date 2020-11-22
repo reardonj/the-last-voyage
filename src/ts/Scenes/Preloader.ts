@@ -12,6 +12,7 @@ export default class Preloader extends Phaser.Scene {
 
     this.load.path = "assets/";
     this.load.image(Sprites.Civilization, "civilization.png");
+    this.load.image(Sprites.Dot, "dot.png");
     this.load.image(Sprites.Sun, "sun.png");
     this.load.image(Sprites.Planet, "planet.png");
     this.load.image(Sprites.Ship, "ship.png");

@@ -11,8 +11,12 @@ export interface ScalableObject extends GravityWell, InteractiveObject {
   readonly interactionObject: Phaser.GameObjects.GameObject
 }
 
-export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition }): ScalableObject[] {
-  const objects: ScalableObject[] = [];
+export type NavObject = { definition?: SolarSystemObject, scalable: ScalableObject };
+
+export function createGameObjects(system: SolarSystemDefinition, others: { [id: string]: SolarSystemDefinition })
+  : NavObject[] {
+
+  const objects: NavObject[] = [];
   // technically gets the mass of all suns, but that's fine
   const sunMass = Object.keys(system.objects)
     .filter(x => system.objects[x].type == "sun")
@@ -23,19 +27,19 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
     const object = system.objects[key];
     switch (object.type) {
       case "sun":
-        objects.push(new SunSprite(object));
+        objects.push({ definition: object, scalable: new SunSprite(object) });
         break;
       case "planet":
         const sprite = new PlanetSprite(object, sunMass);
         planets.push(sprite);
-        objects.push(sprite);
+        objects.push({ definition: object, scalable: sprite });
         break;
     }
   }
-  objects.unshift(new InvisibleObjectIndicator(planets));
+  objects.unshift({ scalable: new InvisibleObjectIndicator(planets) });
 
   for (let id in others) {
-    objects.push(new InterstellarObject(system, others[id]));
+    objects.push({ scalable: new InterstellarObject(system, others[id]) });
   }
   return objects;
 }

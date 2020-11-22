@@ -49,6 +49,7 @@ export const Colours = {
 
 export const Sprites = {
   Civilization: "civilization",
+  Dot: "dot",
   Planet: "planet",
   Ship: "ship",
   Sun: "sun",

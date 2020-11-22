@@ -41,7 +41,7 @@ export default class GameState implements SavedState {
         orientation: new Phaser.Math.Vector2(5, 3).angle(),
         position: [-40, 146]
       },
-      currentScene: ["solar-system", { name: "Sol" }]
+      currentScene: ["solar-system", { name: "Ovid" }]
     },
       transitionScene);
   }
@@ -90,6 +90,10 @@ export default class GameState implements SavedState {
 
   watch(event: string, handler: Function, ctx: any) {
     this.eventSource.addListener(event, handler, ctx)
+  }
+
+  unwatch(event: string, ctx: any) {
+    this.eventSource.removeListener(event, undefined, ctx)
   }
 
   currentSceneName(): string {
@@ -256,6 +260,11 @@ export default class GameState implements SavedState {
   useFuel(amount: number) {
     this.fuel = clampStatusValue(this.fuel - amount);
     this.emit(Events.FuelChanged, this.fuel);
+  }
+
+  usePassengers(amount: number) {
+    this.passengers = clampStatusValue(this.passengers - amount);
+    this.emit(Events.PassengersChanged, this.passengers);
   }
 
   useIntegrity(amount: number) {
@@ -442,7 +451,12 @@ export const Events = {
   /**
    * Show a warning message to the player. The message is passed as the event parameter
    */
-  Warning: "warning"
+  Warning: "warning",
+
+  /**
+   * A colony fleet has been launched. The target Planet is passed as the event parameter
+   */
+  LaunchColonizationFleet: "launchColonyFleet"
 }
 
 export interface TimePassedEvent {

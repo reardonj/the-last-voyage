@@ -3,10 +3,11 @@ import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
 import GameState, { arrayToPosition, Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Resources, Sprites, UI } from "../Utilities";
-import { createGameObjects, createZoomLevels, ScalableObject } from "../GameData/NavigationObjects";
+import { createGameObjects, createZoomLevels, NavObject, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import SavedGames from "../GameData/SavedGames";
+import { Planet, planetPositionAt } from "../GameData/SolarSystemObjects";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
@@ -33,10 +34,11 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private predictionSpacing = 50;
   private frame = 0;
   private daysPassed: number;
-  private zoomLevels: number[] = [];
-  private orbitalBodies: ScalableObject[];
+  private orbitalBodies: NavObject[];
   orientation: number;
   farthestOrbit: number;
+  launchEmitter: GameObjects.Particles.ParticleEmitter;
+  launchDestination: GameObjects.Particles.GravityWell;
 
   public preload(): void {
   }
@@ -49,7 +51,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }, this);
 
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
-    this.events.on('destroy', () => this.game.events.removeListener("step", undefined, this));
+    this.events.on('destroy', () => {
+      this.game.events.removeListener("step", undefined, this);
+      state.unwatch(Events.LaunchColonizationFleet, this);
+    });
 
     this.add.rectangle(0, 0, 1000000, 1000000, 0x000000, 1)
       .setInteractive(true, () => true)
@@ -58,7 +63,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.farthestOrbit = state.currentSystem()!.farthestOrbit();
     this.orbitalBodies = createGameObjects(state.currentSystem()!, state.worlds);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
-    this.sim = new GravitySimulation(this.orbitalBodies);
+    this.sim = new GravitySimulation(this.orbitalBodies.map(x => x.scalable));
 
     this.position = arrayToPosition(state.ship.position);
     this.nextVelocity = arrayToPosition(state.ship.velocity);
@@ -67,17 +72,34 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
 
+    // Set up position predictions
     this.prediction = [];
     for (let i = 0; i < 20; i++) {
-      const p = this.add.circle(50, 50, 1, 0xffffaa).setAlpha(1 - 0.8 * (i / 20));
+      const p = this.add.circle(50, 50, 1, 0xffffaa);
       this.prediction.push(p);
       this.toScale.push(p);
     }
+
+    // Set up ship
     this.currentPosition = this.add.image(this.position.x, this.position.y, Sprites.Ship).setTint(Colours.TextTint);
     this.toScale.push(this.currentPosition);
     UI.showHoverHint(this.currentPosition, this.gameState(), () => Resources.ShipName);
 
+    // Set up launch particles
+    const particleSource = this.add.particles(Sprites.Dot);
+    this.launchEmitter = particleSource.createEmitter({
+      lifespan: 2000,
+      follow: this.currentPosition,
+      frequency: -1,
+      quantity: 5,
+      moveToX: 10,
+      moveToY: 10,
+      emitZone: { source: new Phaser.Geom.Rectangle(-5, -5, 10, 10) }
+    });
+
     this.updateScaledObjects(true);
+
+    state.watch(Events.LaunchColonizationFleet, this.launchColonizationFleet, this);
 
     SavedGames.saveGame(state);
     this.time.addEvent({
@@ -88,11 +110,33 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     })
   }
 
-  private setupScalableObject(obj: ScalableObject) {
-    obj.create(this);
-    obj.interactionObject.setInteractive({ useHandCursor: true });
-    obj.interactionObject.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, obj.info()));
-    UI.showHoverHint(obj.interactionObject, this.gameState(), () => obj.hint());
+  launchColonizationFleet(planet: Planet) {
+    const civs = planet.civilizations;
+    const planetPosition = this.orbitalBodies.find(x => x.definition === planet);
+    if (planetPosition && civs) {
+      const civ = civs[civs.length - 1];
+      const time = (civ.established - this.gameState().earthTime - 60 * 24) / (1 / 12 * 60 * 24 * 60 / 1000);
+
+      const foundingPosition = planetPosition.scalable.positionAt(civ.established - 60 * 24);
+
+      this.launchEmitter.setEmitterAngle({
+        min: 360 * this.orientation / (2 * Math.PI) - 90,
+        max: 360 * this.orientation / (2 * Math.PI) + 90
+      });
+      this.launchEmitter.setLifespan(time);
+      this.launchEmitter.moveTo = true;
+      this.launchEmitter.moveToX.loadConfig({ moveToX: { min: foundingPosition.x - 8, max: foundingPosition.x + 8 } });
+      this.launchEmitter.moveToY.loadConfig({ moveToY: { min: foundingPosition.y - 8, max: foundingPosition.y + 8 } });
+      this.launchEmitter.emitParticle();
+    }
+
+  }
+
+  private setupScalableObject(obj: NavObject) {
+    obj.scalable.create(this);
+    obj.scalable.interactionObject.setInteractive({ useHandCursor: true });
+    obj.scalable.interactionObject.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, obj.scalable.info()));
+    UI.showHoverHint(obj.scalable.interactionObject, this.gameState(), () => obj.scalable.hint());
   }
 
   public update(time: number, delta: number) {
@@ -108,7 +152,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
         "Select a destination, or return to the current system.")
     }
     this.updateScaledObjects();
-    this.orbitalBodies.forEach(x => x.update(this));
+    this.orbitalBodies.forEach(x => x.scalable.update(this));
 
   }
 
@@ -135,8 +179,9 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       p.setScale(scaleFactor);
     }
     for (let p of this.orbitalBodies) {
-      p.setScale(scaleFactor);
+      p.scalable.setScale(scaleFactor);
     }
+    this.launchEmitter.setScale(scaleFactor);
 
     if (scale == 0.001) {
       this.gameState().emit(
