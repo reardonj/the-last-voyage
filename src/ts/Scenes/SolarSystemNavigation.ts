@@ -33,12 +33,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   private nextPredictions: [pos: M.Vector2, vel: M.Vector2, acc: M.Vector2][];
   private predictionSpacing = 50;
   private frame = 0;
-  private daysPassed: number;
+  private timePassed: number = 0;
   private orbitalBodies: NavObject[];
   orientation: number;
   farthestOrbit: number;
   launchEmitter: GameObjects.Particles.ParticleEmitter;
   launchDestination: GameObjects.Particles.GravityWell;
+
 
   public preload(): void {
   }
@@ -119,10 +120,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
       const foundingPosition = planetPosition.scalable.positionAt(civ.established - 60 * 24);
 
-      this.launchEmitter.setEmitterAngle({
-        min: 360 * this.orientation / (2 * Math.PI) - 90,
-        max: 360 * this.orientation / (2 * Math.PI) + 90
-      });
+      this.launchEmitter.setDeathZone({ source: new Phaser.Geom.Circle(foundingPosition.x, foundingPosition.y, 10) });
       this.launchEmitter.setLifespan(time);
       this.launchEmitter.moveTo = true;
       this.launchEmitter.moveToX.loadConfig({ moveToX: { min: foundingPosition.x - 8, max: foundingPosition.x + 8 } });
@@ -145,7 +143,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
 
     if (this.cameras.main.zoom > 0.01) {
-      this.updateShip();
+      this.updateShip(delta);
     } else {
       this.gameState().emit(
         Events.UpdateStatus,
@@ -195,11 +193,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     return scale;
   }
 
-  private updateShip(): number {
-    const daysPassed = 1 / 12;
+  private updateShip(deltaMs: number): number {
+    const daysPassed = 7.2 / 60 / 24 * deltaMs;
     const needsUpdate =
       !this.nextPredictions ||
-      this.daysPassed != daysPassed ||
       this.cursors.up?.isDown ||
       this.cursors.down?.isDown ||
       this.cursors.right?.isDown ||
@@ -216,14 +213,15 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       acc.add(ownAcc);
       this.path = this.sim.calculate(
         this.gameState().earthTime,
-        daysPassed,
+        1 / 12,
         new M.Vector2(this.position.x, this.position.y),
         this.nextVelocity,
         acc.clone());
-      this.daysPassed = daysPassed;
+      this.timePassed = 0;
       this.resetPredictions();
     }
     else {
+      this.timePassed += deltaMs;
       this.updatePredictions();
     }
 
@@ -269,10 +267,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   }
 
   private updatePredictions() {
-    this.nextPredictions.push(this.path.next().value);
-    this.nextPredictions.shift();
 
-    this.renderPredictions();
+    while (this.timePassed >= 1000 / 60) {
+      this.nextPredictions.push(this.path.next().value);
+      this.nextPredictions.shift();
+      this.timePassed -= 1000 / 60;
+      this.renderPredictions();
+    }
+
   }
 
   private resetPredictions() {

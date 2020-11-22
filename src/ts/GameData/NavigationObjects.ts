@@ -304,6 +304,7 @@ class PlanetSprite implements ScalableObject {
     for (const civ of this.civilizations) {
       civ.established = civ.civ.established <= minutes;
       civ.sprite
+        .setAlpha(Phaser.Math.Clamp((minutes - civ.civ.established) / 10000, 0, 1))
         .setVisible(civ.established && this.sprite.visible)
         .setPosition(this.position.x, this.position.y)
     }
