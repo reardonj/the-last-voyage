@@ -122,6 +122,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
       this.launchEmitter.setDeathZone({ source: new Phaser.Geom.Circle(foundingPosition.x, foundingPosition.y, 10) });
       this.launchEmitter.setLifespan(time);
+      this.launchEmitter.setTint(Colours.AllyTint)
       this.launchEmitter.moveTo = true;
       this.launchEmitter.moveToX.loadConfig({ moveToX: { min: foundingPosition.x - 8, max: foundingPosition.x + 8 } });
       this.launchEmitter.moveToY.loadConfig({ moveToY: { min: foundingPosition.y - 8, max: foundingPosition.y + 8 } });

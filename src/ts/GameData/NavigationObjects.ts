@@ -257,7 +257,7 @@ class PlanetSprite implements ScalableObject {
 
   create(scene: Phaser.Scene) {
     this.orbit = scene.add.graphics().setAlpha(0.8);
-    this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.SelectableTint);
+    this.sprite = scene.add.sprite(-100000, -100000, Sprites.Planet).setTint(Colours.NeutralTint);
     this.interactionObject = this.sprite;
 
     this.createCivilizationSprites(scene);
@@ -272,7 +272,7 @@ class PlanetSprite implements ScalableObject {
       } else {
         const sprite = scene.add.sprite(-10000, -10000, Sprites.Civilization)
           .setOrigin(pos[0], pos[1])
-          .setTint(Colours.TextTint);
+          .setTint(Colours.AllyTint);
 
         const state = <GameState>scene.scene.settings.data;
         sprite.setInteractive({ useHandCursor: true });
