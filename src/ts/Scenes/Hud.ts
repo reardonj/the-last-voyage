@@ -274,6 +274,7 @@ export default class Hud extends Phaser.Scene {
         onCompleteScope: this
       })
     } else {
+      this.showHoverHint(null);
       this.currentInfo = info;
       this.currentInfo.onlyUpdate = false;
       this.infoTitle.setText(info.name);

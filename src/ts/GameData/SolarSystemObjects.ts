@@ -40,23 +40,22 @@ export type Civilization = {
   scanned: boolean
 }
 
-export function civilizationHint(civ: Civilization): string {
-  const popDecimals = civ.population < 1000000 ? 2 : 0;
-  return `${civ.technology}, ${civ.species}, population approx. ${(civ.population / 1000000).toFixed(popDecimals)} million`
-}
 
 export function relativeEarthGravity(planet: Planet) {
   return (planet.mass / 59.72) / (planet.equatorialRadius * planet.equatorialRadius);
 }
 
 export function planetPositionAt(planet: Planet, sunMass: number, earthMinutes: number): Phaser.Math.Vector2 {
-  const orbitalPeriod =
-    planet.orbitalSpeedMultiplier *
-    24 * 60 * AstronomicalMath.orbitalPeriod(planet.orbitalRadius, sunMass);
+  const period = orbitalPeriod(planet, sunMass);
 
   return new Phaser.Math.Vector2().setToPolar(
-    planet.startAngle + 2 * Math.PI * (earthMinutes / orbitalPeriod),
+    planet.startAngle + 2 * Math.PI * (earthMinutes / period),
     planet.orbitalRadius);
+}
+
+export function orbitalPeriod(planet: Planet, sunMass: number) {
+  return planet.orbitalSpeedMultiplier *
+    24 * 60 * AstronomicalMath.orbitalPeriod(planet.orbitalRadius, sunMass);
 }
 
 export function planetInfo(planet: Planet): ObjectInfo {

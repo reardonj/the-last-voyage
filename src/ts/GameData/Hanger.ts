@@ -105,7 +105,7 @@ export class Hanger implements ShipSystem {
     }
 
     this.state.emit(Events.LaunchColonizationFleet, planet)
-    this.state.emit(Events.ShowInfo, planetInfo(planet))
+    this.state.emit(Events.ShowInfo, null)
   }
 
   isHabitable(planet: Planet): Habitability {

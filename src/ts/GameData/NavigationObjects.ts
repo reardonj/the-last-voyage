@@ -2,7 +2,7 @@ import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import Utilities, { Colours, Sprites, UI } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
-import { Civilization, civilizationHint, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import { Civilization, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene): void

@@ -1,5 +1,6 @@
-import GameState, { Events, Habitability, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, sumHabitabilities } from "./GameState";
-import { Atmosphere, civilizationHint, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
+import { civilizationHint, civilizationInfo } from "./Civilization";
+import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, sumHabitabilities } from "./GameState";
+import { Atmosphere, Civilization, orbitalPeriod, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
 export default class Scanner implements ShipSystem {
   public needsAttention: boolean = this.isScanTargetAvailable();
@@ -64,56 +65,69 @@ export default class Scanner implements ShipSystem {
   }
 
   transformInfo(info: ObjectInfo): void {
+    const planet = info.definition;
+    const system = this.state.currentSystem();
     if (
-      !info.definition ||
-      info.definition instanceof SolarSystemDefinition ||
-      info.definition.type != "planet"
+      !system ||
+      !planet ||
+      planet instanceof SolarSystemDefinition ||
+      planet.type != "planet"
     ) {
       return;
     }
 
-    const scanTime = this.scanTime(info.definition);
+    const scanTime = this.scanTime(planet);
     let scansComplete = 0;
+    const newDetails: ObjectDetail[] = [];
 
-    info.details.push(`Surface Gravity: ${relativeEarthGravity(info.definition).toFixed(2)} g`)
+    newDetails.push(`Orbital Period: ${Math.abs(orbitalPeriod(planet, system.solarMass()) / 365 / 24 / 60).toFixed(2)} y`)
+    newDetails.push(`Surface Gravity: ${relativeEarthGravity(planet).toFixed(2)} g`)
 
-    if (scannedAtmosphere(scanTime, info.definition.atmosphere)) {
-      const atmosphere = info.definition.atmosphere;
-      info.details.push([`Atmosphere: ${atmosphere ?? "None"}`, () => atmosphereHint(atmosphere)]);
+    if (scannedAtmosphere(scanTime, planet.atmosphere)) {
+      const atmosphere = planet.atmosphere;
+      newDetails.push([`Atmosphere: ${atmosphere ?? "None"}`, () => atmosphereHint(atmosphere)]);
       scansComplete++;
     }
 
-    if (scannedTemperature(scanTime, info.definition.temperature)) {
-      info.details.push(`Temperature: ${info.definition.temperature ?? "Variable Extreme"}`);
+    if (scannedTemperature(scanTime, planet.temperature)) {
+      newDetails.push(`Temperature: ${planet.temperature ?? "Variable Extreme"}`);
       scansComplete++;
     }
 
-    if (scannedBiosphere(scanTime, info.definition)) {
-      info.details.push(`Biosphere: ${info.definition.biosphere ?? "None"}`);
+    if (scannedBiosphere(scanTime, planet)) {
+      newDetails.push(`Biosphere: ${planet.biosphere ?? "None"}`);
       scansComplete++;
     }
 
-    if (scannedCivilization(scanTime, info.definition)) {
-      if (info.definition.civilizations) {
-        info.details.push("Civilizations:");
-        for (const civ of info.definition.civilizations ?? []) {
-          info.details.push("- " + civilizationHint(civ))
+    if (scannedCivilization(scanTime, planet)) {
+      const visibleCivs = (planet.civilizations ?? [])
+        .filter((x: Civilization) => x.established <= this.state.earthTime);
+      if (visibleCivs.length > 0) {
+        newDetails.push("Civilizations:");
+        for (const civ of visibleCivs) {
+          newDetails.push({
+            name: civ.species,
+            hint: civilizationHint(civ),
+            action: g => g.emit(Events.ShowInfo, civilizationInfo(civ, planet))
+          })
         }
       } else {
-        info.details.push("Civilizations: None");
+        newDetails.push("Civilizations: None");
       }
       scansComplete++;
     }
 
-    if (this.systems["scanner"]["scanning"] === info.definition.name) {
-      info.details.push("(scan in progress)");
+    if (this.systems["scanner"]["scanning"] === planet.name) {
+      newDetails.unshift("Scan: In progress");
     } else if (scansComplete == 4) {
-      info.details.push("(scan complete)");
-      info.details.push(this.showHabitability(info.definition));
+      newDetails.unshift(this.showHabitability(planet));
+      newDetails.unshift("Scan: Complete");
     } else {
-      info.details.push(this.createScanAction(info.definition));
+      newDetails.unshift("Scan: ---");
+      newDetails.push(this.createScanAction(planet));
     }
 
+    info.details.push(...newDetails);
   }
 
   private showHabitability(planet: Planet): (string | [string, () => string]) {
