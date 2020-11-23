@@ -4,27 +4,6 @@ import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 const LeftMargin = 8;
 const StatusBars = 20;
 
-function createTimeString(time: number, minutesPerTick: number): string {
-  const years = Math.floor(time / 524160);
-  time = time % 524160;
-  const weeks = 1 + Math.floor(time / 10080);
-  time = time % 10080;
-  const days = 1 + Math.floor(time / 1440);
-  time = time % 1440;
-  const hours = pad(time / 60, 2);
-  const minutes = time % 60;
-
-  if (minutesPerTick < 1) {
-    return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)} ${hours}:${pad(minutes, 2)}`;
-  } else {
-    return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)}`;
-  }
-}
-
-function pad(num: number, length: number) {
-  return Math.floor(num).toFixed(0).padStart(length, "0");
-}
-
 type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, warning: Phaser.Tweens.Tween, running: boolean];
 
 type WarningItem = { text: Phaser.GameObjects.BitmapText; anim: Phaser.Tweens.Tween | null; };
@@ -216,8 +195,8 @@ export default class Hud extends Phaser.Scene {
   updateTime(state: TimePassedEvent) {
     this.durationText.setText(
       `${Resources.Hud.MissionDuration}: ` +
-      `${createTimeString(state.earth, state.minutesPerTick)} ${Resources.Hud.AbsoluteDuration} / ` +
-      `${createTimeString(state.relative, state.minutesPerTick)} ${Resources.Hud.RelativeDuration}`);
+      `${UI.createTimeString(state.earth, state.minutesPerTick, 1)} ${Resources.Hud.AbsoluteDuration} / ` +
+      `${UI.createTimeString(state.relative, state.minutesPerTick, 0)} ${Resources.Hud.RelativeDuration}`);
     this.rightAlign(this.durationText, LeftMargin);
   }
 

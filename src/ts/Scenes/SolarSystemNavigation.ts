@@ -120,7 +120,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
       const foundingPosition = planetPosition.scalable.positionAt(civ.established - 60 * 24);
 
-      this.launchEmitter.setDeathZone({ source: new Phaser.Geom.Circle(foundingPosition.x, foundingPosition.y, 10) });
+      this.launchEmitter.setDeathZone({ source: new Phaser.Geom.Circle(foundingPosition.x, foundingPosition.y, 8) });
       this.launchEmitter.setLifespan(time);
       this.launchEmitter.setTint(Colours.AllyTint)
       this.launchEmitter.moveTo = true;

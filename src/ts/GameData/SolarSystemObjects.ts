@@ -31,6 +31,10 @@ export type Planet = {
   details: { [id: string]: any }
 }
 
+export function isPlanet(obj: SolarSystemObject): obj is Planet {
+  return obj.type === "planet"
+}
+
 export type Civilization = {
   technology: TechLevel
   population: number
@@ -38,6 +42,9 @@ export type Civilization = {
   /** The time, in earth minutes from launch, when the civilization began, or 0 for pre-existing ones. */
   established: number
   scanned: boolean
+
+  /** Population growth rate in percent/year */
+  growthRate: number
 }
 
 

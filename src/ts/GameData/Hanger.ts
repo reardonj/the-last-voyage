@@ -1,3 +1,4 @@
+import { addCivilization } from "./Civilization";
 import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, StatusMaxValue, sumHabitabilities } from "./GameState";
 import { Civilization, Planet, planetInfo, planetPositionAt } from "./SolarSystemObjects";
 
@@ -96,14 +97,10 @@ export class Hanger implements ShipSystem {
       population: passengers,
       scanned: true,
       species: "human",
-      technology: "Interstellar"
+      technology: "Interstellar",
+      growthRate: 1.02
     };
-    if (planet.civilizations) {
-      planet.civilizations.push(newCiv);
-    } else {
-      planet.civilizations = [newCiv];
-    }
-
+    addCivilization(planet, newCiv);
     this.state.emit(Events.LaunchColonizationFleet, planet)
     this.state.emit(Events.ShowInfo, null)
   }
@@ -134,7 +131,7 @@ export class Hanger implements ShipSystem {
         });
     } else if (this.isBuilding()) {
       state.push([
-        `Building ${this.systems["hanger"]["building"]}`,
+        `Building: ${this.systems["hanger"]["building"]}`,
         () => `${(this.systems["hanger"]["remaining"] / 24 / 60).toFixed(0)} days remaining`
       ]);
     } else {

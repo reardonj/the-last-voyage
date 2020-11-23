@@ -1,4 +1,5 @@
 import GameState, { Events } from "./GameData/GameState";
+import { YearInMinutes } from "./Logic/Conversions";
 
 export default class Utilities {
   /**
@@ -32,6 +33,27 @@ export class UI {
     obj.setX((left + right) / 2 - obj.width / 2);
     return obj;
   }
+
+  public static createTimeString(time: number, minutesPerTick: number, offset: number): string {
+    const years = Math.floor(time / YearInMinutes);
+    time = time % YearInMinutes;
+    const weeks = offset + Math.floor(time / 10080);
+    time = time % 10080;
+    const days = offset + Math.floor(time / 1440);
+    time = time % 1440;
+    const hours = pad(time / 60, 2);
+    const minutes = time % 60;
+
+    if (minutesPerTick < 1) {
+      return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)} ${hours}:${pad(minutes, 2)}`;
+    } else {
+      return `${pad(years, 4)}-${pad(weeks, 2)}-${days.toFixed(0)}`;
+    }
+  }
+}
+
+function pad(num: number, length: number) {
+  return Math.floor(num).toFixed(0).padStart(length, "0");
 }
 
 export const Fonts = {

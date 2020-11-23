@@ -4,6 +4,7 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import { updateCivilizations } from "./Civilization";
 import { Hanger } from "./Hanger";
 import Scanner from "./Scanner";
 import { Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
@@ -32,7 +33,7 @@ export default class GameState implements SavedState {
       passengers: StatusMaxValue,
       integrity: StatusMaxValue,
       supplies: StatusMaxValue,
-      earthTime: 0,
+      earthTime: 4293394560,
       relativeTime: 0,
       systems: Worlds,
       shipSystems: {},
@@ -153,6 +154,13 @@ export default class GameState implements SavedState {
     durationEarthMinutes: number,
     durationRelativeMinutes: number
   ) {
+    updateCivilizations(this.systems, this, durationEarthMinutes);
+
+    this.shipTimeStep(durationEarthMinutes, durationRelativeMinutes, thrusterAcceleration, acceleration);
+    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
+  }
+
+  private shipTimeStep(durationEarthMinutes: number, durationRelativeMinutes: number, thrusterAcceleration: number, acceleration: number) {
     const previousIntegrity = this.integrity;
     this.shipSystemObjects.forEach(x => x.timeStep(durationEarthMinutes, durationRelativeMinutes));
 
@@ -179,7 +187,6 @@ export default class GameState implements SavedState {
 
     this.eventSource.emit(Events.IntegrityChanged, this.integrity);
     this.eventSource.emit(Events.FuelChanged, this.fuel);
-    this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
   }
 
   /**

@@ -47,7 +47,6 @@ export const Worlds: { name: string, position: number[], objects: SolarSystemObj
         atmosphere: "Toxic",
         temperature: "Warm",
         biosphere: "Remnant",
-        civilizations: [{ established: 0, population: 5, technology: "Interstellar", scanned: true, species: "human" }],
         details: { "scanner": 1000000 }
       },
       {
