@@ -3,6 +3,7 @@ import AstronomicalMath from "../Logic/AstronomicalMath";
 import Utilities, { Colours, Sprites, UI } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
 import { Civilization, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import { civilizationHint, civilizationInfo } from "./Civilization";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene): void
@@ -276,8 +277,8 @@ class PlanetSprite implements ScalableObject {
 
         const state = <GameState>scene.scene.settings.data;
         sprite.setInteractive({ useHandCursor: true });
-        UI.showHoverHint(sprite, state, () => this.hint());
-        sprite.on("pointerdown", () => state.emit(Events.ShowInfo, this.info()));
+        UI.showHoverHint(sprite, state, () => civilizationHint(civ));
+        sprite.on("pointerdown", () => state.emit(Events.ShowInfo, civilizationInfo(civ, this.definition)));
         this.civilizations.push({ sprite, civ, established: false, inView: true });
       }
     }

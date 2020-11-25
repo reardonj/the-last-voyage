@@ -37,6 +37,7 @@ export function isPlanet(obj: SolarSystemObject): obj is Planet {
 
 export type Civilization = {
   technology: TechLevel
+  techProgress: number
   population: number
   species: string
   /** The time, in earth minutes from launch, when the civilization began, or 0 for pre-existing ones. */
@@ -45,6 +46,15 @@ export type Civilization = {
 
   /** Population growth rate in percent/year */
   growthRate: number
+  events: CivilizationEvent[]
+}
+
+export type CivilizationEvent = {
+  ends: number
+  growthRateEffect: number
+  immediatePopulationEffect: number
+  immediateTechEffect: number
+  description: string
 }
 
 

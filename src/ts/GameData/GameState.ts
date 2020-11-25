@@ -1,4 +1,5 @@
 import AstronomicalMath from "../Logic/AstronomicalMath";
+import { YearInMinutes } from "../Logic/Conversions";
 import GameOver from "../Scenes/GameOver";
 import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
@@ -6,8 +7,9 @@ import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
 import { updateCivilizations } from "./Civilization";
 import { Hanger } from "./Hanger";
+import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
-import { Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
+import { Civilization, Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -26,6 +28,7 @@ export default class GameState implements SavedState {
   private eventSource: Phaser.Events.EventEmitter;
   nextScene: CurrentScene | null = null;
   shipSystemObjects: ShipSystem[];
+  lastSave = 0;
 
   static newGame(transitionScene: Transition) {
     return new GameState({
@@ -158,6 +161,12 @@ export default class GameState implements SavedState {
 
     this.shipTimeStep(durationEarthMinutes, durationRelativeMinutes, thrusterAcceleration, acceleration);
     this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
+
+    this.lastSave += durationEarthMinutes;
+    if (this.lastSave > YearInMinutes / 52 && this.currentScene[0] === "solar-system") {
+      SavedGames.saveGame(this);
+      this.lastSave = 0;
+    }
   }
 
   private shipTimeStep(durationEarthMinutes: number, durationRelativeMinutes: number, thrusterAcceleration: number, acceleration: number) {
@@ -280,7 +289,7 @@ export default class GameState implements SavedState {
 }
 
 export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
-  return (0.05 * thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
+  return (0.01 * thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
 }
 
 function clampStatusValue(value: number) {
@@ -463,7 +472,15 @@ export const Events = {
   /**
    * A colony fleet has been launched. The target Planet is passed as the event parameter
    */
-  LaunchColonizationFleet: "launchColonyFleet"
+  LaunchColonizationFleet: "launchColonyFleet",
+
+  /** A civilization has achieved an interstellar launch. The event parameter is an InterstellarLaunch */
+  InterstellarLaunch: "interstellarLaunch"
+}
+
+export type InterstellarLaunch = {
+  civilization: Civilization,
+  time: number
 }
 
 export interface TimePassedEvent {

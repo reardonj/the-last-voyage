@@ -280,6 +280,55 @@ export const Worlds: { name: string, position: number[], objects: SolarSystemObj
         details: {}
       }
     ]
+  },
+  // Fix. Currently Celestial clone
+  {
+    name: "Valhalla",
+    position: [-20, -16],
+    objects: [
+      {
+        type: "sun",
+        name: "Dagr",
+        mass: 24000000,
+        details: {}
+      },
+      {
+        type: "planet",
+        name: "alpha-Valhalla",
+        mass: 8,
+        orbitalRadius: 34,
+        equatorialRadius: 0.2,
+        startAngle: 7,
+        orbitalSpeedMultiplier: 1,
+        composition: "Rocky",
+        temperature: "Molten",
+        details: {}
+      },
+      {
+        type: "planet",
+        name: "beta-Valhalla",
+        mass: 57,
+        orbitalRadius: 150,
+        equatorialRadius: 0.99,
+        startAngle: 7,
+        orbitalSpeedMultiplier: 1,
+        composition: "Rocky",
+        temperature: "Warm",
+        biosphere: "Miscible",
+        details: {}
+      },
+      {
+        type: "planet",
+        name: "gamma-Valhalla",
+        mass: 20300,
+        orbitalRadius: 1821,
+        equatorialRadius: 9.8,
+        startAngle: 2,
+        orbitalSpeedMultiplier: 1,
+        composition: "Gas Giant",
+        details: {}
+      }
+    ]
   }
 ]
 

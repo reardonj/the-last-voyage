@@ -95,10 +95,12 @@ export class Hanger implements ShipSystem {
     const newCiv: Civilization = {
       established: establishTime,
       population: passengers,
+      techProgress: 0,
       scanned: true,
       species: "human",
-      technology: "Interstellar",
-      growthRate: 1.02
+      technology: "Industrial",
+      growthRate: 1.02,
+      events: []
     };
     addCivilization(planet, newCiv);
     this.state.emit(Events.LaunchColonizationFleet, planet)

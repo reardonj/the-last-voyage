@@ -102,13 +102,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     state.watch(Events.LaunchColonizationFleet, this.launchColonizationFleet, this);
 
-    SavedGames.saveGame(state);
-    this.time.addEvent({
-      delay: 1000,
-      loop: true,
-      callback: () => SavedGames.saveGame(state),
-      callbackScope: this
-    })
   }
 
   launchColonizationFleet(planet: Planet) {
