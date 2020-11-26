@@ -1,6 +1,6 @@
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { YearInMinutes } from "../Logic/Conversions";
-import GameState, { Events, Habitability, InterstellarLaunch, ObjectInfo, ShipSystem } from "./GameState";
+import GameState, { Alert, Events, Habitability, InterstellarLaunch, ObjectInfo, ShipSystem } from "./GameState";
 import { Planet, SolarSystem } from "./SolarSystemObjects";
 
 export class Mission implements ShipSystem {
@@ -34,7 +34,7 @@ export class Mission implements ShipSystem {
 
     // Only check while inside the system proper
     const sunDist = AstronomicalMath.distance(this.state.ship.position, [0, 0]);
-    if (sunDist > 5000) {
+    if (sunDist > 4000) {
       return;
     }
 
@@ -43,7 +43,35 @@ export class Mission implements ShipSystem {
       const distance = AstronomicalMath.distance(launch.system.position, system.position);
       const yearsPast = currentYear - launch.time;
       if (yearsPast > distance * 2) {
-        this.state.emit(Events.Alert, {});
+        let alertText: string[];
+        if (launch.system.name === system.name) {
+          alertText = [
+            `Sojourner, this is ${launch.system.name} Fleet Command. We're glad you made it back. ` +
+            "Your mission is accomplished. We've replicated the Sojourner's technology and begun " +
+            "launching our own voyagers. Never again will humanity be bound to a single star.",
+            " ",
+            "Make for planetary orbit and we can take you in for refit."
+          ]
+        } else {
+          alertText = [
+            `Sojourner, this is the ISV Herald. We've been looking for you. On behalf of ${launch.system.name} ` +
+            "Fleet Command, I'd like to extend our congratulations. We've replicated the Sojourner's " +
+            "technology and begun launching our own voyagers. Your mission is accomplished. Never again " +
+            "will humanity be bound to a single star.",
+            " ",
+            `If you return, Fleet Command can take you for a refit, but if you're still in good condition, we'd be honoured to have you accompany us to the next star.`
+          ]
+        }
+        const alert: Alert = {
+          title: "Incoming Transmission",
+          text: alertText,
+          action: {
+            name: "Continue",
+            hint: "",
+            action: () => this.state.transitionTo(["game-over", { reason: "victory" }])
+          }
+        }
+        this.state.emit(Events.Alert, alert);
       }
     }
 

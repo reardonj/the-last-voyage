@@ -146,6 +146,7 @@ export default class Hud extends Phaser.Scene {
     this.alertTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "", 32)
       .setTint(Colours.TextTint);
     this.alertText = this.add.bitmapText(0, 0, Fonts.Proportional24, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setMaxWidth(600)
       .setTint(Colours.TextTint);
 
     this.alertAction = this.add.bitmapText(0, 0, Fonts.Proportional24, "");
@@ -294,7 +295,7 @@ export default class Hud extends Phaser.Scene {
         targets: this.alertContainer,
         y: 0,
         ease: 'cubic.inout',
-        duration: 200,
+        duration: 500,
         repeat: 0,
       })
     }
@@ -306,7 +307,7 @@ export default class Hud extends Phaser.Scene {
       targets: this.alertContainer,
       y: this.cameras.main.height,
       ease: 'cubic.inout',
-      duration: 200,
+      duration: 500,
       repeat: 0,
       onComplete: () => {
         this.currentAlert = null;

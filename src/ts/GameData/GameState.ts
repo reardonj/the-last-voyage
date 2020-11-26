@@ -400,7 +400,7 @@ export interface InterstellarState {
 }
 
 export interface GameOverState {
-  reason: "fuel" | "integrity"
+  reason: "fuel" | "integrity" | "victory"
 }
 
 export interface SolarSystemState {

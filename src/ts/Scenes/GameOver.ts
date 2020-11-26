@@ -70,7 +70,8 @@ export default class GameOver extends Phaser.Scene {
         return Resources.GameOver.Fuel;
       case "integrity":
         return Resources.GameOver.Integrity;
-
+      case "victory":
+        return Resources.GameOver.Victory;
     }
   }
 

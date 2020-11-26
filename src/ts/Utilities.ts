@@ -94,7 +94,8 @@ export const Resources = {
   },
   GameOver: {
     Fuel: "The ship's reactor shuts down as it consumes your last grams of fuel, leaving the Sojourner adrift in space.",
-    Integrity: "The Sojourner has sustained catastrophic damage, causing the ship to break up and scatter debris across the system."
+    Integrity: "The Sojourner has sustained catastrophic damage, causing the ship to break up and scatter debris across the system.",
+    Victory: "Humanity has re-established a viable civilization, and launched new ships into the stars. Your voyage is complete."
   }
 }
 
