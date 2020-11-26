@@ -7,6 +7,7 @@ import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
 import { updateCivilizations } from "./Civilization";
 import { Hanger } from "./Hanger";
+import { Mission } from "./Mission";
 import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
 import { Civilization, Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
@@ -66,7 +67,7 @@ export default class GameState implements SavedState {
     this.shipSystems = savedState.shipSystems;
     this.worlds = createSystems(this.systems);
 
-    this.shipSystemObjects = [new Scanner(this), new Hanger(this)];
+    this.shipSystemObjects = [new Scanner(this), new Hanger(this), new Mission(this)];
   }
 
   toSavedState(): SavedState {
@@ -475,11 +476,14 @@ export const Events = {
   LaunchColonizationFleet: "launchColonyFleet",
 
   /** A civilization has achieved an interstellar launch. The event parameter is an InterstellarLaunch */
-  InterstellarLaunch: "interstellarLaunch"
+  InterstellarLaunch: "interstellarLaunch",
+
+  /** A modal alert the player must acknowledge to continue. */
+  Alert: "alert"
 }
 
 export type InterstellarLaunch = {
-  civilization: Civilization,
+  system: SolarSystem,
   time: number
 }
 

@@ -85,7 +85,7 @@ function updateSystem(system: SolarSystem, state: GameState, timePassed: number)
 
     for (const civ of civs) {
       civ.events.push(...systemEvents);
-      updateCivilization(civ, state, timePassed);
+      updateCivilization(system, civ, state, timePassed);
     }
   }
 }
@@ -107,7 +107,7 @@ function mergeCivilizations(civs: [Civilization], time: number) {
   }
 }
 
-function updateCivilization(civ: Civilization, state: GameState, timePassed: number): void {
+function updateCivilization(system: SolarSystem, civ: Civilization, state: GameState, timePassed: number): void {
   if (civ.established > state.earthTime) {
     return;
   }
@@ -135,7 +135,7 @@ function updateCivilization(civ: Civilization, state: GameState, timePassed: num
     else if (civ.technology === "Intrastellar") {
       civ.technology = "Interstellar";
     } else {
-      state.emit(Events.InterstellarLaunch, { civilization: civ, time: state.earthTime })
+      state.emit(Events.InterstellarLaunch, { system: system, time: state.earthTime })
     }
   } else if (civ.techProgress <= -10) {
     civ.techProgress += 10;

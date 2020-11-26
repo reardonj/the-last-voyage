@@ -17,12 +17,15 @@ export default class AstronomicalMath {
    */
   public static readonly Acceleration1GDay = 73.21;
 
+  public static distance(a: [number, number], b: [number, number]): number {
+    return Math.sqrt(Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2));
+  }
+
   /***
    * Calculates the relatavistic travel time to another object, accelerating
    * at the given speed of half the journey, then decelerating for the other
    * half.
    * @param distance in light years
-   * @param acceleration in g.
    * @returns the travel times, in years.
    */
   public static travelTime(distance: number): { reference: number, relative: number } {

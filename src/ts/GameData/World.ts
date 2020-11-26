@@ -1,6 +1,6 @@
-import { SolarSystemObject } from "./SolarSystemObjects"
+import { SolarSystem } from "./SolarSystemObjects"
 
-export const Worlds: { name: string, position: number[], objects: SolarSystemObject[] }[] = [
+export const Worlds: SolarSystem[] = [
   {
     name: "Sol",
     position: [0, 0],
