@@ -179,7 +179,7 @@ export default class GameState implements SavedState {
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
     this.integrity = clampStatusValue(this.integrity - durationRelativeMinutes / 1000);
 
-    // Accelerating beyond 1g causes damage.
+    // Accelerating beyond 2g causes damage.
     if (acceleration > 2) {
       this.eventSource.emit(Events.Warning, "Warning: Acceleration is causing hull damage");
       this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
@@ -193,6 +193,14 @@ export default class GameState implements SavedState {
       this.passengers = clampStatusValue(this.passengers - popPercent * Phaser.Math.Between(1, damage));
       this.eventSource.emit(Events.PassengersChanged, this.passengers);
       this.eventSource.emit(Events.Warning, "Warning: Casualties incurred due to hull damage!");
+    }
+
+    if (this.currentScene[0] === "solar-system") {
+      // Only check while inside the system proper
+      const sunDist = AstronomicalMath.distance(this.ship.position, [0, 0]);
+      if (sunDist < 200) {
+        this.fuel = clampStatusValue(this.fuel + durationRelativeMinutes * Math.pow(1 - sunDist / 200, 3));
+      }
     }
 
     this.eventSource.emit(Events.IntegrityChanged, this.integrity);

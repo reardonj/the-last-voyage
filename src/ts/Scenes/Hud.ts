@@ -103,7 +103,7 @@ export default class Hud extends Phaser.Scene {
 
   suppliesHint(): string {
     const suppliesPercent = Math.max(1, 100 * this.gameState().supplies / StatusMaxValue).toFixed(0);
-    return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication`;
+    return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication.`;
   }
 
   passengersHint(): string {
@@ -113,12 +113,12 @@ export default class Hud extends Phaser.Scene {
 
   fuelHint(): string {
     const fuelPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
-    return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship`;
+    return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship. Orbit within 200 million km of a sun to refuel.`;
   }
 
   integrityHint(): string {
     const integrityPercent = Math.max(1, 100 * this.gameState().integrity / StatusMaxValue).toFixed(0);
-    return `Hull integrity: ${integrityPercent}%\nLoss will result in injuries, deaths and ultimately the destruction of the ship`;
+    return `Hull integrity: ${integrityPercent}%\nLoss will result in injuries, deaths and ultimately the destruction of the ship.`;
   }
 
   private setupInfoPanel() {
