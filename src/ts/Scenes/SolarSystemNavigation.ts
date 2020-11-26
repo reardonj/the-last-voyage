@@ -1,7 +1,7 @@
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
-import GameState, { arrayToPosition, Events, SolarSystemState } from "../GameData/GameState";
+import GameState, { Alert, arrayToPosition, Events, SolarSystemState } from "../GameData/GameState";
 import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, NavObject, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
@@ -39,6 +39,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   farthestOrbit: number;
   launchEmitter: GameObjects.Particles.ParticleEmitter;
   launchDestination: GameObjects.Particles.GravityWell;
+  paused: boolean = false;
+  pauseKey: Phaser.Input.Keyboard.Key;
 
 
   public preload(): void {
@@ -55,6 +57,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.events.on('destroy', () => {
       this.game.events.removeListener("step", undefined, this);
       state.unwatch(Events.LaunchColonizationFleet, this);
+      state.unwatch(Events.Alert, this);
     });
 
     this.add.rectangle(0, 0, 1000000, 1000000, 0x000000, 1)
@@ -72,6 +75,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.pauseKey = this.input.keyboard.addKey("P", true, false);
 
     // Set up position predictions
     this.prediction = [];
@@ -101,7 +105,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.updateScaledObjects(true);
 
     state.watch(Events.LaunchColonizationFleet, this.launchColonizationFleet, this);
-
+    state.watch(Events.Alert, (x: any) => this.paused = x !== null, this);
   }
 
   launchColonizationFleet(planet: Planet) {
@@ -134,6 +138,19 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   public update(time: number, delta: number) {
     if (this.gameState().currentScene[0] != "solar-system") {
       return;
+    }
+
+    if (this.paused) {
+      return;
+    }
+
+    if (this.pauseKey.isDown) {
+      const alert: Alert = {
+        title: "Game Paused",
+        text: [" ", " "],
+        action: { name: "Continue", hint: "", action: x => x.emit(Events.Alert, null) }
+      };
+      this.gameState().emit(Events.Alert, alert)
     }
 
     if (this.cameras.main.zoom > 0.01) {

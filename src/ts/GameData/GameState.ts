@@ -482,6 +482,12 @@ export const Events = {
   Alert: "alert"
 }
 
+export type Alert = {
+  title: string,
+  text: string[]
+  action: ObjectAction
+}
+
 export type InterstellarLaunch = {
   system: SolarSystem,
   time: number

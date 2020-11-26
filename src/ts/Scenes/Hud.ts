@@ -1,4 +1,4 @@
-import GameState, { Events, LocationChangedEvent, ObjectInfo, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
+import GameState, { Alert, Events, LocationChangedEvent, ObjectInfo, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
 const LeftMargin = 8;
@@ -31,6 +31,12 @@ export default class Hud extends Phaser.Scene {
   pendingWarnings = new Set<string>();
   systems: [ShipSystem, Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween][];
   currentInfo: ObjectInfo | null;
+  currentAlert: Alert | null;
+  alertRect: Phaser.GameObjects.Rectangle;
+  alertTitle: Phaser.GameObjects.BitmapText;
+  alertText: Phaser.GameObjects.BitmapText;
+  alertAction: Phaser.GameObjects.BitmapText;
+  alertContainer: Phaser.GameObjects.Container;
 
   public preload(): void {
     // Preload as needed.
@@ -53,8 +59,9 @@ export default class Hud extends Phaser.Scene {
       .setMaxWidth(800)
       .setTint(Colours.TextTint);
 
-    this.setupInfoPanel();
     this.setupShipSystems(state);
+    this.setupInfoPanel();
+    this.setupAlertPanel(state);
 
     state.watch(Events.TimePassed, this.updateTime, this);
     state.watch(Events.LocationChanged, this.updateLocation, this);
@@ -66,6 +73,7 @@ export default class Hud extends Phaser.Scene {
     state.watch(Events.ShowInfo, this.showInfo, this);
     state.watch(Events.HoverHint, this.showHoverHint, this);
     state.watch(Events.UpdateStatus, this.updateStatus, this);
+    state.watch(Events.Alert, this.showAlert, this);
   }
 
   setupShipSystems(state: GameState) {
@@ -128,6 +136,29 @@ export default class Hud extends Phaser.Scene {
     this.infoContainer.add(this.infoTitle);
     this.infoContainer.add(this.infoBorder);
     this.hideInfo();
+  }
+
+  private setupAlertPanel(gameState: GameState) {
+    this.alertRect = this.add.rectangle(0, 0, this.cameras.main.width, this.cameras.main.height, Colours.PanelBackground, 0.8)
+      .setOrigin(0, 0)
+      .setInteractive();
+
+    this.alertTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "", 32)
+      .setTint(Colours.TextTint);
+    this.alertText = this.add.bitmapText(0, 0, Fonts.Proportional24, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setTint(Colours.TextTint);
+
+    this.alertAction = this.add.bitmapText(0, 0, Fonts.Proportional24, "");
+    UI.makeInteractive(this.alertAction);
+    UI.showHoverHint(this.alertAction, gameState, () => this.currentAlert?.action.hint ?? "");
+    this.alertAction.on('pointerdown', () => this.currentAlert?.action.action(gameState));
+
+    this.alertContainer = this.add.container(0, this.alertRect.height);
+    this.alertContainer.add(this.alertRect);
+    this.alertContainer.add(this.alertTitle);
+    this.alertContainer.add(this.alertText);
+    this.alertContainer.add(this.alertAction);
+    this.hideAlert();
   }
 
   createSystemStatusText(y: number, name: string, hint: () => string): StatusItem {
@@ -231,6 +262,57 @@ export default class Hud extends Phaser.Scene {
     return (warning: string) => {
       this.pendingWarnings.add(warning);
     };
+  }
+
+  showAlert(alert: Alert | null) {
+    if (!alert) {
+      this.hideAlert();
+    } else if (!this.currentAlert) {
+      this.showHoverHint(null);
+      this.currentAlert = alert;
+      this.alertTitle.setText(alert.title).setY(0);
+      UI.centre(0, this.alertRect.width, this.alertTitle);
+      let yOffset = this.alertTitle.height + LeftMargin * 2;
+
+      this.alertText.setText(alert.text).setY(yOffset);
+      UI.centre(0, this.alertRect.width, this.alertText);
+      yOffset += this.alertText.height + LeftMargin * 2;
+
+      this.alertAction.setText(`[ ${alert.action.name}]`).setY(yOffset);
+      UI.centre(0, this.alertRect.width, this.alertAction);
+      yOffset += this.alertAction.height;
+
+      yOffset = (this.alertRect.height - yOffset) / 2;
+      this.alertTitle.y += yOffset;
+      this.alertText.y += yOffset;
+      this.alertAction.y += yOffset;
+
+      this.alertContainer.setY(this.alertRect.height);
+      this.alertContainer.setVisible(true);
+
+      this.tweens.add({
+        targets: this.alertContainer,
+        y: 0,
+        ease: 'cubic.inout',
+        duration: 200,
+        repeat: 0,
+      })
+    }
+  }
+
+  hideAlert() {
+    this.currentAlert = null;
+    this.tweens.add({
+      targets: this.alertContainer,
+      y: this.cameras.main.height,
+      ease: 'cubic.inout',
+      duration: 200,
+      repeat: 0,
+      onComplete: () => {
+        this.currentAlert = null;
+      },
+      onCompleteScope: this
+    })
   }
 
   showInfo(info: ObjectInfo | null) {
