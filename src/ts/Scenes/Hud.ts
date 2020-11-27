@@ -4,7 +4,7 @@ import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 const LeftMargin = 8;
 const StatusBars = 20;
 
-type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, warning: Phaser.Tweens.Tween, running: boolean];
+type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, running: boolean];
 
 type WarningItem = { text: Phaser.GameObjects.BitmapText; anim: Phaser.Tweens.Tween | null; };
 
@@ -18,7 +18,7 @@ export default class Hud extends Phaser.Scene {
   private locationText: Phaser.GameObjects.BitmapText;
   private integrityText: StatusItem;
   private fuelText: StatusItem;
-  private populationText: StatusItem;
+  private passengersText: StatusItem;
   private suppliesText: StatusItem;
   infoContainer: Phaser.GameObjects.Container;
   infoTitle: Phaser.GameObjects.BitmapText;
@@ -29,7 +29,7 @@ export default class Hud extends Phaser.Scene {
   hoverHint: Phaser.GameObjects.BitmapText;
   warningText: WarningItem;
   pendingWarnings = new Set<string>();
-  systems: [ShipSystem, Phaser.GameObjects.BitmapText, Phaser.Tweens.Tween][];
+  systems: [ShipSystem, Phaser.GameObjects.BitmapText][];
   currentInfo: ObjectInfo | null;
   currentAlert: Alert | null;
   alertRect: Phaser.GameObjects.Rectangle;
@@ -37,6 +37,8 @@ export default class Hud extends Phaser.Scene {
   alertText: Phaser.GameObjects.BitmapText;
   alertAction: Phaser.GameObjects.BitmapText;
   alertContainer: Phaser.GameObjects.Container;
+  needsAttentionAnimation: Phaser.Tweens.Tween;
+  needsAttentionAlpha: number = 1;
 
   public preload(): void {
     // Preload as needed.
@@ -48,10 +50,19 @@ export default class Hud extends Phaser.Scene {
     this.statusText = this.add.bitmapText(0, 680, Fonts.Proportional16, "----").setTint(Colours.TextTint);
     this.rightAlign(this.statusText, LeftMargin);
 
+    this.needsAttentionAnimation = this.add.tween({
+      targets: this,
+      needsAttentionAlpha: { from: 1, to: 0.2 },
+      ease: 'Linear',
+      duration: 1000,
+      repeat: -1,
+      yoyo: true
+    });
+
     this.integrityText = this.createSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity, () => this.integrityHint());
     this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
     this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
-    this.populationText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
+    this.passengersText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
     this.warningText = this.createWarningText();
 
     this.hoverHint = this.add
@@ -65,14 +76,14 @@ export default class Hud extends Phaser.Scene {
 
     this.updateSystemStatus(this.fuelText)(state.fuel);
     this.updateSystemStatus(this.integrityText)(state.integrity);
-    this.updateSystemStatus(this.populationText)(state.passengers);
+    this.updateSystemStatus(this.passengersText)(state.passengers);
     this.updateSystemStatus(this.suppliesText)(state.supplies);
 
     state.watch(Events.TimePassed, this.updateTime, this);
     state.watch(Events.LocationChanged, this.updateLocation, this);
     state.watch(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
     state.watch(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
-    state.watch(Events.PassengersChanged, this.updateSystemStatus(this.populationText), this);
+    state.watch(Events.PassengersChanged, this.updateSystemStatus(this.passengersText), this);
     state.watch(Events.SuppliesChanged, this.updateSystemStatus(this.suppliesText), this);
     state.watch(Events.Warning, this.updateWarning(this.warningText), this);
     state.watch(Events.ShowInfo, this.showInfo, this);
@@ -82,7 +93,7 @@ export default class Hud extends Phaser.Scene {
   }
 
   setupShipSystems(state: GameState) {
-    let yOffset = this.populationText[1].y + this.populationText[1].height + LeftMargin;
+    let yOffset = this.passengersText[1].y + this.passengersText[1].height + LeftMargin;
     this.systems = [];
     for (const system of state.shipSystemObjects) {
       const label = this.add.bitmapText(0, yOffset, Fonts.Proportional16, `[ ${system.name} ]`);
@@ -91,17 +102,8 @@ export default class Hud extends Phaser.Scene {
       label.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, system.info()));
       this.rightAlign(label, LeftMargin);
 
-      const activeAnimation = this.add.tween({
-        targets: label,
-        alpha: { from: 1, to: 0.2 },
-        ease: 'Linear',
-        duration: 1000,
-        repeat: -1,
-        yoyo: true,
-        paused: true
-      });
 
-      this.systems.push([system, label, activeAnimation]);
+      this.systems.push([system, label]);
       yOffset += label.height + LeftMargin / 2
     }
   }
@@ -171,17 +173,8 @@ export default class Hud extends Phaser.Scene {
     const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " " + "|".repeat(StatusBars)).setTint(Colours.TextTint);
     this.rightAlign(text, LeftMargin);
     UI.showHoverHint(text, this.gameState(), hint);
-    const tween = this.add.tween({
-      targets: text,
-      alpha: { from: 1, to: 0.2 },
-      ease: 'Linear',
-      duration: 1000,
-      repeat: -1,
-      yoyo: true,
-      paused: true
-    });
 
-    return [name, text, tween, false];
+    return [name, text, false];
   }
 
   createWarningText(): WarningItem {
@@ -198,13 +191,16 @@ export default class Hud extends Phaser.Scene {
 
   public update() {
     // Update active animations for ship systems
-    for (const [sys, label, anim] of this.systems) {
-      if (sys.needsAttention && !anim.isPlaying()) {
-        anim.resume();
-      } else if (!sys.needsAttention && anim.isPlaying()) {
-        anim.pause();
+    for (const [sys, label] of this.systems) {
+      if (sys.needsAttention) {
+        label.alpha = this.needsAttentionAlpha;
+      } else {
         label.setAlpha(1);
       }
+    }
+
+    for (const status of [this.integrityText, this.fuelText, this.suppliesText, this.passengersText]) {
+      status[1].alpha = status[2] ? this.needsAttentionAlpha : 1;
     }
 
     // Update warnings
@@ -250,17 +246,8 @@ export default class Hud extends Phaser.Scene {
   private updateSystemStatus(item: StatusItem): (state: number) => void {
     return (state: number) => {
       const bars = Phaser.Math.Clamp(StatusBars * state / StatusMaxValue, 0, StatusBars);
-      const warning = bars / 20 < 0.2;
-
       item[1].setText(item[0] + " " + "|".repeat(Math.ceil(bars)));
-      if (warning && !item[3]) {
-        item[2].resume();
-        item[3] = true;
-      } else if (!warning && item[3]) {
-        item[2].pause();
-        item[1].setAlpha(1);
-        item[3] = false;
-      }
+      item[2] = bars / 20 < 0.2;
     };
   }
 
