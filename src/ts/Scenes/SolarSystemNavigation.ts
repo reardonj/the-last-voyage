@@ -240,6 +240,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.nextVelocity = this.nextPredictions[1][1];
     this.currentPosition.setPosition(this.position.x, this.position.y);
     this.currentPosition.setRotation(this.orientation);
+    const velocityKmSecond = (1000000 * this.nextVelocity.length() / 24 / 60 / 60);
 
     const state = this.gameState();
     if (state.currentScene[0] == "solar-system") {
@@ -268,7 +269,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       relativeMinutes,
     );
 
-    const displayVelocity = (1000000 * this.nextVelocity.length() / 24 / 60 / 60).toFixed(0);
+    const displayVelocity = velocityKmSecond.toFixed(0);
     const displayAcceleration = (totalAccelerationMagnitude).toFixed(2);
     this.gameState().emit(
       Events.UpdateStatus,

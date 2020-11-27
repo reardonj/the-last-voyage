@@ -9,6 +9,10 @@ export default class Utilities {
   public static Log(message: string): void {
     console.log((new Date()).toISOString() + " : " + message);
   }
+
+  public static exponentialProbability(duration: number, mean: number) {
+    return Phaser.Math.FloatBetween(0, 1) < 1 - Math.exp(-duration / mean);
+  }
 }
 
 export class UI {

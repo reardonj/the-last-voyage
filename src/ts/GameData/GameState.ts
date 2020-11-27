@@ -10,7 +10,7 @@ import { Hanger } from "./Hanger";
 import { Mission } from "./Mission";
 import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
-import { Civilization, Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
+import { AsteroidBelt, Civilization, Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -183,6 +183,21 @@ export default class GameState implements SavedState {
     if (acceleration > 2) {
       this.eventSource.emit(Events.Warning, "Warning: Acceleration is causing hull damage");
       this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
+    }
+
+    // Going fast through an asteroid belt is dangerous
+    const velocityKmSecond = 1000000 * AstronomicalMath.distance([0, 0], this.ship.velocity) / 24 / 60 / 60;
+    if (this.currentScene[0] === "solar-system" && velocityKmSecond > 100) {
+      const distanceFromSun = AstronomicalMath.distance([0, 0], this.ship.position);
+      for (const belt of this.currentSystem()!.asteroids()) {
+        if ( // A collision occurs
+          Math.abs(distanceFromSun - belt.orbitalRadius) < belt.radius &&
+          Utilities.exponentialProbability(durationEarthMinutes, 60 * 24 * 7)
+        ) {
+          this.integrity = clampStatusValue(this.integrity - velocityKmSecond * Phaser.Math.Between(10, 1000));
+
+        }
+      }
     }
 
     // If the ship sustains serious damage while having <50% hull integrity, 
@@ -425,6 +440,13 @@ export class SolarSystemDefinition {
   vectorTo(other: SolarSystemDefinition) {
     return new Phaser.Math.Vector2(other.position[0], other.position[1])
       .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
+  }
+
+  asteroids(): AsteroidBelt[] {
+    return Object
+      .keys(this.objects)
+      .map(x => this.objects[x])
+      .filter<AsteroidBelt>((x): x is AsteroidBelt => x.type === "asteroids")
   }
 
   planets(): Planet[] {

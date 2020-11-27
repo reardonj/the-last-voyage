@@ -1,5 +1,5 @@
 import { YearInMinutes } from "../Logic/Conversions";
-import { UI } from "../Utilities";
+import Utilities, { UI } from "../Utilities";
 import GameState, { Events, ObjectInfo, SolarSystemDefinition } from "./GameState";
 import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPositionAt, SolarSystem, TechLevel } from "./SolarSystemObjects";
 
@@ -176,8 +176,7 @@ function getEvents(time: number, durationMinutes: number, potentialEvents: Poten
   const durationYears = durationMinutes / YearInMinutes;
 
   for (const event of potentialEvents) {
-    const likelihood = 1 - Math.exp(-durationYears / event.yearsBetween);
-    if (Phaser.Math.FloatBetween(0, 1) < likelihood) {
+    if (Utilities.exponentialProbability(durationYears, event.yearsBetween)) {
       actualEvents.push({
         description: event.description,
         ends: time + YearInMinutes * Phaser.Math.FloatBetween(event.duration[0], event.duration[1]),
@@ -248,3 +247,4 @@ const planetaryEvents: PotentialEvent[] = [
     immediateTechEffect: 3
   }
 ]
+

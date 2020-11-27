@@ -7,13 +7,20 @@ export type SolarSystem = {
   objects: SolarSystemObject[],
 }
 
-export type SolarSystemObject = Sun | Planet;
+export type SolarSystemObject = Sun | Planet | AsteroidBelt;
 
 export type Sun = {
   type: "sun",
   name: string,
   mass: number,
   details: { [id: string]: any }
+}
+
+export type AsteroidBelt = {
+  type: "asteroids",
+  name: string,
+  orbitalRadius: number,
+  radius: number
 }
 
 export type Planet = {

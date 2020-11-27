@@ -258,6 +258,12 @@ export const Worlds: SolarSystem[] = [
         details: {}
       },
       {
+        type: "asteroids",
+        name: "Asteroid Belt",
+        orbitalRadius: 420,
+        radius: 80
+      },
+      {
         type: "planet",
         name: "Amores I",
         mass: 14681,

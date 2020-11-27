@@ -2,7 +2,7 @@ import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import Utilities, { Colours, Sprites, UI } from "../Utilities";
 import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
-import { Civilization, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import { AsteroidBelt, Civilization, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 import { civilizationHint, civilizationInfo } from "./Civilization";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
@@ -35,6 +35,8 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
         planets.push(sprite);
         objects.push({ definition: object, scalable: sprite });
         break;
+      case "asteroids":
+        objects.push({ definition: object, scalable: new Asteroids(object) })
     }
   }
   objects.unshift({ scalable: new InvisibleObjectIndicator(planets) });
@@ -62,6 +64,66 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
   }
 
   return levels;
+}
+
+class Asteroids implements ScalableObject {
+  interactionObject: Phaser.GameObjects.GameObject;
+  mass: number = 0;
+  graphics: Phaser.GameObjects.Graphics;
+  scaledGraphics: Phaser.GameObjects.Graphics;
+
+  constructor(public definition: AsteroidBelt) { }
+
+  create(scene: Phaser.Scene): void {
+    this.graphics = scene.add
+      .graphics()
+      .lineStyle(this.definition.radius * 2, 0x444400)
+      .beginPath()
+      .arc(0, 0, this.definition.orbitalRadius, 0, Math.PI * 2, false, 0.02)
+      .closePath()
+      .strokePath();
+    this.scaledGraphics = scene.add.graphics();
+
+    const innerCircle = new Phaser.Geom.Circle(0, 0, this.definition.orbitalRadius - this.definition.radius);
+    this.graphics.setInteractive({
+      useHandCursor: true,
+      hitArea: new Phaser.Geom.Circle(0, 0, this.definition.orbitalRadius + this.definition.radius),
+      hitAreaCallback: (circle: Phaser.Geom.Circle, x: number, y: number) =>
+        Phaser.Geom.Circle.Contains(circle, x, y) && !Phaser.Geom.Circle.Contains(innerCircle, x, y)
+    })
+      .disableInteractive();
+    this.interactionObject = this.graphics;
+  }
+
+  update(scene: Phaser.Scene): void {
+  }
+
+  setScale(scale: number): void {
+    const isVisible = scale < 100 && this.definition.orbitalRadius / scale > 30;
+    this.graphics.setVisible(isVisible)
+    this.scaledGraphics.setVisible(this.graphics.visible);
+
+    if (this.scaledGraphics.visible) {
+      this.scaledGraphics
+        .clear()
+        .lineStyle(scale * 2, 0xffffcc)
+        .strokeCircle(0, 0, this.definition.orbitalRadius + this.definition.radius)
+        .strokeCircle(0, 0, this.definition.orbitalRadius - this.definition.radius)
+    }
+  }
+
+  positionAt(minutes: number): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2();
+  }
+
+  info(): ObjectInfo {
+    throw new Error("Method not implemented.");
+  }
+
+  hint(): string {
+    return "An asteroid belt.\n Traversing at >100km/s risks dangeous collisions.\nDeploy scavenger drones to replenish supplies."
+  }
+
 }
 
 class InterstellarObject implements ScalableObject {
@@ -132,11 +194,11 @@ class InterstellarObject implements ScalableObject {
 class InvisibleObjectIndicator implements ScalableObject {
   position: Phaser.Math.Vector2;
   mass: number;
-  orbits: PlanetSprite[];
-  min: PlanetSprite | null;
+  orbits: (PlanetSprite | Asteroids)[];
+  min: PlanetSprite | Asteroids | null;
   interactionObject: Phaser.GameObjects.Arc;
 
-  constructor(planets: PlanetSprite[]) {
+  constructor(planets: (PlanetSprite | Asteroids)[]) {
     this.position = new Phaser.Math.Vector2();
     this.mass = 0;
     this.orbits = planets.sort((a, b) => a.definition.orbitalRadius - b.definition.orbitalRadius);
