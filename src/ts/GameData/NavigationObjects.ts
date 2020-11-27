@@ -121,7 +121,7 @@ class Asteroids implements ScalableObject {
   }
 
   hint(): string {
-    return "An asteroid belt.\n Traversing at >100km/s risks dangeous collisions.\nDeploy scavenger drones to replenish supplies."
+    return "An asteroid belt.\n Traversing at >50km/s risks dangeous collisions.\nDeploy scavenger drones to mine."
   }
 
 }

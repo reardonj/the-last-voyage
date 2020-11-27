@@ -191,14 +191,16 @@ export default class GameState implements SavedState {
 
     // Going fast through an asteroid belt is dangerous
     const velocityKmSecond = 1000000 * AstronomicalMath.distance([0, 0], this.ship.velocity) / 24 / 60 / 60;
-    if (this.currentScene[0] === "solar-system" && velocityKmSecond > 100) {
+    if (this.currentScene[0] === "solar-system" && velocityKmSecond > 50) {
       const distanceFromSun = AstronomicalMath.distance([0, 0], this.ship.position);
       for (const belt of this.currentSystem()!.asteroids()) {
-        if ( // A collision occurs if in a belt, going too fast, once a week on average
-          withinAsteroidBelt(distanceFromSun, belt) &&
-          Utilities.exponentialProbability(durationEarthMinutes, 60 * 24 * 7)
-        ) {
-          this.useIntegrity(velocityKmSecond * Phaser.Math.Between(10, 1000));
+        if (withinAsteroidBelt(distanceFromSun, belt)) {
+          this.emit(Events.Warning, "Warning: Exceeding safe velocity in an asteroid field!");
+          if ( // A collision occurs if in a belt, going too fast, once a week on average
+            Utilities.exponentialProbability(durationEarthMinutes, 60 * 24 * 7)
+          ) {
+            this.useIntegrity(velocityKmSecond * Phaser.Math.Between(10, 1000));
+          }
         }
       }
     }
@@ -311,9 +313,7 @@ export default class GameState implements SavedState {
   }
 
   useIntegrity(amount: number) {
-    if (amount > 100) {
-      this.permanentDamage += 0.1 * amount;
-    }
+    this.permanentDamage += 0.1 * amount;
     this.integrity = Phaser.Math.Clamp(this.integrity - amount, 0, StatusMaxValue - this.permanentDamage);
   }
 }
