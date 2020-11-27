@@ -62,7 +62,8 @@ function pad(num: number, length: number) {
 
 export const Fonts = {
   Proportional16: "future-thin-16",
-  Proportional24: "future-thin-24"
+  Proportional24: "future-thin-24",
+  Proportional48: "future-outline-48"
 }
 
 export const Colours = {
