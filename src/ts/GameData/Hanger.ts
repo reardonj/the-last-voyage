@@ -1,6 +1,8 @@
+import AstronomicalMath from "../Logic/AstronomicalMath";
+import Utilities from "../Utilities";
 import { addCivilization } from "./Civilization";
 import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, StatusMaxValue, sumHabitabilities } from "./GameState";
-import { Civilization, Planet, planetInfo, planetPositionAt } from "./SolarSystemObjects";
+import { Civilization, Planet, planetInfo, planetPositionAt, withinAsteroidBelt } from "./SolarSystemObjects";
 
 export class Hanger implements ShipSystem {
   name: string = "Fabricators";
@@ -17,10 +19,17 @@ export class Hanger implements ShipSystem {
   timeStep(durationEarthMinutes: number, durationRelativeMinutes: number): void {
     let remaining = this.systems["hanger"]["remaining"];
     const building = this.systems["hanger"]["building"];
+    this.needsAttention = building ? false : true;
     if (building === "repair") {
       this.state.useSupplies(durationRelativeMinutes);
       this.state.useIntegrity(-durationRelativeMinutes / 2);
-      if (this.state.integrity / StatusMaxValue > 0.95) {
+      if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
+        this.stopBuilding();
+      }
+    } else if (building === "scavenge") {
+      if (this.isInBelt()) {
+        this.state.useSupplies(-durationRelativeMinutes * 0.5);
+      } else {
         this.stopBuilding();
       }
     } else if (building && typeof (remaining) === "number") {
@@ -34,6 +43,14 @@ export class Hanger implements ShipSystem {
         this.systems["hanger"]["remaining"] = remaining;
       }
     }
+  }
+
+  private isInBelt() {
+    const distanceFromSun = AstronomicalMath.distance([0, 0], this.state.ship.position);
+    const inBelt = (this.state.currentSystem()?.asteroids() ?? [])
+      .filter(belt => withinAsteroidBelt(distanceFromSun, belt))
+      .length > 0;
+    return inBelt;
   }
 
   private stopBuilding() {
@@ -131,6 +148,14 @@ export class Hanger implements ShipSystem {
           hint: "Free up factory resources for other projects.",
           action: () => this.stopBuilding()
         });
+    } else if (this.systems["hanger"]["building"] === "scavenge") {
+      state.push(
+        "Processing material from scavenger drones.",
+        {
+          name: "Stop scavenging operations",
+          hint: "Free up factory resources for other projects.",
+          action: () => this.stopBuilding()
+        });
     } else if (this.isBuilding()) {
       state.push([
         `Building: ${this.systems["hanger"]["building"]}`,
@@ -143,6 +168,11 @@ export class Hanger implements ShipSystem {
           name: "Repair the Sojourner",
           hint: "Perform repairs on the ship at a rate of 1% hull integrity for 2% of supplies.",
           action: () => this.repairShip()
+        },
+        {
+          name: "Deploy Scavenger Drones",
+          hint: "Deploy drone ships to harvest material from asteroids or derelicts.",
+          action: () => this.startScavenging()
         },
         {
           name: "Provision Colonization Fleet",
@@ -170,13 +200,24 @@ export class Hanger implements ShipSystem {
   }
 
   private repairShip(): void {
-    if (this.state.integrity / StatusMaxValue >= 0.95) {
+    if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
       this.state.emit(Events.Warning, "Cannot effect further repairs.");
     } else if (this.state.supplies < 0.01 * StatusMaxValue) {
       this.state.emit(Events.Warning, "Insufficient supplies.");
     } else {
       this.systems["hanger"]["building"] = "repair";
       this.refreshInfo();
+    }
+  }
+
+  private startScavenging(): void {
+    if (this.isInBelt()) {
+
+      this.systems["hanger"]["building"] = "scavenge";
+      this.refreshInfo();
+    } else {
+      this.state.emit(Events.Warning, "Nothing nearby to scavenge");
+
     }
   }
 

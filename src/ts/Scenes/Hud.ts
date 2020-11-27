@@ -63,6 +63,11 @@ export default class Hud extends Phaser.Scene {
     this.setupInfoPanel();
     this.setupAlertPanel(state);
 
+    this.updateSystemStatus(this.fuelText)(state.fuel);
+    this.updateSystemStatus(this.integrityText)(state.integrity);
+    this.updateSystemStatus(this.populationText)(state.passengers);
+    this.updateSystemStatus(this.suppliesText)(state.supplies);
+
     state.watch(Events.TimePassed, this.updateTime, this);
     state.watch(Events.LocationChanged, this.updateLocation, this);
     state.watch(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);

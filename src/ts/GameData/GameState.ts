@@ -10,13 +10,14 @@ import { Hanger } from "./Hanger";
 import { Mission } from "./Mission";
 import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
-import { AsteroidBelt, Civilization, Planet, SolarSystem, SolarSystemObject } from "./SolarSystemObjects";
+import { AsteroidBelt, Civilization, Planet, SolarSystem, SolarSystemObject, withinAsteroidBelt } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
   fuel: number;
   passengers: number;
   integrity: number;
+  permanentDamage: number;
   supplies: number;
   earthTime: number;
   relativeTime: number;
@@ -36,6 +37,7 @@ export default class GameState implements SavedState {
       fuel: StatusMaxValue,
       passengers: StatusMaxValue,
       integrity: StatusMaxValue,
+      permanentDamage: 0,
       supplies: StatusMaxValue,
       earthTime: 4293394560,
       relativeTime: 0,
@@ -57,6 +59,7 @@ export default class GameState implements SavedState {
     this.fuel = savedState.fuel;
     this.passengers = savedState.passengers;
     this.integrity = savedState.integrity;
+    this.permanentDamage = savedState.permanentDamage;
     this.supplies = savedState.supplies;
 
     this.earthTime = savedState.earthTime;
@@ -75,6 +78,7 @@ export default class GameState implements SavedState {
       fuel: this.fuel,
       passengers: this.passengers,
       integrity: this.integrity,
+      permanentDamage: this.permanentDamage,
       supplies: this.supplies,
       earthTime: this.earthTime,
       relativeTime: this.relativeTime,
@@ -177,12 +181,12 @@ export default class GameState implements SavedState {
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
-    this.integrity = clampStatusValue(this.integrity - durationRelativeMinutes / 1000);
+    this.useIntegrity(durationRelativeMinutes / 1000);
 
     // Accelerating beyond 2g causes damage.
     if (acceleration > 2) {
       this.eventSource.emit(Events.Warning, "Warning: Acceleration is causing hull damage");
-      this.integrity = clampStatusValue(this.integrity - Math.max(0, acceleration - 1) * durationRelativeMinutes);
+      this.useIntegrity(Math.max(0, acceleration - 1) * durationRelativeMinutes);
     }
 
     // Going fast through an asteroid belt is dangerous
@@ -190,12 +194,11 @@ export default class GameState implements SavedState {
     if (this.currentScene[0] === "solar-system" && velocityKmSecond > 100) {
       const distanceFromSun = AstronomicalMath.distance([0, 0], this.ship.position);
       for (const belt of this.currentSystem()!.asteroids()) {
-        if ( // A collision occurs
-          Math.abs(distanceFromSun - belt.orbitalRadius) < belt.radius &&
+        if ( // A collision occurs if in a belt, going too fast, once a week on average
+          withinAsteroidBelt(distanceFromSun, belt) &&
           Utilities.exponentialProbability(durationEarthMinutes, 60 * 24 * 7)
         ) {
-          this.integrity = clampStatusValue(this.integrity - velocityKmSecond * Phaser.Math.Between(10, 1000));
-
+          this.useIntegrity(velocityKmSecond * Phaser.Math.Between(10, 1000));
         }
       }
     }
@@ -308,7 +311,10 @@ export default class GameState implements SavedState {
   }
 
   useIntegrity(amount: number) {
-    this.integrity = clampStatusValue(this.integrity - amount);
+    if (amount > 100) {
+      this.permanentDamage += 0.1 * amount;
+    }
+    this.integrity = Phaser.Math.Clamp(this.integrity - amount, 0, StatusMaxValue - this.permanentDamage);
   }
 }
 
@@ -360,6 +366,7 @@ export interface SavedState {
   fuel: number
   passengers: number
   integrity: number
+  permanentDamage: number
   supplies: number
   ship: MobileObject
 }

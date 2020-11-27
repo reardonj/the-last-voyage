@@ -23,6 +23,10 @@ export type AsteroidBelt = {
   radius: number
 }
 
+export function withinAsteroidBelt(distanceFromSun: number, belt: AsteroidBelt) {
+  return Math.abs(distanceFromSun - belt.orbitalRadius) < belt.radius;
+}
+
 export type Planet = {
   type: "planet"
   name: string,
