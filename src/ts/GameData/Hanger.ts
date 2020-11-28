@@ -233,8 +233,17 @@ export class Hanger implements ShipSystem {
   }
 
   hint(): string {
+    const currentAction = this.currentAction()[1];
+    let currentActionHint: string;
+    if (typeof (currentAction) === "string") {
+      currentActionHint = currentAction;
+    } else if (Array.isArray(currentAction)) {
+      currentActionHint = currentAction[1]();
+    } else {
+      currentActionHint = currentAction.hint;
+    }
     return "Automatic provisioning and repair facilities. Use to repair the ship or build short-range ships and orbitals." +
-      `\nCurrent Operation: ${this.currentAction()[1]}`
+      `\nCurrent Operation: ${currentActionHint}`
   }
 
 }

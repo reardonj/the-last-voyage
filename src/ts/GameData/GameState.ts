@@ -110,8 +110,8 @@ export default class GameState implements SavedState {
     this.eventSource.addListener(event, handler, ctx)
   }
 
-  unwatch(event: string, ctx: any) {
-    this.eventSource.removeListener(event, undefined, ctx)
+  unwatch(event: string, func: Function) {
+    this.eventSource.removeListener(event, func)
   }
 
   currentSceneName(): string {

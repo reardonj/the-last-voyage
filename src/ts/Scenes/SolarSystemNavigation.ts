@@ -57,8 +57,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.game.events.on("step", () => this.gameState().doStateBasedTransitions(this), this);
     this.events.on('destroy', () => {
       this.game.events.removeListener("step", undefined, this);
-      state.unwatch(Events.LaunchColonizationFleet, this);
-      state.unwatch(Events.Alert, this);
+      state.unwatch(Events.LaunchColonizationFleet, this.launchColonizationFleet);
+      state.unwatch(Events.Alert, this.pause);
     });
 
     this.add.rectangle(0, 0, 2000000, 1000000, 0x000000, 1)
@@ -106,7 +106,11 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.updateScaledObjects(true);
 
     state.watch(Events.LaunchColonizationFleet, this.launchColonizationFleet, this);
-    state.watch(Events.Alert, (x: any) => this.paused = x !== null, this);
+    state.watch(Events.Alert, this.pause, this);
+  }
+
+  pause(x: any) {
+    this.paused = x !== null;
   }
 
   launchColonizationFleet(planet: Planet) {
