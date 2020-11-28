@@ -6,8 +6,8 @@ import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, NavObject, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
 import AstronomicalMath from "../Logic/AstronomicalMath";
-import SavedGames from "../GameData/SavedGames";
 import { Planet, planetPositionAt } from "../GameData/SolarSystemObjects";
+import { AudioManager } from "../GameData/AudioManager";
 
 type TransformableObject =
   Phaser.GameObjects.Components.Transform &
@@ -50,6 +50,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.events.once('transitioncomplete', () => {
       if (!this.scene.get(Hud.Name)?.scene.isActive()) {
         this.scene.launch(Hud.Name, state);
+        AudioManager()?.changeBackground("game");
       }
     }, this);
 
@@ -60,7 +61,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       state.unwatch(Events.Alert, this);
     });
 
-    this.add.rectangle(0, 0, 1000000, 1000000, 0x000000, 1)
+    this.add.rectangle(0, 0, 2000000, 1000000, 0x000000, 1)
       .setInteractive(true, () => true)
       .on("pointerdown", () => this.gameState().emit(Events.ShowInfo, null));
 

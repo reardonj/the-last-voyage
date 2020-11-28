@@ -1,3 +1,4 @@
+import { AudioManager } from "../GameData/AudioManager";
 import Preloader from "./Preloader";
 
 export default class Boot extends Phaser.Scene {

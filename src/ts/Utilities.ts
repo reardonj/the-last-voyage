@@ -1,3 +1,4 @@
+import { AudioManager } from "./GameData/AudioManager";
 import GameState, { Events } from "./GameData/GameState";
 import { YearInMinutes } from "./Logic/Conversions";
 
@@ -16,10 +17,16 @@ export default class Utilities {
 }
 
 export class UI {
-  public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint) {
+  public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint, sound?: boolean) {
     obj.setInteractive({ useHandCursor: true });
     obj.setTint(Colours.SelectableTint);
-    obj.on("pointerover", () => obj.setTint(Colours.Highlight), this);
+    obj.on("pointerover", () => {
+      obj.setTint(Colours.Highlight);
+      if (sound) {
+        AudioManager()?.play("rollover");
+      }
+    }, this);
+    obj.on("pointerdown", () => sound && AudioManager()?.play("click"), this);
     obj.on("pointerout", () => obj.setTint(Colours.SelectableTint), this);
   }
 

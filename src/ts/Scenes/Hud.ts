@@ -1,3 +1,4 @@
+import { AudioManager } from "../GameData/AudioManager";
 import GameState, { Alert, Events, LocationChangedEvent, ObjectInfo, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
@@ -231,6 +232,7 @@ export default class Hud extends Phaser.Scene {
       }
     }
     this.warnings = newWarningList;
+    AudioManager()?.warning(this.warnings.length > 0)
   }
 
   updateTime(state: TimePassedEvent) {

@@ -1,3 +1,4 @@
+import { AudioManager } from "../GameData/AudioManager";
 import GameState, { GameOverState } from "../GameData/GameState";
 import SavedGames from "../GameData/SavedGames";
 import { Colours, Fonts, Resources, UI } from "../Utilities";
@@ -30,7 +31,7 @@ export default class GameOver extends Phaser.Scene {
       .setTint(Colours.TextTint)
       .setAlpha(0);
     UI.centre(0, this.cameras.main.width, mainMenu);
-    UI.makeInteractive(mainMenu);
+    UI.makeInteractive(mainMenu, true);
     mainMenu.on("pointerdown", () => {
       this.scene.add(MainMenu.Name, MainMenu, false);
       this.scene.sendToBack(MainMenu.Name);
@@ -77,6 +78,17 @@ export default class GameOver extends Phaser.Scene {
         return Resources.GameOver.Integrity;
       case "victory":
         return Resources.GameOver.Victory;
+    }
+  }
+
+  private isWin(state: GameState): boolean {
+    switch ((<GameOverState>state.currentScene[1]).reason) {
+      case "victory":
+        return true;
+      case "fuel":
+        return false;
+      case "integrity":
+        return false;
     }
   }
 

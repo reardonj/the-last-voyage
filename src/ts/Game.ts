@@ -5,6 +5,7 @@ import MainMenu from "./Scenes/MainMenu";
 import SplashScreen from "./Scenes/SplashScreen";
 import Hud from './Scenes/Hud';
 import Transition from './Scenes/Transition';
+import { AudioScene } from './GameData/AudioManager';
 
 const gameConfig: Phaser.Types.Core.GameConfig = {
   width: 1280,
@@ -19,6 +20,7 @@ export default class Game extends Phaser.Game {
     super(config);
 
     this.scene.add(Boot.Name, Boot);
+    this.scene.add(AudioScene.Name, AudioScene);
     this.scene.add(Preloader.Name, Preloader);
     this.scene.add(SplashScreen.Name, SplashScreen);
     this.scene.add(MainMenu.Name, MainMenu);

@@ -5,6 +5,7 @@ import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
 import Utilities from "../Utilities";
+import { AudioManager } from "./AudioManager";
 import { updateCivilizations } from "./Civilization";
 import { Hanger } from "./Hanger";
 import { Mission } from "./Mission";
@@ -92,6 +93,14 @@ export default class GameState implements SavedState {
   emit(event: string, params: any) {
     if (event === Events.ShowInfo && params) {
       this.shipSystemObjects.forEach(x => x.transformInfo(params));
+    }
+
+    if (event === Events.HoverHint && params !== null) {
+      AudioManager()?.play("rollover");
+    }
+
+    if (event === Events.ShowInfo && params !== null) {
+      AudioManager()?.play("click");
     }
 
     this.eventSource.emit(event, params);
@@ -283,6 +292,15 @@ export default class GameState implements SavedState {
 
   transition(currentScene: Phaser.Scene) {
     Utilities.Log(`Transitioning to ${this.currentSceneName()}`);
+
+    if (this.currentScene[0] === "game-over" && this.currentScene[1].reason) {
+      if (this.currentScene[1].reason === "victory") {
+        AudioManager()?.changeBackground("victory");
+      } else {
+        AudioManager()?.changeBackground("loss");
+      }
+    }
+
     const newScene = currentScene.scene.add(this.currentSceneName(), this.currentSceneType(), false, this);
     newScene.scene.sendToBack(this.currentSceneName());
     this.eventSource.emit(Events.ShowInfo, null);
