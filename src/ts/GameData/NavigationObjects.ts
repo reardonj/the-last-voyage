@@ -85,12 +85,13 @@ class Asteroids implements ScalableObject {
     this.scaledGraphics = scene.add.graphics();
 
     const innerCircle = new Phaser.Geom.Circle(0, 0, this.definition.orbitalRadius - this.definition.radius);
-    this.graphics.setInteractive({
-      useHandCursor: true,
-      hitArea: new Phaser.Geom.Circle(0, 0, this.definition.orbitalRadius + this.definition.radius),
-      hitAreaCallback: (circle: Phaser.Geom.Circle, x: number, y: number) =>
-        Phaser.Geom.Circle.Contains(circle, x, y) && !Phaser.Geom.Circle.Contains(innerCircle, x, y)
-    })
+    this.graphics
+      .setInteractive({
+        useHandCursor: true,
+        hitArea: new Phaser.Geom.Circle(0, 0, this.definition.orbitalRadius + this.definition.radius),
+        hitAreaCallback: (circle: Phaser.Geom.Circle, x: number, y: number) =>
+          Phaser.Geom.Circle.Contains(circle, x, y) && !Phaser.Geom.Circle.Contains(innerCircle, x, y)
+      })
       .disableInteractive();
     this.interactionObject = this.graphics;
   }
@@ -117,7 +118,15 @@ class Asteroids implements ScalableObject {
   }
 
   info(): ObjectInfo {
-    throw new Error("Method not implemented.");
+    return {
+      name: this.definition.name,
+      definition: this.definition,
+      details: [
+        "An ore and ice rich asteroid belt.",
+        "Traversing at >50km/s risks dangeous collisions.",
+        "Deploy scavenger drones to mine and replenish the Sojourner's supplies."
+      ]
+    }
   }
 
   hint(): string {
