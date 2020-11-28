@@ -30,4 +30,12 @@ export default class SavedGames {
   static deleteGame() {
     window.localStorage.removeItem("saved_game");
   }
+
+  static audioOn(): boolean {
+    return (window.localStorage.getItem("audioOn") ?? "false") == "true"
+  }
+
+  static setAudioOn(on: boolean) {
+    window.localStorage.setItem("audioOn", on ? "true" : "false");
+  }
 }

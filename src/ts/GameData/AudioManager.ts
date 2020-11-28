@@ -1,5 +1,6 @@
 import { Scene } from "phaser";
-import Utilities from "../Utilities";
+import Utilities, { Fonts, UI } from "../Utilities";
+import SavedGames from "./SavedGames";
 
 export interface Audio {
   init(): void
@@ -33,9 +34,34 @@ export class AudioScene extends Scene implements Audio {
   private sounds: { [id: string]: Phaser.Sound.BaseSound } = {};
   private lastWarning: number = 0;
   private warningOn: boolean = false;
+  audioToggle: Phaser.GameObjects.BitmapText;
 
   public create() {
     scene = this;
+    this.audioToggle = this.add.bitmapText(UI.Margin, 696, Fonts.Proportional16, "");
+    this.audioToggle.on("pointerdown", () => {
+      if (this.sound.locked) {
+        return;
+      }
+      const mute = !this.sound.mute;
+      this.sound.mute = mute;
+      this.setAudioToggleText();
+      SavedGames.setAudioOn(!mute);
+    }, this);
+    UI.makeInteractive(this.audioToggle, true);
+    this.sound.mute = !SavedGames.audioOn();
+    this.setAudioToggleText();
+    this.sound.on('unlocked', () => { this.sound.mute = !SavedGames.audioOn() });
+  }
+
+  private setAudioToggleText() {
+    if (this.sound.locked) {
+      this.audioToggle.text = "[ Audio Locked ]";
+    } else if (this.sound.mute) {
+      this.audioToggle.text = "[ Audio off ]";
+    } else {
+      this.audioToggle.text = "[ Audio on ]";
+    }
   }
 
   public init() {
@@ -49,10 +75,11 @@ export class AudioScene extends Scene implements Audio {
   }
 
   public update(time: number, delta: number) {
-    if (this.warningOn && this.lastWarning + 2000 < time) {
+    if (this.warningOn && this.lastWarning + 1500 < time) {
       this.sounds["warning"].play();
       this.lastWarning = time;
     }
+    this.setAudioToggleText();
   }
 
   public warning(on: boolean) {

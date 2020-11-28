@@ -9,7 +9,7 @@ export interface ScalableObject extends GravityWell, InteractiveObject {
   create(scene: Phaser.Scene): void
   update(scene: Phaser.Scene): void
   setScale(scale: number): void
-  readonly interactionObject: Phaser.GameObjects.GameObject
+  readonly interactionObject?: Phaser.GameObjects.GameObject
 }
 
 export type NavObject = { definition?: SolarSystemObject, scalable: ScalableObject };
@@ -44,6 +44,8 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
   for (let id in others) {
     objects.push({ scalable: new InterstellarObject(system, others[id]) });
   }
+
+  objects.push({ scalable: new InterstellarSpace(system.farthestOrbit()) })
   return objects;
 }
 
@@ -64,6 +66,65 @@ export function createZoomLevels(system: SolarSystemDefinition): number[] {
   }
 
   return levels;
+}
+
+class InterstellarSpace implements ScalableObject {
+  interactionObject: Phaser.GameObjects.GameObject;
+  mass: number = 0;
+  graphics: Phaser.GameObjects.Graphics;
+  beginning: number;
+
+  constructor(farthestOrbit: number) {
+    this.beginning = farthestOrbit + 1000;
+  }
+
+  create(scene: Phaser.Scene): void {
+    this.graphics = scene.add.graphics();
+    const innerCircle = new Phaser.Geom.Circle(0, 0, this.beginning);
+    UI.showHoverHint(this.graphics, <GameState>scene.scene.settings.data, () => this.hint())
+    this.graphics
+      .setInteractive({
+        useHandCursor: true,
+        hitArea: new Phaser.Geom.Circle(0, 0, this.beginning),
+        hitAreaCallback: (circle: Phaser.Geom.Circle, x: number, y: number) =>
+          !Phaser.Geom.Circle.Contains(circle, x, y)
+      })
+      .disableInteractive();
+  }
+
+  update(scene: Phaser.Scene): void {
+  }
+
+  setScale(scale: number): void {
+    const isVisible = scale < 100;
+    this.graphics.setVisible(isVisible)
+
+    if (this.graphics.visible) {
+      this.graphics
+        .clear()
+        .setInteractive()
+        .lineStyle(this.beginning * 6, 0x200924)
+        .beginPath()
+        .arc(0, 0, this.beginning * 4, 0, Math.PI * 2, false, 0.02)
+        .closePath()
+        .strokePath();
+    } else {
+      this.graphics.disableInteractive();
+    }
+  }
+
+  positionAt(minutes: number): Phaser.Math.Vector2 {
+    return new Phaser.Math.Vector2(0, 0)
+  }
+
+  info(): ObjectInfo {
+    throw new Error("Method not implemented.");
+  }
+
+  hint(): string {
+    return "Interstellar space.\nTravel into to begin an interstellar voyage."
+  }
+
 }
 
 class Asteroids implements ScalableObject {

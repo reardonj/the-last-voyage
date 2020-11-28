@@ -17,6 +17,8 @@ export default class Utilities {
 }
 
 export class UI {
+  public static Margin = 8;
+
   public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint, sound?: boolean) {
     obj.setInteractive({ useHandCursor: true });
     obj.setTint(Colours.SelectableTint);

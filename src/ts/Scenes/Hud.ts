@@ -2,7 +2,6 @@ import { AudioManager } from "../GameData/AudioManager";
 import GameState, { Alert, Events, LocationChangedEvent, ObjectInfo, ShipSystem, ShipSystems, StatusMaxValue, TimePassedEvent } from "../GameData/GameState";
 import { Colours, Fonts, Resources, Sprites, UI } from "../Utilities";
 
-const LeftMargin = 8;
 const StatusBars = 20;
 
 type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, running: boolean];
@@ -47,7 +46,7 @@ export default class Hud extends Phaser.Scene {
     this.durationText = this.add.bitmapText(0, 696, Fonts.Proportional16, "").setTint(Colours.TextTint);
     this.locationText = this.add.bitmapText(0, 664, Fonts.Proportional24, "----").setTint(Colours.TextTint);
     this.statusText = this.add.bitmapText(0, 680, Fonts.Proportional16, "----").setTint(Colours.TextTint);
-    this.rightAlign(this.statusText, LeftMargin);
+    this.rightAlign(this.statusText, UI.Margin);
 
     this.needsAttentionAnimation = this.add.tween({
       targets: this,
@@ -58,13 +57,13 @@ export default class Hud extends Phaser.Scene {
       yoyo: true
     });
 
-    this.integrityText = this.createSystemStatusText(LeftMargin / 2, Resources.Hud.Integrity, () => this.integrityHint());
-    this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
-    this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
-    this.passengersText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
+    this.integrityText = this.createSystemStatusText(UI.Margin / 2, Resources.Hud.Integrity, () => this.integrityHint());
+    this.fuelText = this.createSystemStatusText(UI.Margin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
+    this.suppliesText = this.createSystemStatusText(UI.Margin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
+    this.passengersText = this.createSystemStatusText(UI.Margin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
 
     this.hoverHint = this.add
-      .bitmapText(0, LeftMargin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .bitmapText(0, UI.Margin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
       .setMaxWidth(800)
       .setTint(Colours.TextTint);
 
@@ -91,18 +90,18 @@ export default class Hud extends Phaser.Scene {
   }
 
   setupShipSystems(state: GameState) {
-    let yOffset = this.passengersText[1].y + this.passengersText[1].height + LeftMargin;
+    let yOffset = this.passengersText[1].y + this.passengersText[1].height + UI.Margin;
     this.systems = [];
     for (const system of state.shipSystemObjects) {
       const label = this.add.bitmapText(0, yOffset, Fonts.Proportional16, `[ ${system.name} ]`);
       UI.makeInteractive(label);
       UI.showHoverHint(label, state, () => system.hint())
       label.on("pointerdown", () => this.gameState().emit(Events.ShowInfo, system.info()));
-      this.rightAlign(label, LeftMargin);
+      this.rightAlign(label, UI.Margin);
 
 
       this.systems.push([system, label]);
-      yOffset += label.height + LeftMargin / 2
+      yOffset += label.height + UI.Margin / 2
     }
   }
 
@@ -132,11 +131,11 @@ export default class Hud extends Phaser.Scene {
       .setOrigin(0, 0)
       .setTint(Colours.TextTint)
       .setFlipX(true);
-    this.infoTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "")
+    this.infoTitle = this.add.bitmapText(UI.Margin, UI.Margin, Fonts.Proportional24, "")
       .setTint(Colours.TextTint);
     this.infoDetails = [];
 
-    this.infoContainer = this.add.container(0, LeftMargin * 4);
+    this.infoContainer = this.add.container(0, UI.Margin * 4);
     this.infoContainer.add(this.infoRect);
     this.infoContainer.add(this.infoTitle);
     this.infoContainer.add(this.infoBorder);
@@ -148,7 +147,7 @@ export default class Hud extends Phaser.Scene {
       .setOrigin(0, 0)
       .setInteractive();
 
-    this.alertTitle = this.add.bitmapText(LeftMargin, LeftMargin, Fonts.Proportional24, "", 32)
+    this.alertTitle = this.add.bitmapText(UI.Margin, UI.Margin, Fonts.Proportional24, "", 32)
       .setTint(Colours.TextTint);
     this.alertText = this.add.bitmapText(0, 0, Fonts.Proportional24, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
       .setMaxWidth(600)
@@ -169,7 +168,7 @@ export default class Hud extends Phaser.Scene {
 
   createSystemStatusText(y: number, name: string, hint: () => string): StatusItem {
     const text = this.add.bitmapText(0, y, Fonts.Proportional16, name + " " + "|".repeat(StatusBars)).setTint(Colours.TextTint);
-    this.rightAlign(text, LeftMargin);
+    this.rightAlign(text, UI.Margin);
     UI.showHoverHint(text, this.gameState(), hint);
 
     return [name, text, false];
@@ -180,7 +179,7 @@ export default class Hud extends Phaser.Scene {
       .setTint(Colours.WarningTint)
       .setMaxWidth(400)
       .setAlpha(1);
-    this.rightAlign(text, LeftMargin);
+    this.rightAlign(text, UI.Margin);
     return text;
   }
 
@@ -221,13 +220,13 @@ export default class Hud extends Phaser.Scene {
     const newWarningList = [];
     // Start below the systems list
     const lastSystemButton = this.systems[this.systems.length - 1][1]
-    let yOffset = lastSystemButton.y + lastSystemButton.height + LeftMargin;
+    let yOffset = lastSystemButton.y + lastSystemButton.height + UI.Margin;
     for (const warning of this.warnings) {
       if (warning.end < time) {
         warning.display.destroy();
       } else {
         warning.display.setY(yOffset);
-        yOffset = warning.display.y + warning.display.height + LeftMargin;
+        yOffset = warning.display.y + warning.display.height + UI.Margin;
         newWarningList.push(warning);
       }
     }
@@ -240,17 +239,17 @@ export default class Hud extends Phaser.Scene {
       `${Resources.Hud.MissionDuration}: ` +
       `${UI.createTimeString(state.earth, state.minutesPerTick, 1)} ${Resources.Hud.AbsoluteDuration} / ` +
       `${UI.createTimeString(state.relative, state.minutesPerTick, 0)} ${Resources.Hud.RelativeDuration}`);
-    this.rightAlign(this.durationText, LeftMargin);
+    this.rightAlign(this.durationText, UI.Margin);
   }
 
   updateLocation(state: LocationChangedEvent) {
     this.locationText.setText([...state].reverse().join("."));
-    this.rightAlign(this.locationText, LeftMargin);
+    this.rightAlign(this.locationText, UI.Margin);
   }
 
   updateStatus(state: string) {
     this.statusText.setText(state);
-    this.rightAlign(this.statusText, LeftMargin);
+    this.rightAlign(this.statusText, UI.Margin);
   }
 
   private updateSystemStatus(item: StatusItem): (state: number) => void {
@@ -273,11 +272,11 @@ export default class Hud extends Phaser.Scene {
       this.currentAlert = alert;
       this.alertTitle.setText(alert.title).setY(0);
       UI.centre(0, this.alertRect.width, this.alertTitle);
-      let yOffset = this.alertTitle.height + LeftMargin * 2;
+      let yOffset = this.alertTitle.height + UI.Margin * 2;
 
       this.alertText.setText(alert.text).setY(yOffset);
       UI.centre(0, this.alertRect.width, this.alertText);
-      yOffset += this.alertText.height + LeftMargin * 2;
+      yOffset += this.alertText.height + UI.Margin * 2;
 
       this.alertAction.setText(`[ ${alert.action.name}]`).setY(yOffset);
       UI.centre(0, this.alertRect.width, this.alertAction);
@@ -340,27 +339,27 @@ export default class Hud extends Phaser.Scene {
       this.currentInfo = info;
       this.currentInfo.onlyUpdate = false;
       this.infoTitle.setText(info.name);
-      let yOffset = this.infoTitle.height + LeftMargin;
+      let yOffset = this.infoTitle.height + UI.Margin;
 
       const gameState = <GameState>this.scene.settings.data;
       for (const line of info.details ?? []) {
         let control: Phaser.GameObjects.BitmapText;
         if (typeof (line) === "string") {
-          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, line)
+          control = this.add.bitmapText(UI.Margin, yOffset, Fonts.Proportional16, line)
             .setTint(Colours.TextTint)
             .setMaxWidth(400);
         } else if (Array.isArray(line)) {
-          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, line[0])
+          control = this.add.bitmapText(UI.Margin, yOffset, Fonts.Proportional16, line[0])
             .setTint(Colours.TextTint)
             .setMaxWidth(400);
           UI.showHoverHint(control, gameState, line[1])
         } else {
-          control = this.add.bitmapText(LeftMargin, yOffset, Fonts.Proportional16, `[ ${line.name} ]`);
+          control = this.add.bitmapText(UI.Margin, yOffset, Fonts.Proportional16, `[ ${line.name} ]`);
           UI.makeInteractive(control);
           UI.showHoverHint(control, gameState, () => line.hint);
           control.on('pointerdown', () => line.action(gameState));
         }
-        yOffset += control.height + LeftMargin / 2;
+        yOffset += control.height + UI.Margin / 2;
         this.infoContainer.add(control);
         this.infoDetails.push(control);
       }
@@ -368,7 +367,7 @@ export default class Hud extends Phaser.Scene {
       const width = [this.infoTitle.width, ...this.infoDetails.map(x => x.width)]
         .reduce((max, x) => Math.max(max, x), 0);
       const height = yOffset;
-      this.infoRect.setSize(width + LeftMargin * 2, height + LeftMargin * 2);
+      this.infoRect.setSize(width + UI.Margin * 2, height + UI.Margin * 2);
       this.infoBorder.displayHeight = this.infoRect.height;
       this.infoBorder.setX(this.infoRect.width - 8);
       this.infoContainer.setX(-this.infoRect.width);

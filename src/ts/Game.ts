@@ -20,12 +20,12 @@ export default class Game extends Phaser.Game {
     super(config);
 
     this.scene.add(Boot.Name, Boot);
-    this.scene.add(AudioScene.Name, AudioScene);
     this.scene.add(Preloader.Name, Preloader);
     this.scene.add(SplashScreen.Name, SplashScreen);
     this.scene.add(MainMenu.Name, MainMenu);
     this.scene.add(Hud.Name, Hud);
     this.scene.add(Transition.Name, Transition, true);
+    this.scene.add(AudioScene.Name, AudioScene);
     this.scene.start(Boot.Name);
   }
 }
