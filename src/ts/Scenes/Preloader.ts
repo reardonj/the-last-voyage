@@ -1,5 +1,5 @@
 import { audioAssets, AudioManager, AudioScene } from "../GameData/AudioManager";
-import { Fonts, Sprites } from "../Utilities";
+import { Colours, Fonts, Sprites } from "../Utilities";
 import MainMenu from "./MainMenu";
 
 export default class Preloader extends Phaser.Scene {
@@ -7,6 +7,7 @@ export default class Preloader extends Phaser.Scene {
    * Unique name of the scene.
    */
   public static Name = "Preloader";
+  progressAnimation: Phaser.Tweens.Tween;
 
   public preload(): void {
     this.addProgressBar();
@@ -32,75 +33,30 @@ export default class Preloader extends Phaser.Scene {
     this.scene.start(MainMenu.Name);
   }
 
-  public update(): void {
-    // preload handles updates to the progress bar, so nothing should be needed here.
-  }
-
   /**
    * Adds a progress bar to the display, showing the percentage of assets loaded and their name.
    */
   private addProgressBar(): void {
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;
-    /** Customizable. This text color will be used around the progress bar. */
-    const outerTextColor = '#ffffff';
+    const drawingColour = Colours.NeutralTint;
 
     const progressBar = this.add.graphics();
-    const progressBox = this.add.graphics();
-    progressBox.fillStyle(0x222222, 0.8);
-    progressBox.fillRect(width / 4, height / 2 - 30, width / 2, 50);
-
-    const loadingText = this.make.text({
-      x: width / 2,
-      y: height / 2 - 50,
-      text: "Loading...",
-      style: {
-        font: "20px monospace",
-        fill: outerTextColor
-      }
-    });
-    loadingText.setOrigin(0.5, 0.5);
-
-    const percentText = this.make.text({
-      x: width / 2,
-      y: height / 2 - 5,
-      text: "0%",
-      style: {
-        font: "18px monospace",
-        fill: "#ffffff"
-      }
-    });
-    percentText.setOrigin(0.5, 0.5);
-
-    const assetText = this.make.text({
-      x: width / 2,
-      y: height / 2 + 50,
-      text: "",
-      style: {
-        font: "18px monospace",
-        fill: outerTextColor
-      }
-    });
-
-    assetText.setOrigin(0.5, 0.5);
-
-    this.load.on("progress", (value: number) => {
-      percentText.setText(parseInt(value * 100 + "", 10) + "%");
-      progressBar.clear();
-      progressBar.fillStyle(0xffffff, 1);
-      progressBar.fillRect((width / 4) + 10, (height / 2) - 30 + 10, (width / 2 - 10 - 10) * value, 30);
-    });
-
-    this.load.on("fileprogress", (file: Phaser.Loader.File) => {
-      assetText.setText("Loading asset: " + file.key);
-    });
+    progressBar
+      .lineStyle(2, drawingColour)
+      .fillStyle(0, 1)
+      .strokeCircle(0, 0, 50)
+      .fillCircle(0, 50, 14)
+      .strokeCircle(0, 50, 12)
+      .setPosition(width / 2, height / 2)
+    this.progressAnimation = this.tweens.add({
+      targets: progressBar,
+      rotation: { from: 0, to: Math.PI * 2 },
+      duration: 4000
+    })
 
     this.load.on("complete", () => {
       progressBar.destroy();
-      progressBox.destroy();
-      loadingText.destroy();
-      percentText.destroy();
-      assetText.destroy();
     });
   }
 }
