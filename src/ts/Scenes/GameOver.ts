@@ -1,4 +1,5 @@
 import GameState, { GameOverState } from "../GameData/GameState";
+import SavedGames from "../GameData/SavedGames";
 import { Colours, Fonts, Resources, UI } from "../Utilities";
 import Hud from "./Hud";
 import MainMenu from "./MainMenu";
@@ -7,7 +8,11 @@ export default class GameOver extends Phaser.Scene {
   static Name = "GameOver";
 
   public create(state: GameState): void {
-    this.events.on('transitioncomplete', () => this.scene.stop(Hud.Name), this);
+    this.events.on('transitioncomplete',
+      () => {
+        this.scene.stop(Hud.Name);
+        SavedGames.deleteGame();
+      }, this);
 
     this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, 0x000000, 1);
     const title = this.add.bitmapText(0, 200, Fonts.Proportional24, "Your Journey has Ended", 32)

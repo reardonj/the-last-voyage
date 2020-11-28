@@ -26,4 +26,8 @@ export default class SavedGames {
     window.localStorage.setItem("saved_game", JSON.stringify(state.toSavedState()));
     return true;
   }
+
+  static deleteGame() {
+    window.localStorage.removeItem("saved_game");
+  }
 }
