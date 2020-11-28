@@ -25,11 +25,18 @@ export class Hanger implements ShipSystem {
       this.state.useIntegrity(-durationRelativeMinutes / 2);
       if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
         this.stopBuilding();
+      } else if (this.state.supplies < 0.01 * StatusMaxValue) {
+        this.state.emit(Events.Warning, "Insufficient supplies to continue repairs.");
+        this.stopBuilding();
       }
     } else if (building === "scavenge") {
       if (this.isInBelt()) {
         this.state.useSupplies(-durationRelativeMinutes * 0.5);
+        if (this.state.supplies === StatusMaxValue) {
+          this.state.emit(Events.Warning, "Holds full, recalling drones.");
+        }
       } else {
+        this.state.emit(Events.Warning, "Left belt, recalling drones.");
         this.stopBuilding();
       }
     } else if (building && typeof (remaining) === "number") {
@@ -226,7 +233,8 @@ export class Hanger implements ShipSystem {
   }
 
   hint(): string {
-    return "Automatic provisioning and repair facilities. Use to repair the ship or build short-range ships and orbitals."
+    return "Automatic provisioning and repair facilities. Use to repair the ship or build short-range ships and orbitals." +
+      `\nCurrent Operation: ${this.currentAction()[1]}`
   }
 
 }

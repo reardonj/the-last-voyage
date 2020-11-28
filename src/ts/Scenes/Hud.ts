@@ -6,8 +6,6 @@ const StatusBars = 20;
 
 type StatusItem = [name: string, display: Phaser.GameObjects.BitmapText, running: boolean];
 
-type WarningItem = { text: Phaser.GameObjects.BitmapText; anim: Phaser.Tweens.Tween | null; };
-
 export default class Hud extends Phaser.Scene {
   /**
    * Unique name of the scene.
@@ -27,8 +25,8 @@ export default class Hud extends Phaser.Scene {
   infoDetails: Phaser.GameObjects.BitmapText[];
   statusText: Phaser.GameObjects.BitmapText;
   hoverHint: Phaser.GameObjects.BitmapText;
-  warningText: WarningItem;
-  pendingWarnings = new Set<string>();
+  pendingWarnings: Set<string> = new Set();
+  warnings: { end: number, text: string, display: Phaser.GameObjects.BitmapText }[] = [];
   systems: [ShipSystem, Phaser.GameObjects.BitmapText][];
   currentInfo: ObjectInfo | null;
   currentAlert: Alert | null;
@@ -63,7 +61,6 @@ export default class Hud extends Phaser.Scene {
     this.fuelText = this.createSystemStatusText(LeftMargin / 2 + 20, Resources.Hud.Fuel, () => this.fuelHint());
     this.suppliesText = this.createSystemStatusText(LeftMargin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
     this.passengersText = this.createSystemStatusText(LeftMargin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
-    this.warningText = this.createWarningText();
 
     this.hoverHint = this.add
       .bitmapText(0, LeftMargin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
@@ -85,7 +82,7 @@ export default class Hud extends Phaser.Scene {
     state.watch(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
     state.watch(Events.PassengersChanged, this.updateSystemStatus(this.passengersText), this);
     state.watch(Events.SuppliesChanged, this.updateSystemStatus(this.suppliesText), this);
-    state.watch(Events.Warning, this.updateWarning(this.warningText), this);
+    state.watch(Events.Warning, this.handleWarning, this);
     state.watch(Events.ShowInfo, this.showInfo, this);
     state.watch(Events.HoverHint, this.showHoverHint, this);
     state.watch(Events.UpdateStatus, this.updateStatus, this);
@@ -177,19 +174,20 @@ export default class Hud extends Phaser.Scene {
     return [name, text, false];
   }
 
-  createWarningText(): WarningItem {
-    const text = this.add.bitmapText(0, 0, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+  createWarningText(message: string) {
+    const text = this.add.bitmapText(0, 0, Fonts.Proportional16, message, undefined, Phaser.GameObjects.BitmapText.ALIGN_RIGHT)
       .setTint(Colours.WarningTint)
-      .setAlpha(0);
-
-    return { text, anim: null };
+      .setMaxWidth(400)
+      .setAlpha(1);
+    this.rightAlign(text, LeftMargin);
+    return text;
   }
 
   rightAlign(text: Phaser.GameObjects.BitmapText, margin: number) {
     text.setX(this.cameras.main.width - text.width - margin);
   }
 
-  public update() {
+  public update(time: number, delta: number) {
     // Update active animations for ship systems
     for (const [sys, label] of this.systems) {
       if (sys.needsAttention) {
@@ -199,30 +197,40 @@ export default class Hud extends Phaser.Scene {
       }
     }
 
+    // Update active animations for status bars
     for (const status of [this.integrityText, this.fuelText, this.suppliesText, this.passengersText]) {
       status[1].alpha = status[2] ? this.needsAttentionAlpha : 1;
     }
 
     // Update warnings
     if (this.pendingWarnings.size > 0) {
-      const warningList: string[] = [];
+      const newEndTime = time + 5000;
       for (const warning of this.pendingWarnings) {
-        warningList.push(warning);
+        const existingWarning = this.warnings.find(x => x.text === warning);
+        if (existingWarning) {
+          existingWarning.end = Math.max(existingWarning.end, time + 2000);
+        } else {
+          this.warnings.push({ end: newEndTime, text: warning, display: this.createWarningText(warning) })
+        }
       }
       this.pendingWarnings.clear();
-      const warnings = warningList.join("\n");
-      this.warningText.text.setText(warnings).setY(this.hoverHint.height + LeftMargin);
-      UI.centre(0, this.cameras.main.width, this.warningText.text);
-      this.warningText.anim?.stop();
-      this.warningText.anim = this.add.tween({
-        targets: this.warningText.text,
-        alpha: { start: 1, to: 0 },
-        ease: 'Sin',
-        duration: 2000,
-        repeat: 0,
-        delay: 3500
-      });
     }
+
+    // Remove expired warnings
+    const newWarningList = [];
+    // Start below the systems list
+    const lastSystemButton = this.systems[this.systems.length - 1][1]
+    let yOffset = lastSystemButton.y + lastSystemButton.height + LeftMargin;
+    for (const warning of this.warnings) {
+      if (warning.end < time) {
+        warning.display.destroy();
+      } else {
+        warning.display.setY(yOffset);
+        yOffset = warning.display.y + warning.display.height + LeftMargin;
+        newWarningList.push(warning);
+      }
+    }
+    this.warnings = newWarningList;
   }
 
   updateTime(state: TimePassedEvent) {
@@ -251,10 +259,8 @@ export default class Hud extends Phaser.Scene {
     };
   }
 
-  private updateWarning(item: WarningItem): (warning: string) => void {
-    return (warning: string) => {
-      this.pendingWarnings.add(warning);
-    };
+  private handleWarning(warning: string): void {
+    this.pendingWarnings.add(warning);
   }
 
   showAlert(alert: Alert | null) {
@@ -402,7 +408,6 @@ export default class Hud extends Phaser.Scene {
   private showHoverHint(hint: string | null) {
     this.hoverHint.setText(hint ?? "");
     UI.centre(0, this.cameras.main.width, this.hoverHint);
-    this.warningText.text.setY(this.hoverHint.height + LeftMargin);
   }
 
   private gameState() {

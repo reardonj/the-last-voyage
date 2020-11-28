@@ -71,7 +71,7 @@ export const Colours = {
   Highlight: 0xa0cfa0,
   PanelBackground: 0x292933,
   SelectableTint: 0xccffcc,
-  WarningTint: 0xffbbbb,
+  WarningTint: 0xff5555,
   AllyTint: 0xccccff,
   EnemyTint: 0xffcccc,
   NeutralTint: 0xeeeeff
