@@ -18,7 +18,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 import AstronomicalMath from "../Logic/AstronomicalMath";
-import { YearInMinutes } from "../Logic/Conversions";
+import { StartTime, YearInMinutes } from "../Logic/Conversions";
 import GameState, { Alert, Events, Habitability, InterstellarLaunch, ObjectInfo, ShipSystem } from "./GameState";
 import { Planet, SolarSystem } from "./SolarSystemObjects";
 
@@ -107,7 +107,9 @@ export class Mission implements ShipSystem {
   info(): ObjectInfo {
     this.playerWarnedAboutResigning = false;
     const colonies = this.state.systems.reduce(
-      (s, sx) => s + sx.objects.reduce((o, ox) => o + (ox.type === "planet" ? (ox.civilizations?.length ?? 0) : 0), 0),
+      (s, sx) => s + sx.objects.reduce(
+        (o, ox) => o + (ox.type === "planet" ? (ox.civilizations?.filter(c => c.established > StartTime).length ?? 0) : 0),
+        0),
       0);
     return {
       name: "Mission Status",

@@ -29,3 +29,5 @@ export function contractTime(minutes: number, percentLightSpeed: number): number
 }
 
 export const YearInMinutes = 524160;
+
+export const StartTime = 4293394560;

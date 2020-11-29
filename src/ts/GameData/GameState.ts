@@ -18,7 +18,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 */
 
 import AstronomicalMath from "../Logic/AstronomicalMath";
-import { YearInMinutes } from "../Logic/Conversions";
+import { StartTime, YearInMinutes } from "../Logic/Conversions";
 import GameOver from "../Scenes/GameOver";
 import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
@@ -59,7 +59,7 @@ export default class GameState implements SavedState {
       integrity: StatusMaxValue,
       permanentDamage: 0,
       supplies: StatusMaxValue,
-      earthTime: 4293394560,
+      earthTime: StartTime,
       relativeTime: 0,
       systems: Worlds,
       shipSystems: {},
@@ -68,7 +68,7 @@ export default class GameState implements SavedState {
         orientation: new Phaser.Math.Vector2(5, 3).angle(),
         position: [-40, 146]
       },
-      currentScene: ["solar-system", { name: "Sol" }]
+      currentScene: ["solar-system", { name: "Ovid" }]
     },
       transitionScene);
   }
@@ -193,6 +193,12 @@ export default class GameState implements SavedState {
     updateCivilizations(this.systems, this, durationEarthMinutes);
 
     this.shipTimeStep(durationEarthMinutes, durationRelativeMinutes, thrusterAcceleration, acceleration);
+
+    // If the game has ended, we are just checking for posthumous victory.
+    if (this.currentScene[0] === "game-over") {
+      return;
+    }
+
     this.eventSource.emit(Events.TimePassed, { earth: this.earthTime, relative: this.relativeTime, minutesPerTick: durationEarthMinutes });
 
     this.lastSave += durationEarthMinutes;

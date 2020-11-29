@@ -114,7 +114,7 @@ export class Hanger implements ShipSystem {
     const passengers = Math.min(100000, this.state.passengers);
 
     if (passengers <= 0) {
-      this.state.emit(Events.Warning, "Warning: Cannot launch. No colonists available.");
+      this.state.emit(Events.Warning, "Error: Cannot launch. No colonists available.");
       return;
     }
 
@@ -128,7 +128,7 @@ export class Hanger implements ShipSystem {
     const planetPosition = planetPositionAt(planet, this.state.currentSystem()!.solarMass(), establishTime);
     const distance = planetPosition.distance(new Phaser.Math.Vector2(this.state.ship.position[0], this.state.ship.position[1]));
     if (distance > 200) {
-      this.state.emit(Events.Warning, "Warning: Cannot launch. Destination too far.");
+      this.state.emit(Events.Warning, "Error: Cannot launch. Destination too far.");
       return;
     }
 
