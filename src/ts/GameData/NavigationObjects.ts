@@ -405,7 +405,7 @@ class PlanetSprite implements ScalableObject {
       } else {
         const sprite = scene.add.sprite(-10000, -10000, Sprites.Civilization)
           .setOrigin(pos[0], pos[1])
-          .setTint(Colours.AllyTint);
+          .setTint(this.civilizationTint(civ));
 
         const state = <GameState>scene.scene.settings.data;
         sprite.setInteractive({ useHandCursor: true });
@@ -414,6 +414,10 @@ class PlanetSprite implements ScalableObject {
         this.civilizations.push({ sprite, civ, established: false, inView: true });
       }
     }
+  }
+
+  private civilizationTint(civ: Civilization): number | undefined {
+    return civ.destroyed ? Colours.DeadTint : Colours.AllyTint;
   }
 
   private destroyCivilizationSprites() {
@@ -437,6 +441,7 @@ class PlanetSprite implements ScalableObject {
     for (const civ of this.civilizations) {
       civ.established = civ.civ.established <= minutes;
       civ.sprite
+        .setTint(this.civilizationTint(civ.civ))
         .setAlpha(Phaser.Math.Clamp((minutes - civ.civ.established) / 10000, 0, 1))
         .setVisible(civ.established && this.sprite.visible)
         .setPosition(this.position.x, this.position.y)

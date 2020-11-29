@@ -84,7 +84,8 @@ export const Colours = {
   WarningTint: 0xff5555,
   AllyTint: 0xccccff,
   EnemyTint: 0xffcccc,
-  NeutralTint: 0xeeeeff
+  NeutralTint: 0xeeeeff,
+  DeadTint: 0x808080
 }
 
 export const Sprites = {

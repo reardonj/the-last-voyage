@@ -47,7 +47,23 @@ export const Worlds: SolarSystem[] = [
         atmosphere: "Toxic",
         temperature: "Warm",
         biosphere: "Remnant",
-        details: { "scanner": 1000000 }
+        details: { "scanner": 1000000 },
+        civilizations: [
+          {
+            established: 0,
+            events: [],
+            growthRate: 0,
+            population: 0,
+            scanned: true,
+            species: "human",
+            techProgress: 0,
+            technology: "Interstellar",
+            destroyed: {
+              cause: "Ecological collapse",
+              time: 4293394560
+            }
+          }
+        ]
       },
       {
         type: "planet",
@@ -61,7 +77,23 @@ export const Worlds: SolarSystem[] = [
         atmosphere: "Radioactive Cinders",
         temperature: "Cold",
         biosphere: "Microbial",
-        details: { "scanner": 1000000 }
+        details: { "scanner": 1000000 },
+        civilizations: [
+          {
+            established: 3893394560,
+            events: [],
+            growthRate: 0,
+            population: 0,
+            scanned: true,
+            species: "karrethan",
+            techProgress: 0,
+            technology: "Interstellar",
+            destroyed: {
+              cause: "orbital nuclear bombardment",
+              time: 4093394560
+            }
+          }
+        ]
       },
       {
         type: "planet",
