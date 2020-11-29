@@ -4,7 +4,7 @@ import GameOver from "../Scenes/GameOver";
 import Interstellar from "../Scenes/Interstellar";
 import SolarSystemNavigation from "../Scenes/SolarSystemNavigation";
 import Transition from "../Scenes/Transition";
-import Utilities from "../Utilities";
+import Utilities, { UI } from "../Utilities";
 import { AudioManager } from "./AudioManager";
 import { updateCivilizations } from "./Civilization";
 import { Hanger } from "./Hanger";
@@ -312,7 +312,7 @@ export default class GameState implements SavedState {
       remove: true,
       allowInput: false
     });
-    this.transitionScene.startTransition(400);
+    this.transitionScene.startTransition(UI.TransitionLength);
   }
 
   useSupplies(amount: number) {

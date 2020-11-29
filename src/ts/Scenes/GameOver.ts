@@ -42,7 +42,7 @@ export default class GameOver extends Phaser.Scene {
         duration: 300,
         remove: true
       });
-      state.transitionScene.startTransition(300);
+      state.transitionScene.startTransition(UI.TransitionLength);
     }, this);
 
 
