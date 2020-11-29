@@ -1,8 +1,10 @@
 # build directories
 public/
+*.zip
 # legacy
 build/
 dist/
+
 
 # Dependency directories
 node_modules/
@@ -13,3 +15,6 @@ node_modules/
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+# OS Things
+**.DS_Store
