@@ -209,7 +209,11 @@ export default class GameState implements SavedState {
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
-    this.useIntegrity(durationRelativeMinutes / 1000);
+    this.useIntegrity(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
+    this.useSupplies(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
+    if (this.supplies <= 0) {
+      this.useIntegrity(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
+    }
 
     // Accelerating beyond 2g causes damage.
     if (acceleration > 2) {
@@ -236,7 +240,7 @@ export default class GameState implements SavedState {
     // If the ship sustains serious damage while having <50% hull integrity, 
     // people will die. The more people aboard, the more likely deaths occur.
     const damage = previousIntegrity - this.integrity;
-    if (damage > 100 && this.integrity < 0.5 * StatusMaxValue) {
+    if (damage / durationRelativeMinutes > 10 && this.integrity < 0.5 * StatusMaxValue) {
       const popPercent = this.passengers / StatusMaxValue;
       this.passengers = clampStatusValue(this.passengers - popPercent * Phaser.Math.Between(1, damage));
       this.eventSource.emit(Events.PassengersChanged, this.passengers);
@@ -276,6 +280,8 @@ export default class GameState implements SavedState {
 
     if (fuelUsage >= this.fuel) {
       this.eventSource.emit(Events.Warning, "Error: Cannot travel to destination. Insufficient fuel.");
+    } else if (travelTime.relative * 4 >= 100 * this.integrity / StatusMaxValue) {
+      this.eventSource.emit(Events.Warning, "Error: Cannot travel to destination. Insufficient hull integrity.");
     } else {
       this.nextScene = ["interstellar", { travelTime, origin, destination, leavingPosition }]
     }
@@ -350,7 +356,9 @@ export default class GameState implements SavedState {
   }
 
   useIntegrity(amount: number) {
-    this.permanentDamage += 0.1 * amount;
+    if (amount > 0) {
+      this.permanentDamage += 0.1 * amount;
+    }
     this.integrity = Phaser.Math.Clamp(this.integrity - amount, 0, StatusMaxValue - this.permanentDamage);
   }
 }

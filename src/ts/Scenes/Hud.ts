@@ -56,6 +56,7 @@ export default class Hud extends Phaser.Scene {
   alertContainer: Phaser.GameObjects.Container;
   needsAttentionAnimation: Phaser.Tweens.Tween;
   needsAttentionAlpha: number = 1;
+  permanentDamage: Phaser.GameObjects.BitmapText;
 
   public preload(): void {
     // Preload as needed.
@@ -81,6 +82,11 @@ export default class Hud extends Phaser.Scene {
     this.suppliesText = this.createSystemStatusText(UI.Margin / 2 + 40, Resources.Hud.Supplies, () => this.suppliesHint());
     this.passengersText = this.createSystemStatusText(UI.Margin / 2 + 60, Resources.Hud.Passengers, () => this.passengersHint());
 
+    this.permanentDamage = this.add
+      .bitmapText(this.cameras.main.width - UI.Margin, UI.Margin / 2, Fonts.Proportional16, "")
+      .setOrigin(1, 0)
+      .setTint(Colours.WarningTint);
+
     this.hoverHint = this.add
       .bitmapText(0, UI.Margin / 2, Fonts.Proportional16, "", undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
       .setMaxWidth(800)
@@ -98,7 +104,7 @@ export default class Hud extends Phaser.Scene {
     state.watch(Events.TimePassed, this.updateTime, this);
     state.watch(Events.LocationChanged, this.updateLocation, this);
     state.watch(Events.FuelChanged, this.updateSystemStatus(this.fuelText), this);
-    state.watch(Events.IntegrityChanged, this.updateSystemStatus(this.integrityText), this);
+    state.watch(Events.IntegrityChanged, this.updateIntegrityStatus(this.integrityText), this);
     state.watch(Events.PassengersChanged, this.updateSystemStatus(this.passengersText), this);
     state.watch(Events.SuppliesChanged, this.updateSystemStatus(this.suppliesText), this);
     state.watch(Events.Warning, this.handleWarning, this);
@@ -125,23 +131,23 @@ export default class Hud extends Phaser.Scene {
   }
 
   suppliesHint(): string {
-    const suppliesPercent = Math.max(1, 100 * this.gameState().supplies / StatusMaxValue).toFixed(0);
-    return `Supplies: ${suppliesPercent}% cargo capacity\nAvaiable components and raw materials for fabrication.`;
+    const suppliesPercent = Math.round(100 * this.gameState().supplies / StatusMaxValue).toFixed(0);
+    return `Supplies: ${suppliesPercent}% cargo capacity\nAvailable components and raw materials for fabrication and ship maintenance.\nHull integrity will quickly degrade if no supplies for maintenance are available.`;
   }
 
   passengersHint(): string {
-    const passengers = Math.ceil(this.gameState().passengers).toLocaleString();
+    const passengers = Math.floor(this.gameState().passengers).toLocaleString();
     return `${passengers} live human passengers, in cryostasis`
   }
 
   fuelHint(): string {
-    const fuelPercent = Math.max(1, 100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
-    return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship. Orbit within 200 million km of a sun to refuel.`;
+    const fuelPercent = Math.round(100 * this.gameState().fuel / StatusMaxValue).toFixed(0);
+    return `Fuel: ${fuelPercent}%\n Reactor fuel available to power the ship. Orbit within 200 million km of a sun to recharge fuel cells.`;
   }
 
   integrityHint(): string {
-    const integrityPercent = Math.max(1, 100 * this.gameState().integrity / StatusMaxValue).toFixed(0);
-    return `Hull integrity: ${integrityPercent}%\nLoss will result in injuries, deaths and ultimately the destruction of the ship.`;
+    const integrityPercent = Math.round(100 * this.gameState().integrity / StatusMaxValue).toFixed(0);
+    return `Hull integrity: ${integrityPercent}%\n Irreparable damage: ${(this.gameState().permanentDamage / StatusMaxValue * 100).toFixed()}% total integrity\nShip system stability. Estimated endurance without repair: 50 years (relative).`;
   }
 
   private setupInfoPanel() {
@@ -274,8 +280,16 @@ export default class Hud extends Phaser.Scene {
   private updateSystemStatus(item: StatusItem): (state: number) => void {
     return (state: number) => {
       const bars = Phaser.Math.Clamp(StatusBars * state / StatusMaxValue, 0, StatusBars);
-      item[1].setText(item[0] + " " + "|".repeat(Math.ceil(bars)));
+      item[1].setText(item[0] + " " + "|".repeat(Math.round(bars)));
       item[2] = bars / 20 < 0.2;
+    };
+  }
+
+  private updateIntegrityStatus(item: StatusItem): (state: number) => void {
+    return (state: number) => {
+      this.updateSystemStatus(item)(state);
+      const bars = Phaser.Math.Clamp(StatusBars * this.gameState().permanentDamage / StatusMaxValue, 0, StatusBars);
+      this.permanentDamage.setText("|".repeat(Math.round(bars)));
     };
   }
 

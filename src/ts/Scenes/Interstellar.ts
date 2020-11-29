@@ -62,9 +62,9 @@ export default class Interstellar extends Phaser.Scene {
     }
 
     const nextState = {
-      velocity: initPosition.clone().scale(-5).rotate(0.001),
+      velocity: initPosition.clone().scale(-5).rotate(0.2),
       position: initPosition.scale(farthestOrbit + 500),
-      orientation: initPosition.angle(),
+      orientation: initPosition.clone().rotate(0.2).angle(),
       name: this.sceneState.destination.name
     }
     const animationLength = Math.max(4000, this.sceneState.travelTime.reference * 500);
