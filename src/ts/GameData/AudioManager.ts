@@ -34,24 +34,11 @@ export class AudioScene extends Scene implements Audio {
   private sounds: { [id: string]: Phaser.Sound.BaseSound } = {};
   private lastWarning: number = 0;
   private warningOn: boolean = false;
+  private audioSupported: boolean = true;
   audioToggle: Phaser.GameObjects.BitmapText;
 
   public create() {
     scene = this;
-    this.audioToggle = this.add.bitmapText(UI.Margin, 696, Fonts.Proportional16, "");
-    this.audioToggle.on("pointerdown", () => {
-      if (this.sound.locked) {
-        return;
-      }
-      const mute = !this.sound.mute;
-      this.sound.mute = mute;
-      this.setAudioToggleText();
-      SavedGames.setAudioOn(!mute);
-    }, this);
-    UI.makeInteractive(this.audioToggle, true);
-    this.sound.mute = !SavedGames.audioOn();
-    this.setAudioToggleText();
-    this.sound.on('unlocked', () => { this.sound.mute = !SavedGames.audioOn() });
   }
 
   private setAudioToggleText() {
@@ -65,16 +52,47 @@ export class AudioScene extends Scene implements Audio {
   }
 
   public init() {
-    this.sounds["click"] = this.sound.add("click", { volume: maxVolume("click") });
-    this.sounds["rollover"] = this.sound.add("rollover", { volume: maxVolume("rollover") });
-    this.sounds["opening"] = this.sound.add("opening", { loop: true });
-    this.sounds["game"] = this.sound.add("game", { loop: true });
-    this.sounds["victory"] = this.sound.add("victory", { loop: false });
-    this.sounds["loss"] = this.sound.add("loss", { loop: false });
-    this.sounds["warning"] = this.sound.add("warning", { volume: maxVolume("warning"), loop: false });
+    try {
+      this.sounds["click"] = this.sound.add("click", { volume: maxVolume("click") });
+      this.sounds["rollover"] = this.sound.add("rollover", { volume: maxVolume("rollover") });
+      this.sounds["opening"] = this.sound.add("opening", { loop: true });
+      this.sounds["game"] = this.sound.add("game", { loop: true });
+      this.sounds["victory"] = this.sound.add("victory", { loop: false });
+      this.sounds["loss"] = this.sound.add("loss", { loop: false });
+      this.sounds["warning"] = this.sound.add("warning", { volume: maxVolume("warning"), loop: false });
+    } catch (e) {
+      Utilities.Log("Could not init audio: " + e)
+      this.audioSupported = false;
+    }
+
+    if (this.audioSupported) {
+      this.audioToggle = this.add.bitmapText(UI.Margin, 696, Fonts.Proportional16, "");
+      this.audioToggle.on("pointerdown", () => {
+        if (this.sound.locked) {
+          return;
+        }
+        const mute = !this.sound.mute;
+        this.sound.mute = mute;
+        this.setAudioToggleText();
+        SavedGames.setAudioOn(!mute);
+      }, this);
+      UI.makeInteractive(this.audioToggle, true);
+      this.sound.mute = !SavedGames.audioOn();
+      this.setAudioToggleText();
+      this.sound.on('unlocked', () => { this.sound.mute = !SavedGames.audioOn() });
+    } else {
+      this.audioToggle = this.add
+        .bitmapText(UI.Margin, 696, Fonts.Proportional16, "[ Audio unsupported ]")
+        .setAlpha(0.5)
+
+    }
   }
 
   public update(time: number, delta: number) {
+    if (!this.audioSupported) {
+      return;
+    }
+
     if (this.warningOn && this.lastWarning + 1500 < time) {
       this.sounds["warning"].play();
       this.lastWarning = time;
@@ -90,10 +108,15 @@ export class AudioScene extends Scene implements Audio {
   }
 
   public play(effect: SoundEffect) {
-    this.sounds[effect].play();
+    if (this.audioSupported) {
+      this.sounds[effect].play();
+    }
   }
 
   public changeBackground(next: Background) {
+    if (!this.audioSupported) {
+      return;
+    }
     const curr = this.currentBackground;
     if (next === curr) {
       return;

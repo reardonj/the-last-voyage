@@ -13,7 +13,7 @@
     "phaser": "^3.24.1"
   },
   "scripts": {
-    "build": "webpack --mode production",
+    "build": "webpack --mode production && zip -r -X the-last-voyage.zip public",
     "build-dev": "webpack --mode none",
     "start:dev": "webpack-dev-server --mode production",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx || (exit 0)"

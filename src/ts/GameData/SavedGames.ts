@@ -2,7 +2,14 @@ import GameState, { SavedState } from "./GameState";
 
 export default class SavedGames {
   static supported(): boolean {
-    return typeof (Storage) !== "undefined";
+    try {
+      window.localStorage.setItem("supported", "true");
+      return typeof (Storage) !== "undefined"
+        && typeof (window.localStorage.getItem("test")) !== "undefined";
+    }
+    catch {
+      return false;
+    }
   }
 
   static loadGame(): SavedState | null {
@@ -19,7 +26,7 @@ export default class SavedGames {
   }
 
   static saveGame(state: GameState): boolean {
-    if (!this.supported) {
+    if (!this.supported()) {
       return false;
     }
 
@@ -28,6 +35,9 @@ export default class SavedGames {
   }
 
   static deleteGame() {
+    if (!this.supported()) {
+      return;
+    }
     window.localStorage.removeItem("saved_game");
   }
 
