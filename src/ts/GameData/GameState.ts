@@ -208,7 +208,7 @@ export default class GameState implements SavedState {
           if ( // A collision occurs if in a belt, going too fast, once a week on average
             Utilities.exponentialProbability(durationEarthMinutes, 60 * 24 * 7)
           ) {
-            this.useIntegrity(velocityKmSecond * Phaser.Math.Between(10, 1000));
+            this.useIntegrity(velocityKmSecond * velocityKmSecond * Phaser.Math.Between(0.1, 10));
           }
         }
       }

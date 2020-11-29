@@ -16,20 +16,22 @@ export default class GameOver extends Phaser.Scene {
       }, this);
 
     this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, 0x000000, 1);
-    const title = this.add.bitmapText(0, 200, Fonts.Proportional24, "Your Journey has Ended", 32)
+    const title = this.add.bitmapText(0, 200, Fonts.Proportional24, "Your Voyage has Ended", 32)
       .setTint(Colours.TextTint)
       .setAlpha(0);
     UI.centre(0, this.cameras.main.width, title);
 
-    const reason = UI.centre(0, this.cameras.main.width,
-      this.add.bitmapText(0, 250, Fonts.Proportional24, this.getReasonText(state), undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
-        .setMaxWidth(600)
-        .setTint(Colours.TextTint)
-        .setAlpha(0));
-
-    const mainMenu = this.add.bitmapText(0, 680, Fonts.Proportional16, "[ Main Menu ]", undefined)
+    const reason = this.add
+      .bitmapText(0, 250, Fonts.Proportional24, this.getReasonText(state), undefined, Phaser.GameObjects.BitmapText.ALIGN_CENTER)
+      .setMaxWidth(600)
       .setTint(Colours.TextTint)
       .setAlpha(0);
+    UI.centre(0, this.cameras.main.width, reason);
+
+    const mainMenu = this.add.bitmapText(0, 0, Fonts.Proportional16, "[ Main Menu ]", undefined)
+      .setTint(Colours.TextTint)
+      .setAlpha(0);
+    mainMenu.setY(reason.y + reason.height + 24);
     UI.centre(0, this.cameras.main.width, mainMenu);
     UI.makeInteractive(mainMenu, true);
     mainMenu.on("pointerdown", () => {

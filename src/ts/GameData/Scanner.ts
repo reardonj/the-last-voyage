@@ -106,7 +106,7 @@ export default class Scanner implements ShipSystem {
         newDetails.push("Civilizations:");
         for (const civ of visibleCivs) {
           newDetails.push({
-            name: civ.species,
+            name: civ.species + (civ.destroyed ? " (dead)" : ""),
             hint: civilizationHint(civ),
             action: g => g.emit(Events.ShowInfo, civilizationInfo(civ, planet))
           })

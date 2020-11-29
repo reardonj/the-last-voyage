@@ -5,6 +5,20 @@ import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPo
 
 
 export function civilizationInfo(civ: Civilization, planet: Planet): ObjectInfo {
+  if (civ.destroyed) {
+    return {
+      name: `Dead ${civ.species} civilization on ${planet.name}`,
+      definition: null,
+      details: [
+        { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet)) },
+        `Established: ${civ.established > 0 ? UI.createTimeString(civ.established, 1, 1) : 'Pre-Mission'}`,
+        `Destroyed: ${UI.createTimeString(civ.destroyed.time, 1, 1)}`,
+        `Cause: ${civ.destroyed.cause}`,
+        `Tech level: ${civ.technology}`
+      ]
+    }
+
+  }
   return {
     name: `${civ.species} civilization on ${planet.name}`,
     definition: null,
@@ -29,6 +43,9 @@ function populationHint(civ: Civilization) {
 }
 
 export function civilizationHint(civ: Civilization): string {
+  if (civ.destroyed) {
+    return `dead ${civ.species} civilization`
+  }
   return `${civ.technology}, ${civ.species}, population approx. ${showPop(civ.population)}`
 }
 
@@ -102,6 +119,7 @@ function mergeCivilizations(civs: [Civilization], time: number) {
       relatedCiv.population += civs[i].population;
       relatedCiv.growthRate = Phaser.Math.Average([relatedCiv.growthRate, civs[i].growthRate]);
       relatedCiv.technology = maxTech(civs[i].technology, relatedCiv.technology);
+      relatedCiv.destroyed = undefined;
       civs.splice(i, 1);
     }
   }
@@ -109,6 +127,10 @@ function mergeCivilizations(civs: [Civilization], time: number) {
 
 function updateCivilization(system: SolarSystem, civ: Civilization, state: GameState, timePassed: number): void {
   if (civ.established > state.earthTime) {
+    return;
+  }
+
+  if (civ.destroyed) {
     return;
   }
 
@@ -122,6 +144,39 @@ function updateCivilization(system: SolarSystem, civ: Civilization, state: GameS
   }
 
   // Update tech
+  updateTech(civ, state, system);
+
+  // Do population growth
+  const yearlyGrowthRate = effectiveYearlyGrowthRate(civ);
+  let growthRate = Math.pow(yearlyGrowthRate, timePassed / 60 / 24 / 365);
+
+  // The population will only begin growing after a year
+  if (civ.established + YearInMinutes > state.earthTime) {
+    growthRate = Math.min(1, growthRate);
+  }
+  civ.population = Math.max(0, civ.population * growthRate);
+  if (civ.population <= 1) {
+    civ.destroyed = { time: state.earthTime, cause: worstEvent(civ.events).description }
+  }
+
+  // Remove expired events
+  civ.events = civ.events.filter(x => x.ends < state.earthTime);
+}
+
+function worstEvent(events: CivilizationEvent[]): CivilizationEvent {
+  return events.reduce((worst, x) => {
+    if (x.immediatePopulationEffect < worst.immediatePopulationEffect) {
+      return x;
+    }
+    if (x.growthRateEffect < worst.growthRateEffect) {
+      return x;
+    }
+    return worst;
+  },
+    { description: "no specific cause", ends: 0, growthRateEffect: 0, immediatePopulationEffect: 0, immediateTechEffect: 0 })
+}
+
+function updateTech(civ: Civilization, state: GameState, system: SolarSystem) {
   if (civ.techProgress >= 5) {
     civ.techProgress -= 5;
     if (civ.technology === "Neolithic") {
@@ -135,7 +190,7 @@ function updateCivilization(system: SolarSystem, civ: Civilization, state: GameS
     else if (civ.technology === "Intrastellar") {
       civ.technology = "Interstellar";
     } else {
-      state.emit(Events.InterstellarLaunch, { system: system, time: state.earthTime })
+      state.emit(Events.InterstellarLaunch, { system: system, time: state.earthTime });
     }
   } else if (civ.techProgress <= -10) {
     civ.techProgress += 10;
@@ -152,19 +207,6 @@ function updateCivilization(system: SolarSystem, civ: Civilization, state: GameS
       civ.technology = "Intrastellar";
     }
   }
-
-  // Do population growth
-  const yearlyGrowthRate = effectiveYearlyGrowthRate(civ);
-  let growthRate = Math.pow(yearlyGrowthRate, timePassed / 60 / 24 / 365);
-
-  // The population will only begin growing after a year
-  if (civ.established + YearInMinutes > state.earthTime) {
-    growthRate = Math.min(1, growthRate);
-  }
-  civ.population = civ.population * growthRate;
-
-  // Remove expired events
-  civ.events = civ.events.filter(x => x.ends < state.earthTime);
 }
 
 function effectiveYearlyGrowthRate(civ: Civilization) {
@@ -178,7 +220,7 @@ function getEvents(time: number, durationMinutes: number, potentialEvents: Poten
   for (const event of potentialEvents) {
     if (Utilities.exponentialProbability(durationYears, event.yearsBetween)) {
       actualEvents.push({
-        description: event.description,
+        description: Phaser.Math.RND.pick(event.description),
         ends: time + YearInMinutes * Phaser.Math.FloatBetween(event.duration[0], event.duration[1]),
         growthRateEffect: event.growthRateEffect ?? 0,
         immediatePopulationEffect: event.immediatePopulationEffect ?? 0,
@@ -191,7 +233,7 @@ function getEvents(time: number, durationMinutes: number, potentialEvents: Poten
 }
 
 type PotentialEvent = {
-  description: string
+  description: string[]
   yearsBetween: number
   duration: [number, number]
   growthRateEffect?: number
@@ -201,7 +243,7 @@ type PotentialEvent = {
 
 const stellarEvents: PotentialEvent[] = [
   {
-    description: "Solar flare bursts",
+    description: ["Solar flare bursts"],
     yearsBetween: 100,
     duration: [0.2, 1],
     immediatePopulationEffect: -100,
@@ -211,13 +253,13 @@ const stellarEvents: PotentialEvent[] = [
 
 const planetaryEvents: PotentialEvent[] = [
   {
-    description: "baby boom",
+    description: ["baby boom"],
     yearsBetween: 30,
     duration: [1, 5],
     growthRateEffect: 0.3,
   },
   {
-    description: "natural disaster",
+    description: ["fire", "flood", "famine"],
     yearsBetween: 5,
     duration: [0.05, 0.1],
     growthRateEffect: -0.1,
@@ -225,22 +267,30 @@ const planetaryEvents: PotentialEvent[] = [
     immediateTechEffect: -0.05
   },
   {
-    description: "cataclysm",
-    yearsBetween: 1000,
+    description: ["hurricane"],
+    yearsBetween: 10,
+    duration: [0.05, 0.1],
+    growthRateEffect: -0.01,
+    immediatePopulationEffect: -1000,
+    immediateTechEffect: 0
+  },
+  {
+    description: ["asteroid impact"],
+    yearsBetween: 1,
     duration: [0.5, 10],
     growthRateEffect: -1,
     immediatePopulationEffect: -1000000,
     immediateTechEffect: -2
   },
   {
-    description: "technological breakthrough",
+    description: ["technological breakthrough"],
     yearsBetween: 10,
     duration: [1, 20],
     growthRateEffect: 0.2,
     immediateTechEffect: 0.5
   },
   {
-    description: "major technological breakthrough",
+    description: ["major technological breakthrough"],
     yearsBetween: 100,
     duration: [10, 100],
     growthRateEffect: 0.2,

@@ -62,6 +62,7 @@ export type Civilization = {
   /** Population growth rate in percent/year */
   growthRate: number
   events: CivilizationEvent[]
+  destroyed?: { time: number, cause: string }
 }
 
 export type CivilizationEvent = {

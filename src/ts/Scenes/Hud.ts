@@ -203,6 +203,7 @@ export default class Hud extends Phaser.Scene {
     }
 
     // Update warnings
+    AudioManager()?.warning(this.pendingWarnings.size > 0)
     if (this.pendingWarnings.size > 0) {
       const newEndTime = time + 5000;
       for (const warning of this.pendingWarnings) {
@@ -231,7 +232,6 @@ export default class Hud extends Phaser.Scene {
       }
     }
     this.warnings = newWarningList;
-    AudioManager()?.warning(this.warnings.length > 0)
   }
 
   updateTime(state: TimePassedEvent) {

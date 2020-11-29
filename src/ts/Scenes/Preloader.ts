@@ -47,7 +47,7 @@ export default class Preloader extends Phaser.Scene {
       .fillStyle(0, 1)
       .strokeCircle(0, 0, 50)
       .fillCircle(0, 50, 14)
-      .strokeCircle(0, 50, 12)
+      .strokeCircle(0, 50, 10)
       .setPosition(width / 2, height / 2)
     this.progressAnimation = this.tweens.add({
       targets: progressBar,
