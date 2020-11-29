@@ -1,9 +1,7 @@
 import { AudioManager } from "../GameData/AudioManager";
 import GameState from "../GameData/GameState";
 import SavedGames from "../GameData/SavedGames";
-import Utilities, { Colours, Fonts, UI } from "../Utilities";
-import Hud from "./Hud";
-import SolarSystemNavigation from "./SolarSystemNavigation";
+import Utilities, { Colours, Fonts, Sprites, UI } from "../Utilities";
 import Transition from "./Transition";
 
 export default class MainMenu extends Phaser.Scene {
@@ -35,6 +33,26 @@ export default class MainMenu extends Phaser.Scene {
         state.transition(this);
       }, this);
     }
+
+    const controls = this.add.bitmapText(0, 550, Fonts.Proportional24, "Ship Controls").setTint(Colours.NeutralTint);
+    UI.centre(0, this.cameras.main.width, controls);
+
+    // Explanation
+    this.add.bitmapText(320, 580, Fonts.Proportional16, "P to Pause\nHover for info\nClick on [ buttons ]").setTint(Colours.NeutralTint)
+
+    // Thrust
+    const thrust = this.add.bitmapText(610, 580, Fonts.Proportional16, "Thrust\nUp for main thrusters\nDown for reverse")
+      .setTint(Colours.NeutralTint).setOrigin(0.5, 0);
+
+    // Rotation
+    const rotate = this.add.bitmapText(840, 580, Fonts.Proportional16, "Rotation\nRight for clockwise\nLeft for counterclockwise")
+      .setTint(Colours.NeutralTint).setOrigin(0.5, 0);
+
+    // Saves
+    const saving = this.add.bitmapText(400, 640, Fonts.Proportional16,
+      "Saves are automatic. There are no second chances. This is our last chance.").setTint(Colours.WarningTint)
+    UI.centre(0, this.cameras.main.width, saving);
+
   }
 
   private loadSave(): GameState | null {
