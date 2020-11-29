@@ -97,19 +97,10 @@ export default class GameOver extends Phaser.Scene {
         return Resources.GameOver.Fuel;
       case "integrity":
         return Resources.GameOver.Integrity;
+      case "resign":
+        return Resources.GameOver.Resign;
       case "victory":
         return Resources.GameOver.Victory;
-    }
-  }
-
-  private isWin(state: GameState): boolean {
-    switch ((<GameOverState>state.currentScene[1]).reason) {
-      case "victory":
-        return true;
-      case "fuel":
-        return false;
-      case "integrity":
-        return false;
     }
   }
 

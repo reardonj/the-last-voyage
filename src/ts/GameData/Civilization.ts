@@ -295,7 +295,7 @@ const planetaryEvents: PotentialEvent[] = [
   },
   {
     description: ["asteroid impact"],
-    yearsBetween: 1,
+    yearsBetween: 1000,
     duration: [0.5, 10],
     growthRateEffect: -1,
     immediatePopulationEffect: -1000000,

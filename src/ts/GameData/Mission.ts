@@ -26,6 +26,7 @@ export class Mission implements ShipSystem {
   name: string = "Mission";
   needsAttention: boolean;
   missionState: MissionState;
+  playerWarnedAboutResigning: boolean = false;
 
   constructor(private state: GameState) {
     state.watch(Events.InterstellarLaunch, this.handleLaunchDetected, this);
@@ -87,7 +88,7 @@ export class Mission implements ShipSystem {
           action: {
             name: "Continue",
             hint: "",
-            action: () => this.state.transitionTo(["game-over", { reason: "victory" }])
+            action: () => this.state.transitionTo(["game-over", { reason: "victory", time: this.state.earthTime }])
           }
         }
         this.state.emit(Events.Alert, alert);
@@ -104,21 +105,38 @@ export class Mission implements ShipSystem {
   }
 
   info(): ObjectInfo {
-    const colonies = this.state.systems.reduce((s, sx) => {
-      return s + sx.objects.reduce((o, ox) => o + (ox.type === "planet" ? (ox.civilizations?.length ?? 0) : 0), 0);
-    }, 0);
+    this.playerWarnedAboutResigning = false;
+    const colonies = this.state.systems.reduce(
+      (s, sx) => s + sx.objects.reduce((o, ox) => o + (ox.type === "planet" ? (ox.civilizations?.length ?? 0) : 0), 0),
+      0);
     return {
       name: "Mission Status",
       definition: null,
       details: [
         `Systems Visited: ${Object.keys(this.missionState.systems).length}`,
-        `Colonies Founded: ${colonies}`
+        `Colonies Founded: ${colonies}`,
+        {
+          name: "Resign",
+          hint: "Put the ship in stable orbit, shut down all non-essential systems, and leave Sojourner in the hands of fate.",
+          action: () => this.resign()
+        }
       ]
     }
   }
 
   hint(): string {
     return "Show mission status"
+  }
+
+  private resign() {
+    if (this.state.currentScene[0] !== "solar-system") {
+      this.state.emit(Events.Warning, "Error: You must enter a star system before resigning.");
+    } else if (!this.playerWarnedAboutResigning) {
+      this.state.emit(Events.Warning, "Warning: This will end the game. Press the command again to confirm your resignation.")
+      this.playerWarnedAboutResigning = true;
+    } else {
+      this.state.transitionTo(["game-over", { reason: "resign", time: this.state.earthTime }])
+    }
   }
 
   private handleLaunchDetected(launch: InterstellarLaunch) {

@@ -205,6 +205,9 @@ export default class GameState implements SavedState {
   private shipTimeStep(durationEarthMinutes: number, durationRelativeMinutes: number, thrusterAcceleration: number, acceleration: number) {
     const previousIntegrity = this.integrity;
     this.shipSystemObjects.forEach(x => x.timeStep(durationEarthMinutes, durationRelativeMinutes));
+    if (this.currentScene[0] === "game-over") {
+      return;
+    }
 
     this.earthTime += durationEarthMinutes;
     this.relativeTime += durationRelativeMinutes;
@@ -294,10 +297,10 @@ export default class GameState implements SavedState {
     }
 
     if (this.fuel == 0) {
-      this.currentScene = ["game-over", { reason: "fuel" }]
+      this.currentScene = ["game-over", { reason: "fuel", time: this.earthTime }]
       this.transition(currentScene);
     } else if (this.integrity == 0) {
-      this.currentScene = ["game-over", { reason: "integrity" }]
+      this.currentScene = ["game-over", { reason: "integrity", time: this.earthTime }]
       this.transition(currentScene);
     } else if (this.nextScene) {
       this.currentScene = this.nextScene;
@@ -475,7 +478,8 @@ export interface InterstellarState {
 }
 
 export interface GameOverState {
-  reason: "fuel" | "integrity" | "victory"
+  reason: "fuel" | "integrity" | "resign" | "victory",
+  time: number
 }
 
 export interface SolarSystemState {
