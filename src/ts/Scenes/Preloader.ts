@@ -1,4 +1,5 @@
 import { audioAssets, AudioManager, AudioScene } from "../GameData/AudioManager";
+import SavedGames from "../GameData/SavedGames";
 import { Colours, Fonts, Sprites } from "../Utilities";
 import MainMenu from "./MainMenu";
 
@@ -29,8 +30,6 @@ export default class Preloader extends Phaser.Scene {
   }
 
   public create(): void {
-    this.scene.run(AudioScene.Name,)
-    this.scene.start(MainMenu.Name);
   }
 
   /**
@@ -45,18 +44,33 @@ export default class Preloader extends Phaser.Scene {
     progressBar
       .lineStyle(2, drawingColour)
       .fillStyle(0, 1)
-      .strokeCircle(0, 0, 50)
+      .beginPath()
+      .arc(0, 0, 50, 0.25 + Math.PI * 0.5, Math.PI * 2.5 - 0.25)
+      .strokePath()
       .fillCircle(0, 50, 14)
-      .strokeCircle(0, 50, 10)
+      .strokeCircle(0, 48, 10)
       .setPosition(width / 2, height / 2)
     this.progressAnimation = this.tweens.add({
       targets: progressBar,
       rotation: { from: 0, to: Math.PI * 2 },
-      duration: 4000
+      duration: 4000,
+      repeat: -1
     })
 
     this.load.on("complete", () => {
-      progressBar.destroy();
+      this.tweens.add({
+        targets: progressBar,
+        alpha: { from: 1, to: 0 },
+        duration: 1000,
+        completeDelay: 100,
+        onComplete: () => {
+          this.scene.run(AudioScene.Name)
+
+          this.scene.start(MainMenu.Name, { animate: true });
+          progressBar.destroy();
+        },
+        onCompleteScope: this
+      });
     });
   }
 }

@@ -10,8 +10,8 @@ export default class MainMenu extends Phaser.Scene {
    */
   public static Name = "MainMenu";
 
-  public create(): void {
-    this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, 0x000000, 1);
+  public create(config: { animate?: boolean }): void {
+    this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, Colours.PanelBackground, 1);
     AudioManager()?.changeBackground("opening");
     UI.centre(0, this.cameras.main.width,
       this.add.bitmapText(0, 150, Fonts.Proportional48, "The Last Voyage").setTint(Colours.NeutralTint));
@@ -53,6 +53,18 @@ export default class MainMenu extends Phaser.Scene {
       "Saves are automatic. There are no second chances. This is our last chance.").setTint(Colours.WarningTint)
     UI.centre(0, this.cameras.main.width, saving);
 
+    // Load animation
+    if (config.animate) {
+      this.cameras.main.y = 720;
+      this.tweens.add({
+        targets: this.cameras.main,
+        y: 0,
+        ease: 'cubic.inout',
+        duration: 500,
+        delay: 100,
+        repeat: 0,
+      })
+    }
   }
 
   private loadSave(): GameState | null {
