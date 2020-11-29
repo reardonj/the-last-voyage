@@ -32,10 +32,16 @@ export default class SavedGames {
   }
 
   static audioOn(): boolean {
+    if (!this.supported()) {
+      return false;
+    }
     return (window.localStorage.getItem("audioOn") ?? "false") == "true"
   }
 
   static setAudioOn(on: boolean) {
+    if (!this.supported()) {
+      return;
+    }
     window.localStorage.setItem("audioOn", on ? "true" : "false");
   }
 }
