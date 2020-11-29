@@ -13,6 +13,7 @@ export function audioAssets(): [Sound, string][] {
   return [
     ["click", "audio/click.ogg"],
     ["rollover", "audio/rollover.ogg"],
+    ["intro", "audio/Space Cadet.ogg"],
     ["opening", "audio/bittersweet.ogg"],
     ["game", "audio/Drifting Beyond the Stars.ogg"],
     ["victory", "audio/triumphant.ogg"],
@@ -58,6 +59,7 @@ export class AudioScene extends Scene implements Audio {
       this.sounds["opening"] = this.sound.add("opening", { loop: true });
       this.sounds["game"] = this.sound.add("game", { loop: true });
       this.sounds["victory"] = this.sound.add("victory", { loop: false });
+      this.sounds["intro"] = this.sound.add("intro", { loop: false });
       this.sounds["loss"] = this.sound.add("loss", { loop: false });
       this.sounds["warning"] = this.sound.add("warning", { volume: maxVolume("warning"), loop: false });
     } catch (e) {
@@ -136,7 +138,7 @@ export class AudioScene extends Scene implements Audio {
       targets: this.sounds[next],
       volume: { from: 0.0001, to: maxVolume(next) },
       ease: "Expo.easeIn",
-      duration: 4000,
+      duration: 2000,
       repeat: 0
     })
     this.sounds[next].play();
@@ -160,6 +162,8 @@ function maxVolume(sound: Sound): number {
       return 0.2;
     case "warning":
       return 0.8;
+    case "intro":
+      return 0.2;
   }
 }
 
@@ -167,4 +171,4 @@ type Sound = SoundEffect | Background | "warning";
 
 export type SoundEffect = "click" | "rollover"
 
-export type Background = "opening" | "game" | "victory" | "loss"
+export type Background = "opening" | "game" | "victory" | "loss" | "intro"

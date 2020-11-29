@@ -2,6 +2,7 @@ import { audioAssets, AudioManager, AudioScene } from "../GameData/AudioManager"
 import SavedGames from "../GameData/SavedGames";
 import { Colours, Fonts, Sprites } from "../Utilities";
 import MainMenu from "./MainMenu";
+import SplashScreen from "./SplashScreen";
 
 export default class Preloader extends Phaser.Scene {
   /**
@@ -65,8 +66,13 @@ export default class Preloader extends Phaser.Scene {
         completeDelay: 100,
         onComplete: () => {
           this.scene.run(AudioScene.Name)
-
-          this.scene.start(MainMenu.Name, { animate: true });
+          if (SavedGames.introShown()) {
+            this.scene.add(MainMenu.Name, MainMenu, false);
+            this.scene.start(MainMenu.Name, { animate: true });
+          } else {
+            this.scene.add(SplashScreen.Name, SplashScreen, false);
+            this.scene.start(SplashScreen.Name);
+          }
           progressBar.destroy();
         },
         onCompleteScope: this

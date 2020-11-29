@@ -3,6 +3,7 @@ import GameState from "../GameData/GameState";
 import SavedGames from "../GameData/SavedGames";
 import Utilities, { Colours, Fonts, Sprites, UI } from "../Utilities";
 import MissionLogs from "./MissionLogs";
+import SplashScreen from "./SplashScreen";
 import Transition from "./Transition";
 
 export default class MainMenu extends Phaser.Scene {
@@ -12,6 +13,7 @@ export default class MainMenu extends Phaser.Scene {
   public static Name = "MainMenu";
 
   public create(config: { animate?: boolean }): void {
+    this.scene.sendToBack();
     this.add.rectangle(this.cameras.main.width / 2, this.cameras.main.height / 2, this.cameras.main.width, this.cameras.main.height, Colours.PanelBackground, 1);
     AudioManager()?.changeBackground("opening");
     UI.centre(0, this.cameras.main.width,
@@ -19,18 +21,31 @@ export default class MainMenu extends Phaser.Scene {
 
     const lastSave = this.loadSave();
     if (lastSave) {
-      this.addMenuItem(290, "Continue your voyage", () => { lastSave.transition(this) });
+      this.addMenuItem(260, "Continue your voyage", () => {
+        lastSave.transition(this)
+      });
     } else {
-      this.addMenuItem(290, "Launch the Sojourner", () => {
+      this.addMenuItem(260, "Launch the Sojourner", () => {
         const state = GameState.newGame(<Transition>this.scene.get(Transition.Name));
         state.transition(this);
       });
     }
 
-    this.addMenuItem(350, "Mission Logs", () => {
+    this.addMenuItem(328, "Mission Logs", () => {
       this.scene.add(MissionLogs.Name, MissionLogs, false).scene.sendToBack();
       this.scene.transition({
         target: MissionLogs.Name,
+        duration: UI.TransitionLength,
+        remove: true,
+        allowInput: false
+      });
+      (<Transition>this.scene.get(Transition.Name)).startTransition(UI.TransitionLength);
+    });
+
+    this.addMenuItem(395, "Replay Intro", () => {
+      this.scene.add(SplashScreen.Name, SplashScreen, false).scene.sendToBack();
+      this.scene.transition({
+        target: SplashScreen.Name,
         duration: UI.TransitionLength,
         remove: true,
         allowInput: false
@@ -54,7 +69,7 @@ export default class MainMenu extends Phaser.Scene {
 
     // Saves
     const saving = this.add.bitmapText(400, 550, Fonts.Proportional16,
-      "Saves are automatic. There are no second chances. This is our last chance.").setTint(Colours.WarningTint)
+      "Saves are automatic. There are no second chances. This is already our last shot.").setTint(Colours.WarningTint)
     UI.centre(0, this.cameras.main.width, saving);
 
     // Load animation
@@ -64,7 +79,7 @@ export default class MainMenu extends Phaser.Scene {
         targets: this.cameras.main,
         y: 0,
         ease: 'cubic.inout',
-        duration: 500,
+        duration: 1500,
         delay: 100,
         repeat: 0,
       })
@@ -72,8 +87,8 @@ export default class MainMenu extends Phaser.Scene {
   }
 
   private addMenuItem(y: number, text: string, action: Function) {
-    const continueText = this.add.bitmapText(0, y, Fonts.Proportional24, `[ ${text} ]`);
-    UI.centre(0, this.cameras.main.width, continueText);
+    const continueText = this.add.bitmapText(this.cameras.main.width / 2, y, Fonts.Proportional24, `[ ${text} ]`)
+      .setOrigin(0.5, 0.5);
     UI.makeInteractive(continueText, true);
     continueText.on("pointerdown", action, this);
   }

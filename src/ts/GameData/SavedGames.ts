@@ -54,4 +54,18 @@ export default class SavedGames {
     }
     window.localStorage.setItem("audioOn", on ? "true" : "false");
   }
+
+  static introShown(): boolean {
+    if (!this.supported()) {
+      return false;
+    }
+    return (window.localStorage.getItem("introShown") ?? "false") == "true"
+  }
+
+  static setIntroShown(shown: boolean) {
+    if (!this.supported()) {
+      return;
+    }
+    window.localStorage.setItem("introShown", shown ? "true" : "false");
+  }
 }
