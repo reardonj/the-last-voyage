@@ -53,7 +53,7 @@ module.exports = {
           from: './src/assets',
           to: 'assets',
           globOptions: {
-            ignore: ['**.md', '**.mp3']
+            ignore: ['**.md']
           }
         }
       ]

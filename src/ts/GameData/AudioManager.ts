@@ -28,17 +28,21 @@ export interface Audio {
   changeBackground(background: Background): void
 }
 
-export function audioAssets(): [Sound, string][] {
+export function audioAssets(): [Sound, string[]][] {
   return [
-    ["click", "audio/click.ogg"],
-    ["rollover", "audio/rollover.ogg"],
-    ["intro", "audio/Space Cadet.ogg"],
-    ["opening", "audio/bittersweet.ogg"],
-    ["game", "audio/Drifting Beyond the Stars.ogg"],
-    ["victory", "audio/triumphant.ogg"],
-    ["loss", "audio/hauntingPiano.ogg"],
-    ["warning", "audio/warning.ogg"]
+    ["click", withExtensions("audio/click")],
+    ["rollover", withExtensions("audio/rollover")],
+    ["intro", withExtensions("audio/Space Cadet")],
+    ["opening", withExtensions("audio/bittersweet")],
+    ["game", withExtensions("audio/Drifting Beyond the Stars")],
+    ["victory", withExtensions("audio/triumphant")],
+    ["loss", withExtensions("audio/hauntingPiano")],
+    ["warning", withExtensions("audio/warning")]
   ]
+}
+
+function withExtensions(baseName: string): string[] {
+  return [baseName + ".ogg", baseName + ".mp3"];
 }
 
 let scene: AudioScene | undefined;
