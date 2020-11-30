@@ -135,6 +135,7 @@ export class Hanger implements ShipSystem {
     this.systems["hanger"]["colonization fleet"]--;
     this.state.usePassengers(passengers);
     const newCiv: Civilization = {
+      type: "colony",
       established: establishTime,
       population: passengers,
       techProgress: 0,

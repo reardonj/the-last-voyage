@@ -69,6 +69,7 @@ export const Worlds: SolarSystem[] = [
         details: { "scanner": 1000000 },
         civilizations: [
           {
+            type: "colony",
             established: 0,
             events: [],
             growthRate: 0,
@@ -99,6 +100,7 @@ export const Worlds: SolarSystem[] = [
         details: { "scanner": 1000000 },
         civilizations: [
           {
+            type: "colony",
             established: 3893394560,
             events: [],
             growthRate: 0,

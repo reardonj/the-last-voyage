@@ -17,7 +17,7 @@ You should have received a copy of the GNU General Public License
 along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-import { civilizationHint, civilizationInfo } from "./Civilization";
+import { civDeadTerm, civilizationHint, civilizationInfo, civTypeName } from "./Civilization";
 import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, sumHabitabilities } from "./GameState";
 import { Atmosphere, Civilization, orbitalPeriod, Planet, planetInfo, planetPositionAt, relativeEarthGravity, Temperature } from "./SolarSystemObjects";
 
@@ -122,16 +122,16 @@ export default class Scanner implements ShipSystem {
       const visibleCivs = (planet.civilizations ?? [])
         .filter((x: Civilization) => x.established <= this.state.earthTime);
       if (visibleCivs.length > 0) {
-        newDetails.push("Civilizations:");
+        newDetails.push("Civilizations & Outputs:");
         for (const civ of visibleCivs) {
           newDetails.push({
-            name: civ.species + (civ.destroyed ? " (dead)" : ""),
+            name: `${civ.species} ${civTypeName(civ)}` + (civ.destroyed ? ` (${civDeadTerm(civ)})` : ""),
             hint: civilizationHint(civ),
             action: g => g.emit(Events.ShowInfo, civilizationInfo(civ, planet))
           })
         }
       } else {
-        newDetails.push("Civilizations: None");
+        newDetails.push("Civilizations & Outposts: None");
       }
       scansComplete++;
     }

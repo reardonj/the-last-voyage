@@ -110,7 +110,16 @@ export class Mission implements ShipSystem {
     this.playerWarnedAboutResigning = false;
     const colonies = this.state.systems.reduce(
       (s, sx) => s + sx.objects.reduce(
-        (o, ox) => o + (ox.type === "planet" ? (ox.civilizations?.filter(c => c.established > StartTime).length ?? 0) : 0),
+        (o, ox) => o + (ox.type === "planet" ?
+          (ox.civilizations?.filter(c => c.type === "colony" && c.established > StartTime).length ?? 0) :
+          0),
+        0),
+      0);
+    const orbitals = this.state.systems.reduce(
+      (s, sx) => s + sx.objects.reduce(
+        (o, ox) => o + (ox.type === "planet" ?
+          (ox.civilizations?.filter(c => c.type === "orbital" && c.established > StartTime).length ?? 0) :
+          0),
         0),
       0);
     return {
@@ -119,6 +128,7 @@ export class Mission implements ShipSystem {
       details: [
         `Systems Visited: ${Object.keys(this.missionState.systems).length}`,
         `Colonies Founded: ${colonies}`,
+        `Orbitals Deployed: ${orbitals}`,
         {
           name: "Resign",
           hint: "Put the ship in stable orbit, shut down all non-essential systems, and leave Sojourner in the hands of fate.",
