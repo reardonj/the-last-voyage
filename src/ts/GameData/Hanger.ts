@@ -53,7 +53,7 @@ export class Hanger implements ShipSystem {
       }
     } else if (building === "scavenge") {
       if (this.isInBelt()) {
-        this.state.useSupplies(-durationRelativeMinutes * 0.5);
+        this.state.useSupplies(-durationRelativeMinutes * 1);
         if (this.state.supplies === StatusMaxValue) {
           this.state.emit(Events.Warning, "Info: Holds full, recalling drones.");
         }
@@ -111,7 +111,7 @@ export class Hanger implements ShipSystem {
       });
     }
 
-    if (this.colonyShips() > 0) {
+    if (this.researchOrbitals() > 0) {
       info.details.push({
         name: "Deploy Research Orbital",
         hint: `Deploy 10,000 colonists to an orbital around ${planet.name}`,
@@ -209,6 +209,11 @@ export class Hanger implements ShipSystem {
 
     const planetGravity = relativeEarthGravity(planet);
 
+    // We've already tried earth, so penalize.
+    if (planet.name === "Earth") {
+      points -= 15;
+    }
+
     if (points > 3 && (planetGravity < 0.7 && planetGravity > 0.3) || (planetGravity > 1.2 && planetGravity < 2)) {
       points -= 3;
       habitability.gravity = true;
@@ -227,12 +232,15 @@ export class Hanger implements ShipSystem {
       habitability.atmosphere = true;
     }
 
-    if (points > 3 && planet.biosphere !== "Miscible") {
+    if (points > 5 && planet.biosphere === "Immiscible") {
+      points -= 5;
+      habitability.biosphere = true;
+    } else if (points > 3 && planet.biosphere !== "Miscible") {
       points -= 3;
       habitability.biosphere = true;
     }
 
-    if (points > 3 && planet.temperature !== "Frozen") {
+    if (points > 3 && planet.temperature === "Frozen") {
       points -= 3;
       habitability.temperature = true;
     }
