@@ -20,7 +20,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { addCivilization } from "./Civilization";
 import GameState, { Events, Habitability, ObjectDetail, ObjectInfo, ShipSystem, ShipSystems, SolarSystemDefinition, StatusMaxValue } from "./GameState";
-import { Civilization, Planet, planetInfo, planetPositionAt, withinAsteroidBelt } from "./SolarSystemObjects";
+import { Civilization, Planet, planetInfo, planetPositionAt, relativeEarthGravity, withinAsteroidBelt } from "./SolarSystemObjects";
 
 export class Hanger implements ShipSystem {
   name: string = "Fabricators";
@@ -98,18 +98,26 @@ export class Hanger implements ShipSystem {
       !system ||
       !planet ||
       planet instanceof SolarSystemDefinition ||
-      planet.type != "planet" ||
-      !this.state.isHabitable(planet)
+      planet.type != "planet"
     ) {
       return;
     }
 
-    if (this.colonyShips() > 0)
+    if (this.state.isHabitable(planet) && this.colonyShips() > 0) {
       info.details.push({
         name: "Launch Colonization Fleet",
         hint: `Send 100,000 colonists to ${planet.name}`,
         action: () => this.launchColonyShip(planet)
       });
+    }
+
+    if (this.colonyShips() > 0) {
+      info.details.push({
+        name: "Deploy Research Orbital",
+        hint: `Deploy 10,000 colonists to an orbital around ${planet.name}`,
+        action: () => this.launchOrbital(planet)
+      });
+    }
   }
 
   launchColonyShip(planet: Planet): void {
@@ -152,8 +160,84 @@ export class Hanger implements ShipSystem {
     this.state.emit(Events.ShowInfo, null)
   }
 
+  launchOrbital(planet: Planet): void {
+    const passengers = Math.min(10000, this.state.passengers);
+
+    if (passengers <= 0) {
+      this.state.emit(Events.Warning, "Error: Cannot launch. No colonists available.");
+      return;
+    }
+
+    if (!this.systems["hanger"]["research orbital"]) {
+      this.state.emit(Events.Warning, "Error: No orbitals available.");
+      this.state.emit(Events.ShowInfo, planetInfo(planet))
+      return;
+    }
+
+    const establishTime = this.state.earthTime + 15 * 24 * 20;
+    const planetPosition = planetPositionAt(planet, this.state.currentSystem()!.solarMass(), establishTime);
+    const distance = planetPosition.distance(new Phaser.Math.Vector2(this.state.ship.position[0], this.state.ship.position[1]));
+    if (distance > 50) {
+      this.state.emit(Events.Warning, "Error: Cannot deploy. Destination too far.");
+      return;
+    }
+
+    this.systems["hanger"]["research orbital"]--;
+    this.state.usePassengers(passengers);
+    const newCiv: Civilization = {
+      type: "orbital",
+      established: establishTime,
+      population: passengers,
+      maxPopulation: 15000,
+      techProgress: 0,
+      scanned: true,
+      species: "human",
+      technology: "Interstellar",
+      growthRate: 1.01,
+      events: []
+    };
+    addCivilization(planet, newCiv);
+    this.state.emit(Events.LaunchColonizationFleet, planet)
+    this.state.emit(Events.ShowInfo, null)
+  }
+
   isHabitable(planet: Planet): Habitability {
-    return {}
+    const habitability: Habitability = {};
+    let points = planet.civilizations
+      ?.filter(x => x.type === "orbital" && !x.destroyed && x.technology === "Interstellar")
+      .reduce((total, x) => x.techProgress + total, 0) ?? 0;
+
+    const planetGravity = relativeEarthGravity(planet);
+
+    if (points > 3 && (planetGravity < 0.7 && planetGravity > 0.3) || (planetGravity > 1.2 && planetGravity < 2)) {
+      points -= 3;
+      habitability.gravity = true;
+    }
+
+    if (points > 3 && planet.composition !== "Rocky") {
+      points -= 3;
+      habitability.composition = true;
+    }
+
+    if (points > 2 && (planet.atmosphere === "Thin" || planet.atmosphere === "Thick")) {
+      points -= 2;
+      habitability.atmosphere = true;
+    } else if (points > 4 && (planet.atmosphere === "Toxic" || planet.atmosphere === "Inert")) {
+      points -= 4;
+      habitability.atmosphere = true;
+    }
+
+    if (points > 3 && planet.biosphere !== "Miscible") {
+      points -= 3;
+      habitability.biosphere = true;
+    }
+
+    if (points > 3 && planet.temperature !== "Frozen") {
+      points -= 3;
+      habitability.temperature = true;
+    }
+
+    return habitability;
   }
 
   info(): ObjectInfo {

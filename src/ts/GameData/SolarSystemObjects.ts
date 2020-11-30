@@ -60,7 +60,6 @@ export type Planet = {
   temperature?: Temperature,
   biosphere?: Biosphere,
 
-  /** Technology level and population (millions) */
   civilizations?: [Civilization]
   details: { [id: string]: any }
 }

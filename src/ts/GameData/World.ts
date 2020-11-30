@@ -72,7 +72,7 @@ export const Worlds: SolarSystem[] = [
             type: "colony",
             established: 0,
             events: [],
-            growthRate: 0,
+            growthRate: 1,
             population: 0,
             scanned: true,
             species: "human",

@@ -147,7 +147,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       this.launchEmitter.moveTo = true;
       this.launchEmitter.moveToX.loadConfig({ moveToX: { min: foundingPosition.x - 8, max: foundingPosition.x + 8 } });
       this.launchEmitter.moveToY.loadConfig({ moveToY: { min: foundingPosition.y - 8, max: foundingPosition.y + 8 } });
-      this.launchEmitter.emitParticle();
+      this.launchEmitter.emitParticle(civ.type === "colony" ? 5 : 1);
     }
 
   }

@@ -65,6 +65,10 @@ export function civilizationHint(civ: Civilization): string {
   if (civ.destroyed) {
     return `${civDeadTerm(civ)} ${civ.species} ${civTypeName(civ)}`
   }
+
+  if (civ.type === "orbital") {
+    return `${civ.species} ${civTypeName(civ)}, population approx. ${showPop(civ.population)}`
+  }
   return `${civ.technology}, ${civ.species}, population approx. ${showPop(civ.population)}`
 }
 
@@ -91,8 +95,10 @@ export function civDeadTerm(civ: Civilization): string {
 }
 
 function showPop(population: number) {
-  const popDecimals = population < 1000000 ? 2 : 0;
-  return `${(population / 1000000).toFixed(popDecimals)} million`
+  if (population < 1000) {
+    return "< 1000"
+  }
+  return (Math.round(population / 1000) * 1000).toFixed(0);
 }
 
 function maxTech(level1: TechLevel, level2: TechLevel): TechLevel {
@@ -177,7 +183,7 @@ function updateCivilization(system: SolarSystem, civ: Civilization, state: GameS
     newEvents.push({
       description: "overcrowding",
       ends: state.earthTime + 20 * YearInMinutes,
-      growthRateEffect: -0.05,
+      growthRateEffect: -0.5,
       immediateTechEffect: -0.1,
       immediatePopulationEffect: 0
     })
@@ -239,18 +245,22 @@ function worstEvent(events: CivilizationEvent[]): CivilizationEvent {
 
 function updateTech(civ: Civilization, state: GameState, system: SolarSystem) {
   if (civ.techProgress >= 5) {
-    civ.techProgress -= 5;
     if (civ.technology === "Neolithic") {
+      civ.techProgress -= 5;
       civ.technology = "Pre-industrial";
     } else if (civ.technology === "Pre-industrial") {
+      civ.techProgress -= 5;
       civ.technology = "Industrial";
     }
     else if (civ.technology === "Industrial") {
+      civ.techProgress -= 5;
       civ.technology = "Intrastellar";
     }
     else if (civ.technology === "Intrastellar") {
+      civ.techProgress -= 5;
       civ.technology = "Interstellar";
     } else if (civ.type === "colony") {
+      civ.techProgress -= 5;
       state.emit(Events.InterstellarLaunch, { system: system, time: state.earthTime });
     }
   } else if (civ.techProgress <= -10) {
