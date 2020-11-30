@@ -19,6 +19,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import { StartTime, YearInMinutes } from "../Logic/Conversions";
+import { AudioManager } from "./AudioManager";
 import GameState, { Alert, Events, Habitability, InterstellarLaunch, ObjectInfo, ShipSystem } from "./GameState";
 import { Planet, SolarSystem } from "./SolarSystemObjects";
 
@@ -92,6 +93,7 @@ export class Mission implements ShipSystem {
           }
         }
         this.state.emit(Events.Alert, alert);
+        AudioManager()?.changeBackground("victory")
       }
     }
 

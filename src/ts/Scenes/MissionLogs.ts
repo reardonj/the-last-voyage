@@ -19,7 +19,8 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 
 import { AudioManager } from "../GameData/AudioManager";
 import SavedGames from "../GameData/SavedGames";
-import { Colours, Fonts, UI } from "../Utilities";
+import { StartTime } from "../Logic/Conversions";
+import Utilities, { Colours, Fonts, UI } from "../Utilities";
 import MainMenu from "./MainMenu";
 import Transition from "./Transition";
 
@@ -35,14 +36,13 @@ export default class MissionLogs extends Phaser.Scene {
     UI.centre(0, this.cameras.main.width,
       this.add.bitmapText(0, 150, Fonts.Proportional48, "Mission Logs").setTint(Colours.NeutralTint));
 
-    this.addEntry(320, 300, "Victories");
-    this.addEntry(640, 300, "Posthumous Victories");
-    this.addEntry(960, 300, "Failures");
-    this.addEntry(425, 400, "Quickest Victory");
-    this.addEntry(855, 400, "Quickest Failure");
+    const log = SavedGames.missionLogs();
 
-    // Explanation
-
+    this.addEntry(320, 300, "Victories", log.victories.toFixed(0));
+    this.addEntry(640, 300, "Posthumous Victories", log.posthumousVictories.toFixed(0));
+    this.addEntry(960, 300, "Failures", log.failures.toFixed(0));
+    this.addEntry(425, 400, "Quickest Victory", log.quickestVictory ? UI.createTimeString(log.quickestVictory - StartTime, 0, 0) : undefined);
+    this.addEntry(855, 400, "Quickest Failure", log.quickestFailure ? UI.createTimeString(log.quickestFailure - StartTime, 0, 0) : undefined);
 
     const mainMenu = this.add.bitmapText(0, 550, Fonts.Proportional16, "[ Main Menu ]")
       .setTint(Colours.TextTint)
@@ -60,9 +60,9 @@ export default class MissionLogs extends Phaser.Scene {
     }, this);
   }
 
-  private addEntry(x: number, y: number, title: string) {
+  private addEntry(x: number, y: number, title: string, value: string | undefined) {
     this.add.bitmapText(x, y, Fonts.Proportional24, title).setTint(Colours.NeutralTint).setOrigin(0.5, 0.5);
-    this.add.bitmapText(x, y + 20, Fonts.Proportional16, "---").setTint(Colours.TextTint).setOrigin(0.5, 0.5);
+    this.add.bitmapText(x, y + 20, Fonts.Proportional16, value ?? "---").setTint(Colours.TextTint).setOrigin(0.5, 0.5);
   }
 
   public update(): void {

@@ -147,7 +147,7 @@ export default class Hud extends Phaser.Scene {
 
   integrityHint(): string {
     const integrityPercent = Math.round(100 * this.gameState().integrity / StatusMaxValue).toFixed(0);
-    return `Hull integrity: ${integrityPercent}%\n Irreparable damage: ${(this.gameState().permanentDamage / StatusMaxValue * 100).toFixed()}% total integrity\nShip system stability. Estimated endurance without repair: 50 years (relative).`;
+    return `Hull integrity: ${integrityPercent}%\n Irreparable damage: ${(this.gameState().permanentDamage / StatusMaxValue * 100).toFixed()}% total integrity\nShip system stability. Estimated endurance without repair: 50 years (relative)`;
   }
 
   private setupInfoPanel() {

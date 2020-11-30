@@ -17,7 +17,9 @@ You should have received a copy of the GNU General Public License
 along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+import MissionLogs from "../Scenes/MissionLogs";
 import GameState, { SavedState } from "./GameState";
+import { initialLog, LogSummary } from "./MissionLog";
 
 export default class SavedGames {
   static supported(): boolean {
@@ -85,6 +87,27 @@ export default class SavedGames {
     if (!this.supported()) {
       return;
     }
+
     window.localStorage.setItem("introShown", shown ? "true" : "false");
+  }
+
+  static missionLogs(): LogSummary {
+    if (!this.supported()) {
+      return initialLog();
+    }
+
+    const logs = window.localStorage.getItem("mission_logs");
+    if (!logs) {
+      return initialLog();
+    }
+
+    return JSON.parse(logs);
+  }
+
+  static saveMissionLogs(logs: LogSummary) {
+    if (!this.supported()) {
+      return;
+    }
+    window.localStorage.setItem("mission_logs", JSON.stringify(logs));
   }
 }

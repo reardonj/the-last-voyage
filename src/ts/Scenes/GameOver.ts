@@ -19,6 +19,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 
 import { AudioManager } from "../GameData/AudioManager";
 import GameState, { Events, GameOverState } from "../GameData/GameState";
+import { updateLog } from "../GameData/MissionLog";
 import SavedGames from "../GameData/SavedGames";
 import { YearInMinutes } from "../Logic/Conversions";
 import { Colours, Fonts, Resources, UI } from "../Utilities";
@@ -89,6 +90,8 @@ export default class GameOver extends Phaser.Scene {
     });
 
     if (this.isWin(state)) {
+      this.yearsPassed = 501;
+      SavedGames.saveMissionLogs(updateLog(SavedGames.missionLogs(), "victory", this.endTime(state)));
       this.tweens.add({
         targets: this.mainMenu,
         alpha: { from: 0, to: 1 },
@@ -122,8 +125,8 @@ export default class GameOver extends Phaser.Scene {
     }
   }
 
-  private yearsSinceLoss(state: GameState, time: number): number {
-    return (time - (<GameOverState>state.currentScene[1]).time) / YearInMinutes;
+  private endTime(state: GameState): number {
+    return (<GameOverState>state.currentScene[1]).time;
   }
 
   public update(time: number): void {
@@ -131,6 +134,7 @@ export default class GameOver extends Phaser.Scene {
       return;
     }
 
+    // Advance the game state to see if a civilization succeeds.
     const gameState = <GameState>this.scene.settings.data;
     if (!this.launchYear && this.yearsPassed < 500) {
       for (let i = 0; i < 10 && !this.launchYear; i++) {
@@ -141,6 +145,7 @@ export default class GameOver extends Phaser.Scene {
 
     if (this.launchYear) {
       const year = this.launchYear + Phaser.Math.Between(80, 200);
+      SavedGames.saveMissionLogs(updateLog(SavedGames.missionLogs(), "posthumous", year * YearInMinutes + this.endTime(gameState)));
       this.yearsPassed = 501;
       this.time.addEvent({
         delay: 15000,
@@ -149,6 +154,8 @@ export default class GameOver extends Phaser.Scene {
         loop: false
       })
     } else if (this.yearsPassed === 500) {
+      const ending = (<GameOverState>gameState.currentScene[1]).reason === "resign" ? "resigned" : "failure";
+      SavedGames.saveMissionLogs(updateLog(SavedGames.missionLogs(), ending, this.endTime(gameState)));
       this.yearsPassed = 501;
       this.tweens.add({
         targets: this.mainMenu,
