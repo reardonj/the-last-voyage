@@ -30,7 +30,11 @@ export class Hanger implements ShipSystem {
   constructor(private state: GameState) {
     this.systems = state.shipSystems;
     if (!this.systems["hanger"]) {
-      this.systems["hanger"] = { "building": undefined, "colonization fleet": 0 };
+      this.systems["hanger"] = {
+        "building": undefined,
+        "colonization fleet": 0,
+        "research orbital": 0
+      };
     }
   }
 
@@ -59,9 +63,7 @@ export class Hanger implements ShipSystem {
       }
     } else if (building && typeof (remaining) === "number") {
       remaining -= durationRelativeMinutes;
-      this.state.useSupplies(durationRelativeMinutes);
       if (remaining <= 0) {
-        this.state.useFuel(100000);
         this.systems["hanger"][building]++;
         this.stopBuilding();
       } else {
@@ -164,7 +166,8 @@ export class Hanger implements ShipSystem {
 
   private currentAction(): ObjectDetail[] {
     const state: ObjectDetail[] = [
-      `Colonization Fleets: ${this.colonyShips()}`
+      `Colonization Fleets: ${this.colonyShips()}`,
+      `Research Orbitals: ${this.researchOrbitals()}`
     ]
     if (this.systems["hanger"]["building"] === "repair") {
       state.push(
@@ -203,7 +206,12 @@ export class Hanger implements ShipSystem {
         {
           name: "Provision Colonization Fleet",
           hint: "Prepare short-range vessels and supplies to colonize a habitable world\n(25% supplies, 10% fuel)",
-          action: () => this.provisionColonyShip()
+          action: () => this.provision("colonization fleet", 0.25, 0.1, 0)
+        },
+        {
+          name: "Provision Research Orbital",
+          hint: "Cannibalize ship components to construct an advanced orbital research installation & habitat. Researchers can potentially solve habitability issues on a marginal planet.\n(5% supplies, 15% max integrity, 10% fuel)",
+          action: () => this.provision("research orbital", 0.05, 0.1, 0.15)
         });
     }
 
@@ -214,13 +222,23 @@ export class Hanger implements ShipSystem {
     return this.systems["hanger"]["colonization fleet"];
   }
 
-  private provisionColonyShip(): void {
-    const supplies = StatusMaxValue * 0.25;
-    if (this.state.supplies < supplies) {
-      this.state.emit(Events.Warning, "Insufficient supplies.");
+  private researchOrbitals() {
+    return this.systems["hanger"]["research orbital"];
+  }
+
+  private provision(project: string, supplies: number, fuel: number, maxIntegrity: number) {
+    if (this.state.supplies / StatusMaxValue < supplies) {
+      this.state.emit(Events.Warning, "Error: Insufficient supplies.");
+    } else if (this.state.fuel / StatusMaxValue < fuel) {
+      this.state.emit(Events.Warning, "Error: Insufficient fuel.");
+    } else if (1 - this.state.permanentDamage / StatusMaxValue < maxIntegrity) {
+      this.state.emit(Events.Warning, "Error: Insufficient components.");
     } else {
-      this.systems["hanger"]["building"] = "colonization fleet";
-      this.systems["hanger"]["remaining"] = supplies;
+      this.state.useSupplies(supplies * StatusMaxValue);
+      this.state.useFuel(fuel * StatusMaxValue);
+      this.state.permanentDamage += maxIntegrity * StatusMaxValue;
+      this.systems["hanger"]["building"] = project;
+      this.systems["hanger"]["remaining"] = (supplies + maxIntegrity) * StatusMaxValue;
       this.refreshInfo();
     }
   }
@@ -238,12 +256,10 @@ export class Hanger implements ShipSystem {
 
   private startScavenging(): void {
     if (this.isInBelt()) {
-
       this.systems["hanger"]["building"] = "scavenge";
       this.refreshInfo();
     } else {
       this.state.emit(Events.Warning, "Nothing nearby to scavenge");
-
     }
   }
 
@@ -252,7 +268,7 @@ export class Hanger implements ShipSystem {
   }
 
   hint(): string {
-    const currentAction = this.currentAction()[1];
+    const currentAction = this.currentAction()[2];
     let currentActionHint: string;
     if (typeof (currentAction) === "string") {
       currentActionHint = currentAction;
