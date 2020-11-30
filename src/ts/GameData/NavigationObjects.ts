@@ -42,7 +42,7 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
     .filter(x => system.objects[x].type == "sun")
     .map(x => (<Sun>system.objects[x]).mass)
     .reduce((a, x) => a + x, 0);
-  const planets: PlanetSprite[] = [];
+  const planets: (PlanetSprite | Asteroids)[] = [];
   for (let key in system.objects) {
     const object = system.objects[key];
     switch (object.type) {
@@ -55,7 +55,9 @@ export function createGameObjects(system: SolarSystemDefinition, others: { [id: 
         objects.push({ definition: object, scalable: sprite });
         break;
       case "asteroids":
-        objects.push({ definition: object, scalable: new Asteroids(object) })
+        const asteroids = new Asteroids(object);
+        planets.push(asteroids);
+        objects.push({ definition: object, scalable: asteroids })
     }
   }
   objects.unshift({ scalable: new InvisibleObjectIndicator(planets) });
@@ -202,7 +204,7 @@ class Asteroids implements ScalableObject {
       name: this.definition.name,
       definition: this.definition,
       details: [
-        "An ore and ice rich asteroid belt.",
+        this.definition.description ?? "An ore and ice rich asteroid belt.",
         "Traversing at >50km/s risks dangeous collisions.",
         "Deploy scavenger drones to mine and replenish the Sojourner's supplies."
       ]
@@ -384,7 +386,7 @@ class SunSprite implements ScalableObject {
   info() {
     return {
       name: this.definition.name,
-      details: ["Local sun."],
+      details: [this.definition.description ?? "Local sun."],
       definition: this.definition
     }
   }

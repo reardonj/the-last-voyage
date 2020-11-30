@@ -31,12 +31,14 @@ export type SolarSystemObject = Sun | Planet | AsteroidBelt;
 export type Sun = {
   type: "sun",
   name: string,
+  description?: string,
   mass: number,
   details: { [id: string]: any }
 }
 
 export type AsteroidBelt = {
   type: "asteroids",
+  description?: string,
   name: string,
   orbitalRadius: number,
   radius: number
@@ -59,7 +61,7 @@ export type Planet = {
   atmosphere?: Atmosphere,
   temperature?: Temperature,
   biosphere?: Biosphere,
-
+  potentialEvents?: PotentialEvent[],
   civilizations?: [Civilization]
   details: { [id: string]: any }
 }
@@ -90,6 +92,15 @@ export type CivilizationEvent = {
   immediatePopulationEffect: number
   immediateTechEffect: number
   description: string
+}
+
+export type PotentialEvent = {
+  description: string[]
+  yearsBetween: number
+  duration: [number, number]
+  growthRateEffect?: number
+  immediatePopulationEffect?: number
+  immediateTechEffect?: number
 }
 
 

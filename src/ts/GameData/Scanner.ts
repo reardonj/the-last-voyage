@@ -141,6 +141,13 @@ export default class Scanner implements ShipSystem {
     } else if (scansComplete == 4) {
       newDetails.unshift(this.showHabitability(planet));
       newDetails.unshift("Scan: Complete");
+
+      if (planet.potentialEvents) {
+        newDetails.push("Anomalies:");
+        for (const anomaly of planet.potentialEvents) {
+          newDetails.push([`  ${anomaly.description}`, () => `Occurs approximately every ${anomaly.yearsBetween} years.`])
+        }
+      }
     } else {
       newDetails.unshift("Scan: ---");
       newDetails.push(this.createScanAction(planet));

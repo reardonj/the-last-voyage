@@ -340,7 +340,6 @@ export const Worlds: SolarSystem[] = [
       }
     ]
   },
-  // Fix. Currently Celestial clone
   {
     name: "Valhalla",
     position: [-20, -16],
@@ -348,43 +347,56 @@ export const Worlds: SolarSystem[] = [
       {
         type: "sun",
         name: "Dagr",
+        description: "Named for the norse god of the sun.",
         mass: 24000000,
         details: {}
       },
       {
-        type: "planet",
-        name: "alpha-Valhalla",
-        mass: 8,
-        orbitalRadius: 34,
-        equatorialRadius: 0.2,
-        startAngle: 7,
-        orbitalSpeedMultiplier: 1,
-        composition: "Rocky",
-        temperature: "Molten",
-        details: {}
+        type: "asteroids",
+        name: "inner Valhalla field",
+        orbitalRadius: 90,
+        radius: 20
       },
       {
         type: "planet",
-        name: "beta-Valhalla",
+        name: "alpha-Valhalla",
         mass: 57,
-        orbitalRadius: 150,
+        orbitalRadius: 160,
         equatorialRadius: 0.99,
         startAngle: 7,
         orbitalSpeedMultiplier: 1,
         composition: "Rocky",
         temperature: "Warm",
         biosphere: "Miscible",
-        details: {}
+        atmosphere: "Breathable",
+        details: {},
+        potentialEvents: [
+          {
+            description: ["meteorite storms"],
+            duration: [0.1, 0.5],
+            yearsBetween: 5,
+            growthRateEffect: -0.1,
+            immediatePopulationEffect: -100
+          }
+        ]
+      },
+      {
+        type: "asteroids",
+        name: "outer Valhalla field",
+        orbitalRadius: 300,
+        radius: 32
       },
       {
         type: "planet",
-        name: "gamma-Valhalla",
-        mass: 20300,
-        orbitalRadius: 1821,
-        equatorialRadius: 9.8,
-        startAngle: 2,
+        name: "beta-Valhalla",
+        mass: 5700,
+        orbitalRadius: 610,
+        equatorialRadius: 3.3,
+        startAngle: 7,
         orbitalSpeedMultiplier: 1,
         composition: "Gas Giant",
+        temperature: "Warm",
+        biosphere: "Microbial",
         details: {}
       }
     ]

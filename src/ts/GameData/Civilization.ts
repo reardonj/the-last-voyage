@@ -20,7 +20,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 import { YearInMinutes } from "../Logic/Conversions";
 import Utilities, { UI } from "../Utilities";
 import GameState, { Events, ObjectInfo, SolarSystemDefinition } from "./GameState";
-import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPositionAt, SolarSystem, TechLevel } from "./SolarSystemObjects";
+import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPositionAt, PotentialEvent, SolarSystem, TechLevel } from "./SolarSystemObjects";
 
 
 export function civilizationInfo(civ: Civilization, planet: Planet): ObjectInfo {
@@ -134,6 +134,7 @@ function updateSystem(system: SolarSystem, state: GameState, timePassed: number)
     if (!civs) {
       continue;
     }
+    const planetEvents = getEvents(state.earthTime, timePassed, planet.potentialEvents ?? []);
 
     if (civs.length > 1) {
       mergeCivilizations(civs, state.earthTime);
@@ -141,6 +142,7 @@ function updateSystem(system: SolarSystem, state: GameState, timePassed: number)
 
     for (const civ of civs) {
       civ.events.push(...systemEvents);
+      civ.events.push(...planetEvents);
       updateCivilization(system, civ, state, timePassed);
     }
   }
@@ -301,15 +303,6 @@ function getEvents(time: number, durationMinutes: number, potentialEvents: Poten
   }
 
   return actualEvents;
-}
-
-type PotentialEvent = {
-  description: string[]
-  yearsBetween: number
-  duration: [number, number]
-  growthRateEffect?: number
-  immediatePopulationEffect?: number
-  immediateTechEffect?: number
 }
 
 const stellarEvents: PotentialEvent[] = [

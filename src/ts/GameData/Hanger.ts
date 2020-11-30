@@ -48,17 +48,17 @@ export class Hanger implements ShipSystem {
       if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
         this.stopBuilding();
       } else if (this.state.supplies < 0.01 * StatusMaxValue) {
-        this.state.emit(Events.Warning, "Insufficient supplies to continue repairs.");
+        this.state.emit(Events.Warning, "Error: Insufficient supplies to continue repairs.");
         this.stopBuilding();
       }
     } else if (building === "scavenge") {
       if (this.isInBelt()) {
         this.state.useSupplies(-durationRelativeMinutes * 0.5);
         if (this.state.supplies === StatusMaxValue) {
-          this.state.emit(Events.Warning, "Holds full, recalling drones.");
+          this.state.emit(Events.Warning, "Info: Holds full, recalling drones.");
         }
       } else {
-        this.state.emit(Events.Warning, "Left belt, recalling drones.");
+        this.state.emit(Events.Warning, "Info: Left belt, recalling drones.");
         this.stopBuilding();
       }
     } else if (building && typeof (remaining) === "number") {
@@ -329,9 +329,9 @@ export class Hanger implements ShipSystem {
 
   private repairShip(): void {
     if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
-      this.state.emit(Events.Warning, "Cannot effect further repairs.");
+      this.state.emit(Events.Warning, "Info: Cannot effect further repairs.");
     } else if (this.state.supplies < 0.01 * StatusMaxValue) {
-      this.state.emit(Events.Warning, "Insufficient supplies.");
+      this.state.emit(Events.Warning, "Error: Insufficient supplies to continue repairs.");
     } else {
       this.systems["hanger"]["building"] = "repair";
       this.refreshInfo();
@@ -343,7 +343,7 @@ export class Hanger implements ShipSystem {
       this.systems["hanger"]["building"] = "scavenge";
       this.refreshInfo();
     } else {
-      this.state.emit(Events.Warning, "Nothing nearby to scavenge");
+      this.state.emit(Events.Warning, "Error: Nothing nearby to scavenge");
     }
   }
 
