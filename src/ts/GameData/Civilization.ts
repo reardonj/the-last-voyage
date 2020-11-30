@@ -177,18 +177,42 @@ function updateCivilization(system: SolarSystem, civ: Civilization, state: GameS
 
   const newEvents = getEvents(state.earthTime, timePassed, civ.type === "colony" ? planetaryEvents : orbitalEvents);
 
-  if (
-    civ.maxPopulation &&
-    civ.population === civ.maxPopulation &&
-    !civ.events.find(x => x.description === "overcrowding")
-  ) {
-    newEvents.push({
-      description: "overcrowding",
-      ends: state.earthTime + 20 * YearInMinutes,
-      growthRateEffect: -0.5,
-      immediateTechEffect: -0.1,
-      immediatePopulationEffect: 0
-    })
+  if (civ.maxPopulation) {
+
+    const habitableWorld = system.objects.filter(isPlanet).find(x => state.isHabitable(x));
+
+    if (
+      civ.population > civ.maxPopulation * 0.9 &&
+      habitableWorld &&
+      (civ.technology === "Intrastellar" || civ.technology === "Interstellar")
+    ) {
+      civ.population -= civ.maxPopulation * 0.3;
+      const settlement: Civilization = {
+        established: state.earthTime,
+        events: [],
+        growthRate: civ.growthRate,
+        population: civ.maxPopulation * 0.3,
+        scanned: true,
+        species: "human",
+        techProgress: 3,
+        technology: "Industrial",
+        type: "colony"
+      }
+      if (habitableWorld.civilizations) {
+        habitableWorld.civilizations.push(settlement);
+      } else {
+        habitableWorld.civilizations = [settlement];
+      }
+    }
+    else if (civ.population === civ.maxPopulation && civ.events.find(x => x.description === "overcrowding")) {
+      newEvents.push({
+        description: "overcrowding",
+        ends: state.earthTime + 20 * YearInMinutes,
+        growthRateEffect: -0.5,
+        immediateTechEffect: -0.1,
+        immediatePopulationEffect: 0
+      });
+    }
   }
 
   // Apply immediate effects
@@ -248,10 +272,10 @@ function worstEvent(events: CivilizationEvent[]): CivilizationEvent {
 function updateTech(civ: Civilization, state: GameState, system: SolarSystem) {
   if (civ.techProgress >= 5) {
     if (civ.technology === "Neolithic") {
-      civ.techProgress -= 5;
+      civ.techProgress -= 14;
       civ.technology = "Pre-industrial";
     } else if (civ.technology === "Pre-industrial") {
-      civ.techProgress -= 5;
+      civ.techProgress -= 10;
       civ.technology = "Industrial";
     }
     else if (civ.technology === "Industrial") {
