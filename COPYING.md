@@ -35,20 +35,24 @@ The intro's ending music, the main menu music, and the game over music were
 created by Emma Andersson (https://opengameart.org/users/emmama) and dedicated
 to the public domain:
 
+ * src/assets/audio/bittersweet.mp3
  * src/assets/audio/bittersweet.ogg
+ * src/assets/audio/hauntingPiano.mp3
  * src/assets/audio/hauntingPiano.ogg
+ * src/assets/audio/triumphant.mp3
  * src/assets/audio/triumphant.ogg
 
-The game sound effects are copyright Kenney (https://kenney.nl/) and are
-licensed under the Creative Commons Zero (CC0) license:
+The game sound effects and intro starting music are copyright Kenney 
+(https://kenney.nl/) and are licensed under the Creative Commons Zero 
+(CC0) license:
 
+ * src/assets/audio/click.mp3
  * src/assets/audio/click.ogg
+ * src/assets/audio/rollover.mp3
  * src/assets/audio/rollover.ogg
  * src/assets/audio/warning.ogg
-
-The intro's starting music is copyright Kenney (https://kenney.nl/) and is
-licensed under the Creative Commons Zero (CC0) license:
-
+ * src/assets/audio/warning.mp3
+ * src/assets/audio/Space Cadet.mpg
  * src/assets/audio/Space Cadet.ogg
 
 ## Fonts
