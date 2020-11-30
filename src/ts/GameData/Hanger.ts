@@ -152,7 +152,7 @@ export class Hanger implements ShipSystem {
       scanned: true,
       species: "human",
       technology: "Industrial",
-      growthRate: 1.02,
+      growthRate: 1.04,
       events: []
     };
     addCivilization(planet, newCiv);
@@ -193,7 +193,7 @@ export class Hanger implements ShipSystem {
       scanned: true,
       species: "human",
       technology: "Interstellar",
-      growthRate: 1.01,
+      growthRate: 1.015,
       events: []
     };
     addCivilization(planet, newCiv);
