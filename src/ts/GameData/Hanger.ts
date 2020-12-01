@@ -43,8 +43,8 @@ export class Hanger implements ShipSystem {
     const building = this.systems["hanger"]["building"];
     this.needsAttention = building ? false : true;
     if (building === "repair") {
-      this.state.useSupplies(durationRelativeMinutes);
-      this.state.useIntegrity(-durationRelativeMinutes / 2);
+      this.state.useSupplies(durationRelativeMinutes * 2);
+      this.state.useIntegrity(-durationRelativeMinutes * 1.5);
       if (this.state.integrity >= StatusMaxValue - this.state.permanentDamage) {
         this.stopBuilding();
       } else if (this.state.supplies < 0.01 * StatusMaxValue) {
@@ -53,7 +53,7 @@ export class Hanger implements ShipSystem {
       }
     } else if (building === "scavenge") {
       if (this.isInBelt()) {
-        this.state.useSupplies(-durationRelativeMinutes * 1);
+        this.state.useSupplies(-durationRelativeMinutes * 2);
         if (this.state.supplies === StatusMaxValue) {
           this.state.emit(Events.Warning, "Info: Holds full, recalling drones.");
         }
