@@ -22,6 +22,7 @@ import { ObjectInfo } from "./GameState";
 
 export type SolarSystem = {
   name: string,
+  description?: string,
   position: [number, number],
   objects: SolarSystemObject[],
 }
@@ -34,6 +35,10 @@ export type Sun = {
   description?: string,
   mass: number,
   details: { [id: string]: any }
+}
+
+export function isBlackHole(sun: Sun): boolean {
+  return sun.mass >= 100000000;
 }
 
 export type AsteroidBelt = {

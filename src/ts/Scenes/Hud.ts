@@ -383,7 +383,7 @@ export default class Hud extends Phaser.Scene {
             .setMaxWidth(400);
         } else if (Array.isArray(line)) {
           control = this.add.bitmapText(UI.Margin, yOffset, Fonts.Proportional16, line[0])
-            .setTint(Colours.TextTint)
+            .setTint(Colours.Highlight)
             .setMaxWidth(400);
           UI.showHoverHint(control, gameState, line[1])
         } else {

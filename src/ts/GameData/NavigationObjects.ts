@@ -20,8 +20,8 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 import { GravityWell } from "../Logic/GravitySimulation";
 import AstronomicalMath from "../Logic/AstronomicalMath";
 import Utilities, { Colours, Sprites, UI } from "../Utilities";
-import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
-import { AsteroidBelt, Civilization, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
+import GameState, { arrayToPosition, calculateFuelUsage, Events, InteractiveObject, ObjectDetail, ObjectInfo, SolarSystemDefinition, StatusMaxValue } from "./GameState";
+import { AsteroidBelt, Civilization, isBlackHole, Planet, planetInfo, planetPositionAt, SolarSystemObject, Sun } from "./SolarSystemObjects";
 import { civilizationHint, civilizationInfo } from "./Civilization";
 
 export interface ScalableObject extends GravityWell, InteractiveObject {
@@ -212,7 +212,7 @@ class Asteroids implements ScalableObject {
   }
 
   hint(): string {
-    return "An asteroid belt.\n Traversing at >50km/s risks dangeous collisions.\nDeploy scavenger drones to mine."
+    return this.definition.name + "\n Traversing at >50km/s risks dangeous collisions.\nDeploy scavenger drones to mine."
   }
 
 }
@@ -234,8 +234,9 @@ class InterstellarObject implements ScalableObject {
     const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
     this.distanceToOtherStar = Math.max(0.0005, vectorToOtherStar.length());
     this.position = vectorToOtherStar.scale(10000);
-    this.interactionObject = scene.add.image(this.position.x, this.position.y, Sprites.Sun)
-      .setTint(Colours.SelectableTint);
+    this.interactionObject = this.otherSystem.hasSun()
+      ? scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.SelectableTint)
+      : scene.add.image(this.position.x, this.position.y, Sprites.Planet).setTint(Colours.WarningTint);
   }
 
   update(scene: Phaser.Scene) {
@@ -248,25 +249,30 @@ class InterstellarObject implements ScalableObject {
   }
 
   hint() {
-    return this.otherSystem.name;
+    return this.otherSystem.name + (this.otherSystem.description ? `\n${this.otherSystem.description}` : "");
   }
 
   info(): ObjectInfo {
     const sameSystem = this.otherSystem.name === this.currentSystem.name;
     const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar);
     const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative);
+    const details: ObjectDetail[] = [
+      `Distance: ${this.distanceToOtherStar.toFixed(1)} ly`,
+      `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total`,
+      `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
+      {
+        name: sameSystem ? "Return" : "Travel",
+        hint: sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
+        action: x => this.travel(x)
+      }
+    ]
+    if (this.otherSystem.description) {
+      details.unshift(this.otherSystem.description)
+    }
+
     return {
       name: this.otherSystem.name,
-      details: [
-        `Distance: ${this.distanceToOtherStar.toFixed(1)} ly`,
-        `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total`,
-        `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
-        {
-          name: sameSystem ? "Return" : "Travel",
-          hint: sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
-          action: x => this.travel(x)
-        }
-      ],
+      details: details,
       definition: this.otherSystem
     }
   }
@@ -364,7 +370,9 @@ class SunSprite implements ScalableObject {
   positionAt(time: number) { return this.position }
 
   create(scene: Phaser.Scene) {
-    const outerCircle = scene.add.image(0, 0, Sprites.Sun).setTint(0xeeeeaa);
+    const outerCircle = isBlackHole(this.definition)
+      ? scene.add.image(0, 0, Sprites.Planet).setTint(Colours.WarningTint)
+      : scene.add.image(0, 0, Sprites.Sun).setTint(0xeeeeaa);
     this.toScale.push(outerCircle);
     this.interactionObject = outerCircle;
   }
@@ -438,7 +446,15 @@ class PlanetSprite implements ScalableObject {
   }
 
   private civilizationTint(civ: Civilization): number | undefined {
-    return civ.destroyed ? Colours.DeadTint : Colours.AllyTint;
+    if (civ.destroyed) {
+      return Colours.DeadTint;
+    }
+
+    if (civ.species === "human") {
+      return Colours.AllyTint;
+    }
+
+    return Colours.WarningTint;
   }
 
   private destroyCivilizationSprites() {
@@ -464,7 +480,7 @@ class PlanetSprite implements ScalableObject {
       civ.sprite
         .setTint(this.civilizationTint(civ.civ))
         .setAlpha(Phaser.Math.Clamp((minutes - civ.civ.established) / 10000, 0, 1))
-        .setVisible(civ.established && this.sprite.visible)
+        .setVisible(civ.established && civ.civ.scanned && this.sprite.visible)
         .setPosition(this.position.x, this.position.y)
     }
   }

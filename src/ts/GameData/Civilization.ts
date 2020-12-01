@@ -26,14 +26,13 @@ import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPo
 export function civilizationInfo(civ: Civilization, planet: Planet): ObjectInfo {
   if (civ.destroyed) {
     return {
-      name: `${civDeadTerm(civ)} ${civ.species} ${civTypeName(civ)} on ${planet.name}`,
+      name: `${civDeadTerm(civ)} ${civ.species} ${civTypeName(civ)} at ${planet.name}`,
       definition: null,
       details: [
         { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet)) },
         `Established: ${civ.established > 0 ? UI.createTimeString(civ.established, 1, 1) : 'Pre-Mission'}`,
         `Destroyed: ${UI.createTimeString(civ.destroyed.time, 1, 1)}`,
-        `Cause: ${civ.destroyed.cause}`,
-        `Tech level: ${civ.technology}`
+        `Cause: ${civ.destroyed.cause}`
       ]
     }
 
@@ -90,7 +89,7 @@ export function civTypeName(civ: Civilization): string {
 export function civDeadTerm(civ: Civilization): string {
   switch (civ.type) {
     case "colony": return "dead";
-    case "orbital": return "destroyed";
+    case "orbital": return "derelict";
   }
 }
 
@@ -98,7 +97,7 @@ function showPop(population: number) {
   if (population < 1000) {
     return "< 1000"
   }
-  return (Math.round(population / 1000) * 1000).toFixed(0);
+  return (Math.round(population / 1000) * 1000).toLocaleString(undefined, { maximumFractionDigits: 0 });
 }
 
 function maxTech(level1: TechLevel, level2: TechLevel): TechLevel {
@@ -118,7 +117,7 @@ function maxTech(level1: TechLevel, level2: TechLevel): TechLevel {
 }
 
 function civilizationsAreRelated(civ1: Civilization, civ2: Civilization): boolean {
-  return civ1.species === civ2.species && civ1.type == civ2.type;
+  return civ1.species === civ2.species && civ1.type === "colony" && civ1.type == civ2.type;
 }
 
 export function updateCivilizations(systems: SolarSystem[], state: GameState, timePassed: number): void {
@@ -142,7 +141,10 @@ function updateSystem(system: SolarSystem, state: GameState, timePassed: number)
 
     for (const civ of civs) {
       civ.events.push(...systemEvents);
-      civ.events.push(...planetEvents);
+
+      if (civ.type === "colony") {
+        civ.events.push(...planetEvents);
+      }
       updateCivilization(system, civ, state, timePassed);
     }
   }
@@ -285,7 +287,7 @@ function updateTech(civ: Civilization, state: GameState, system: SolarSystem) {
     else if (civ.technology === "Intrastellar") {
       civ.techProgress -= 5;
       civ.technology = "Interstellar";
-    } else if (civ.type === "colony") {
+    } else if (civ.type === "colony" && civ.species === "human") {
       civ.techProgress -= 5;
       state.emit(Events.InterstellarLaunch, { system: system, time: state.earthTime });
     }

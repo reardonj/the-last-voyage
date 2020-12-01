@@ -148,7 +148,7 @@ export default class GameOver extends Phaser.Scene {
       SavedGames.saveMissionLogs(updateLog(SavedGames.missionLogs(), "posthumous", year * YearInMinutes + this.endTime(gameState)));
       this.yearsPassed = 501;
       this.time.addEvent({
-        delay: 15000,
+        delay: 12000,
         callback: () => this.showPosthumousVictory(year),
         callbackScope: this,
         loop: false

@@ -104,7 +104,7 @@ export default class Scanner implements ShipSystem {
 
     if (scannedAtmosphere(scanTime, planet.atmosphere)) {
       const atmosphere = planet.atmosphere;
-      newDetails.push([`Atmosphere: ${atmosphere ?? "None"}`, () => atmosphereHint(atmosphere)]);
+      newDetails.push(`Atmosphere: ${atmosphere ?? "None"}`);
       scansComplete++;
     }
 
@@ -180,7 +180,7 @@ export default class Scanner implements ShipSystem {
     if (issues.length == 0) {
       return "Habitable";
     } else {
-      return ["Not Habitable", () => `Uninhabitable becaue of incompatible: ${issues.join(", ")}`];
+      return ["Not Habitable", () => `Uninhabitable because of incompatible: ${issues.join(", ")}`];
     }
   }
 

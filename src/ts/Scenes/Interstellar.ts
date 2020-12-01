@@ -67,7 +67,7 @@ export default class Interstellar extends Phaser.Scene {
       orientation: initPosition.clone().rotate(0.2).angle(),
       name: this.sceneState.destination.name
     }
-    const animationLength = Math.max(4000, this.sceneState.travelTime.reference * 500);
+    const animationLength = Math.max(4000, this.sceneState.travelTime.reference * 100);
 
     this.tweens.add({
       targets: this,

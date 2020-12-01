@@ -30,7 +30,7 @@ import { Hanger } from "./Hanger";
 import { Mission } from "./Mission";
 import SavedGames from "./SavedGames";
 import Scanner from "./Scanner";
-import { AsteroidBelt, Civilization, Planet, SolarSystem, SolarSystemObject, withinAsteroidBelt } from "./SolarSystemObjects";
+import { AsteroidBelt, Civilization, isBlackHole, Planet, SolarSystem, SolarSystemObject, Sun, withinAsteroidBelt } from "./SolarSystemObjects";
 import { Worlds } from "./World";
 
 export default class GameState implements SavedState {
@@ -64,11 +64,11 @@ export default class GameState implements SavedState {
       systems: Worlds,
       shipSystems: {},
       ship: {
-        velocity: [5, 3],
-        orientation: new Phaser.Math.Vector2(5, 3).angle(),
-        position: [-40, 146]
+        velocity: [-4, -2],
+        orientation: new Phaser.Math.Vector2(-4, -2).angle(),
+        position: [-45, -136]
       },
-      currentScene: ["solar-system", { name: "Ovid" }]
+      currentScene: ["solar-system", { name: "Sol" }]
     },
       transitionScene);
   }
@@ -227,7 +227,7 @@ export default class GameState implements SavedState {
     // Accelerating beyond 2g causes damage.
     if (acceleration > 2) {
       this.eventSource.emit(Events.Warning, "Warning: Acceleration is causing hull damage");
-      this.useIntegrity(Math.max(0, acceleration - 1) * durationRelativeMinutes);
+      this.useIntegrity(Math.pow(Math.max(0, acceleration - 1), 2) * durationRelativeMinutes);
     }
 
     // Going fast through an asteroid belt is dangerous
@@ -256,11 +256,11 @@ export default class GameState implements SavedState {
       this.eventSource.emit(Events.Warning, "Warning: Casualties incurred due to hull damage!");
     }
 
-    if (this.currentScene[0] === "solar-system") {
+    if (this.currentScene[0] === "solar-system" && this.currentSystem()!.hasSun()) {
       // Only check while inside the system proper
       const sunDist = AstronomicalMath.distance(this.ship.position, [0, 0]);
       if (sunDist < 200) {
-        this.fuel = clampStatusValue(this.fuel + durationRelativeMinutes * Math.pow(1 - sunDist / 200, 3));
+        this.fuel = clampStatusValue(this.fuel + 8 * durationRelativeMinutes * Math.pow(1 - sunDist / 200, 3));
       }
     }
 
@@ -373,7 +373,7 @@ export default class GameState implements SavedState {
 }
 
 export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
-  return (0.01 * thrusterAcceleration * durationEarthMinutes + durationRelativeMinutes / 1000);
+  return (StatusMaxValue * (0.01 * thrusterAcceleration * durationEarthMinutes + 0.01 * durationRelativeMinutes) / YearInMinutes);
 }
 
 function clampStatusValue(value: number) {
@@ -384,6 +384,7 @@ function createSystems(worlds: SolarSystem[]): { [id: string]: SolarSystemDefini
   const toReturn: { [id: string]: SolarSystemDefinition } = {};
   return worlds.map(x => new SolarSystemDefinition(
     x.name,
+    x.description,
     <[number, number]>x.position,
     x.objects.reduce((acc, obj) => {
       acc[obj.name] = obj;
@@ -495,6 +496,7 @@ export interface SolarSystemState {
 export class SolarSystemDefinition {
   constructor(
     public name: string,
+    public description: string | undefined,
     public position: [number, number],
     public objects: { [id: string]: SolarSystemObject }
   ) { }
@@ -502,6 +504,14 @@ export class SolarSystemDefinition {
   vectorTo(other: SolarSystemDefinition) {
     return new Phaser.Math.Vector2(other.position[0], other.position[1])
       .subtract(new Phaser.Math.Vector2(this.position[0], this.position[1]));
+  }
+
+  hasSun(): boolean {
+    return Object
+      .keys(this.objects)
+      .map(x => this.objects[x])
+      .filter<Sun>((x): x is Sun => x.type === "sun")
+      .find(x => !isBlackHole(x)) !== undefined;
   }
 
   asteroids(): AsteroidBelt[] {
@@ -529,7 +539,15 @@ export class SolarSystemDefinition {
     return Object
       .keys(this.objects)
       .map(x => this.objects[x])
-      .reduce((max, x) => x.type == "planet" ? Math.max(max, x.orbitalRadius) : max, 0);
+      .reduce((max, x) => {
+        if (x.type === "planet") {
+          return Math.max(max, x.orbitalRadius);
+        }
+        if (x.type === "asteroids") {
+          return Math.max(max, x.orbitalRadius + x.radius);
+        }
+        return max
+      }, 0);
   }
 }
 

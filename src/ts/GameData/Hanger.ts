@@ -103,7 +103,13 @@ export class Hanger implements ShipSystem {
       return;
     }
 
-    if (this.state.isHabitable(planet) && this.colonyShips() > 0) {
+    const habitable = this.state.isHabitable(planet);
+
+    if (!habitable && this.canBeMadeHabitable(planet)) {
+      info.details.push(["Habitability Possible", () => "It may be possible to make this world habitable with research."]);
+    }
+
+    if (habitable && this.colonyShips() > 0) {
       info.details.push({
         name: "Launch Colonization Fleet",
         hint: `Send 100,000 colonists to ${planet.name}`,
@@ -199,6 +205,14 @@ export class Hanger implements ShipSystem {
     addCivilization(planet, newCiv);
     this.state.emit(Events.LaunchColonizationFleet, planet)
     this.state.emit(Events.ShowInfo, null)
+  }
+
+  canBeMadeHabitable(planet: Planet) {
+    const planetGravity = relativeEarthGravity(planet);
+
+    return planetGravity > 0.3 && planetGravity < 2 &&
+      (planet.atmosphere === "Thin" || planet.atmosphere === "Thick" || planet.atmosphere === "Toxic" || planet.atmosphere === "Inert") &&
+      planet.temperature === "Frozen";
   }
 
   isHabitable(planet: Planet): Habitability {
