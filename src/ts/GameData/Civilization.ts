@@ -374,14 +374,14 @@ const planetaryEvents: PotentialEvent[] = [
   },
   {
     description: ["technological breakthrough"],
-    yearsBetween: 10,
+    yearsBetween: 25,
     duration: [1, 20],
     growthRateEffect: 0.2,
     immediateTechEffect: 1
   },
   {
     description: ["major technological breakthrough"],
-    yearsBetween: 100,
+    yearsBetween: 150,
     duration: [10, 100],
     growthRateEffect: 0.2,
     immediateTechEffect: 3

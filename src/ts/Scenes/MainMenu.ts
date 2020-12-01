@@ -39,6 +39,9 @@ export default class MainMenu extends Phaser.Scene {
     UI.centre(0, this.cameras.main.width,
       this.add.bitmapText(0, 150, Fonts.Proportional48, "The Last Voyage").setTint(Colours.NeutralTint));
 
+    // Version
+    this.add.bitmapText(1280 - UI.Margin, 696, Fonts.Proportional16, "v 1.01").setOrigin(1, 0).setTint(Colours.TextTint)
+
     const lastSave = this.loadSave();
     if (lastSave) {
       this.addMenuItem(260, "Continue your voyage", () => {
