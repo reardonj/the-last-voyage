@@ -20,7 +20,7 @@ along with The Last Voyage.  If not, see <https://www.gnu.org/licenses/>.
 import { GravitySimulation, GravityWell } from "../Logic/GravitySimulation";
 import { GameObjects, Math as M } from "phaser";
 import * as Conversions from "../Logic/Conversions";
-import GameState, { Alert, arrayToPosition, Events, SolarSystemState } from "../GameData/GameState";
+import GameState, { Alert, arrayToPosition, Events, ObjectInfo, SolarSystemState } from "../GameData/GameState";
 import { Colours, Resources, Sprites, UI } from "../Utilities";
 import { createGameObjects, createZoomLevels, NavObject, ScalableObject } from "../GameData/NavigationObjects";
 import Hud from "./Hud";
@@ -60,7 +60,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   launchDestination: GameObjects.Particles.GravityWell;
   paused: boolean = false;
   pauseKey: Phaser.Input.Keyboard.Key;
-
+  selectionIndicator: GameObjects.Sprite;
+  selection: ((t: number) => Phaser.Math.Vector2) | null = null;
 
   public preload(): void {
   }
@@ -77,6 +78,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.events.on('destroy', () => {
       this.game.events.removeListener("step", undefined, this);
       state.unwatch(Events.LaunchColonizationFleet, this.launchColonizationFleet);
+      state.unwatch(Events.ShowInfo, this.showIndicator);
       state.unwatch(Events.Alert, this.pause);
     });
 
@@ -87,6 +89,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.farthestOrbit = state.currentSystem()!.farthestOrbit();
     this.orbitalBodies = createGameObjects(state.currentSystem()!, state.worlds);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
+
     this.sim = new GravitySimulation(this.orbitalBodies.map(x => x.scalable));
 
     this.position = arrayToPosition(state.ship.position);
@@ -122,10 +125,28 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       emitZone: { source: new Phaser.Geom.Rectangle(-5, -5, 10, 10) }
     });
 
+    // Set up selection indicator
+    this.anims.create({
+      key: "blink",
+      frames: this.anims.generateFrameNumbers("selectionIndicator", {}),
+      frameRate: 2,
+      repeat: -1
+    });
+    this.selectionIndicator = this.add
+      .sprite(0, 0, "selectionIndicator")
+      .setTint(Colours.Highlight)
+      .play("blink");
+    this.toScale.push(this.selectionIndicator);
+
     this.updateScaledObjects(true);
 
     state.watch(Events.LaunchColonizationFleet, this.launchColonizationFleet, this);
+    state.watch(Events.ShowInfo, this.showIndicator, this);
     state.watch(Events.Alert, this.pause, this);
+  }
+
+  showIndicator(info: ObjectInfo | null) {
+    this.selection = info?.position ?? null;
   }
 
   pause(x: any) {
@@ -164,6 +185,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   public update(time: number, delta: number) {
     if (this.gameState().currentScene[0] != "solar-system") {
       return;
+    }
+
+    if (this.selection == null) {
+      this.selectionIndicator.alpha = Math.max(0, this.selectionIndicator.alpha - delta / 300);
+    } else {
+      const position = this.selection(this.gameState().earthTime);
+      this.selectionIndicator.setPosition(position.x, position.y);
+      this.selectionIndicator.alpha = Math.min(1, this.selectionIndicator.alpha + delta / 200);
     }
 
     if (this.paused) {
@@ -232,19 +261,22 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
   private updateShip(deltaMs: number): number {
     const daysPassed = 7.2 / 60 / 24 * deltaMs;
-    const needsUpdate =
-      !this.nextPredictions ||
-      this.cursors.up?.isDown ||
-      this.cursors.down?.isDown ||
-      this.cursors.right?.isDown ||
-      this.cursors.left?.isDown;
 
     let ownAcc = new Phaser.Math.Vector2();
     const acc = new Phaser.Math.Vector2();
     if (this.nextPredictions) {
       acc.add(this.nextPredictions[1][2]);
     }
+    if (this.cursors.right?.isDown) {
+      this.orientation += (Math.PI / 90);
+    } else if (this.cursors.left?.isDown) {
+      this.orientation += (-Math.PI / 90);
+    }
 
+    const needsUpdate =
+      !this.nextPredictions ||
+      this.cursors.up?.isDown ||
+      this.cursors.down?.isDown;
     if (needsUpdate) {
       ownAcc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
       acc.add(ownAcc);
@@ -342,11 +374,6 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       y = -0.5;
     }
 
-    if (this.cursors.right?.isDown) {
-      this.orientation += (Math.PI / 90);
-    } else if (this.cursors.left?.isDown) {
-      this.orientation += (-Math.PI / 90);
-    }
     return new Phaser.Math.Vector2(1, 0).setToPolar(this.orientation).scale(y);
   }
 

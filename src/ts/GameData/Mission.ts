@@ -125,6 +125,7 @@ export class Mission implements ShipSystem {
     return {
       name: "Mission Status",
       definition: null,
+      position: null,
       details: [
         `Systems Visited: ${Object.keys(this.missionState.systems).length}`,
         `Colonies Founded: ${colonies}`,

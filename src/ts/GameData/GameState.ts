@@ -433,6 +433,7 @@ export type ObjectInfo = {
   name: string,
   details: ObjectDetail[]
   definition: SolarSystemObject | SolarSystemDefinition | null,
+  position: ((time: number) => Phaser.Math.Vector2) | null,
   onlyUpdate?: boolean
 }
 

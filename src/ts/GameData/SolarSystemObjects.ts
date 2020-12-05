@@ -126,7 +126,7 @@ export function orbitalPeriod(planet: Planet, sunMass: number) {
     24 * 60 * AstronomicalMath.orbitalPeriod(planet.orbitalRadius, sunMass);
 }
 
-export function planetInfo(planet: Planet): ObjectInfo {
+export function planetInfo(planet: Planet, sunMass: number): ObjectInfo {
   const details: string[] = [];
   if (planet.description) {
     details.push(planet.description);
@@ -137,7 +137,8 @@ export function planetInfo(planet: Planet): ObjectInfo {
   return {
     name: planet.name,
     details: details,
-    definition: planet
+    definition: planet,
+    position: t => planetPositionAt(planet, sunMass, t)
   }
 }
 

@@ -62,12 +62,19 @@ export default class Scanner implements ShipSystem {
     return {
       name: this.name,
       details: [this.hint(), ...this.buildActions()],
-      definition: null
+      definition: null,
+      position: null
     }
   }
 
   buildActions(): { name: string; hint: string; action: (state: GameState) => void; }[] {
-    return this.state.currentSystem()?.planets()
+    const system = this.state.currentSystem();
+    if (!system) {
+      return [];
+    }
+
+    const sunMass = system.solarMass();
+    return system.planets()
       .map(x => {
         const scanComplete = this.isScanComplete(this.scanTime(x), x);
         const isScanning = this.systems["scanner"]["scanning"] === x.name;
@@ -77,10 +84,10 @@ export default class Scanner implements ShipSystem {
           return {
             name: `View ${x.name}${isScanning ? " (scanning)" : ""}`,
             hint: scanComplete ? "View scan results" : "View scan progress",
-            action: () => this.state.emit(Events.ShowInfo, planetInfo(x))
+            action: () => this.state.emit(Events.ShowInfo, planetInfo(x, sunMass))
           }
         }
-      }) ?? []
+      });
   }
 
   transformInfo(info: ObjectInfo): void {
@@ -127,7 +134,7 @@ export default class Scanner implements ShipSystem {
           newDetails.push({
             name: `${civ.species} ${civTypeName(civ)}` + (civ.destroyed ? ` (${civDeadTerm(civ)})` : ""),
             hint: civilizationHint(civ),
-            action: g => g.emit(Events.ShowInfo, civilizationInfo(civ, planet))
+            action: g => g.emit(Events.ShowInfo, civilizationInfo(civ, planet, system.solarMass()))
           })
         }
       } else {
@@ -233,7 +240,7 @@ export default class Scanner implements ShipSystem {
       this.stopScanning();
       const updateScannerInfo = this.info();
       updateScannerInfo.onlyUpdate = true;
-      const updatePlanetInfo = planetInfo(target);
+      const updatePlanetInfo = planetInfo(target, system.solarMass());
       updatePlanetInfo.onlyUpdate = true;
       target.civilizations?.forEach(x => x.scanned = true);
 

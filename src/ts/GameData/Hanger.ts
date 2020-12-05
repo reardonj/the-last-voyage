@@ -136,7 +136,7 @@ export class Hanger implements ShipSystem {
 
     if (!this.systems["hanger"]["colonization fleet"]) {
       this.state.emit(Events.Warning, "Error: No ships available.");
-      this.state.emit(Events.ShowInfo, planetInfo(planet))
+      this.state.emit(Events.ShowInfo, planetInfo(planet, this.state.currentSystem()!.solarMass()))
       return;
     }
 
@@ -176,7 +176,7 @@ export class Hanger implements ShipSystem {
 
     if (!this.systems["hanger"]["research orbital"]) {
       this.state.emit(Events.Warning, "Error: No orbitals available.");
-      this.state.emit(Events.ShowInfo, planetInfo(planet))
+      this.state.emit(Events.ShowInfo, planetInfo(planet, this.state.currentSystem()!.solarMass()))
       return;
     }
 
@@ -267,6 +267,7 @@ export class Hanger implements ShipSystem {
       name: this.name,
       definition: null,
       details: this.currentAction(),
+      position: null
     }
   }
 

@@ -203,6 +203,7 @@ class Asteroids implements ScalableObject {
     return {
       name: this.definition.name,
       definition: this.definition,
+      position: null,
       details: [
         this.definition.description ?? "An ore and ice rich asteroid belt.",
         "Traversing at >50km/s risks dangeous collisions.",
@@ -273,7 +274,8 @@ class InterstellarObject implements ScalableObject {
     return {
       name: this.otherSystem.name,
       details: details,
-      definition: this.otherSystem
+      definition: this.otherSystem,
+      position: t => this.positionAt(t)
     }
   }
 
@@ -311,6 +313,7 @@ class InvisibleObjectIndicator implements ScalableObject {
     const hidden = this.hiddenObjects();
     return {
       name: `Unrenderable Objects (${hidden.length})`,
+      position: null,
       details: [
         "Objects are too close to the sun to display at this resolution:",
         ...hidden.map(x => ({
@@ -391,11 +394,12 @@ class SunSprite implements ScalableObject {
     return this.definition.name;
   }
 
-  info() {
+  info(): ObjectInfo {
     return {
       name: this.definition.name,
       details: [this.definition.description ?? "Local sun."],
-      definition: this.definition
+      definition: this.definition,
+      position: t => this.positionAt(t)
     }
   }
 }
@@ -439,7 +443,7 @@ class PlanetSprite implements ScalableObject {
         const state = <GameState>scene.scene.settings.data;
         sprite.setInteractive({ useHandCursor: true });
         UI.showHoverHint(sprite, state, () => civilizationHint(civ));
-        sprite.on("pointerdown", () => state.emit(Events.ShowInfo, civilizationInfo(civ, this.definition)));
+        sprite.on("pointerdown", () => state.emit(Events.ShowInfo, civilizationInfo(civ, this.definition, this.sunMass)));
         this.civilizations.push({ sprite, civ, established: false, inView: true });
       }
     }
@@ -505,7 +509,7 @@ class PlanetSprite implements ScalableObject {
   }
 
   info() {
-    return planetInfo(this.definition);
+    return planetInfo(this.definition, this.sunMass);
   }
 }
 

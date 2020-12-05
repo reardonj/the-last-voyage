@@ -23,17 +23,19 @@ import GameState, { Events, ObjectInfo, SolarSystemDefinition } from "./GameStat
 import { Civilization, CivilizationEvent, isPlanet, Planet, planetInfo, planetPositionAt, PotentialEvent, SolarSystem, TechLevel } from "./SolarSystemObjects";
 
 
-export function civilizationInfo(civ: Civilization, planet: Planet): ObjectInfo {
+export function civilizationInfo(civ: Civilization, planet: Planet, solarMass: number): ObjectInfo {
+
   if (civ.destroyed) {
     return {
       name: `${civDeadTerm(civ)} ${civ.species} ${civTypeName(civ)} at ${planet.name}`,
       definition: null,
       details: [
-        { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet)) },
+        { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet, solarMass)) },
         `Established: ${civ.established > 0 ? UI.createTimeString(civ.established, 1, 1) : 'Pre-Mission'}`,
         `Destroyed: ${UI.createTimeString(civ.destroyed.time, 1, 1)}`,
         `Cause: ${civ.destroyed.cause}`
-      ]
+      ],
+      position: t => planetPositionAt(planet, solarMass, t)
     }
 
   }
@@ -41,11 +43,12 @@ export function civilizationInfo(civ: Civilization, planet: Planet): ObjectInfo 
     name: `${civ.species} ${civTypeName(civ)} at ${planet.name}`,
     definition: null,
     details: [
-      { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet)) },
+      { name: planet.name, hint: "Return to planet information.", action: g => g.emit(Events.ShowInfo, planetInfo(planet, solarMass)) },
       `Established: ${civ.established > 0 ? UI.createTimeString(civ.established, 1, 1) : 'Pre-Mission'}`,
       `Tech level: ${civ.technology}`,
       [`Population: ${showPop(civ.population)}`, () => populationHint(civ)]
-    ]
+    ],
+    position: t => planetPositionAt(planet, solarMass, t)
   }
 }
 
