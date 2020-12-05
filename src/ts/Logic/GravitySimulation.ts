@@ -52,7 +52,7 @@ export class GravitySimulation {
       vel.add(acc.add(newAcc).scale(delta * 0.5));
       pos = newPos;
       acc = newAcc;
-      time += daysPerFrame / 24 / 60;
+      time += daysPerFrame * 24 * 60;
     }
   }
 
