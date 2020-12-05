@@ -44,7 +44,7 @@ export class UI {
     right: number,
     obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform & { width: number }
   ) {
-    obj.setX((left + right) / 2 - obj.width / 2);
+    obj.setX(Math.floor((left + right) / 2 - obj.width / 2));
     return obj;
   }
 

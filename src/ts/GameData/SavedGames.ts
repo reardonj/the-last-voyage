@@ -80,7 +80,7 @@ export default class SavedGames {
     if (!this.supported()) {
       return false;
     }
-    return (window.localStorage.getItem("introShown") ?? "false") == "true"
+    return (window.localStorage.getItem("introShown") ?? "false") === "true"
   }
 
   static setIntroShown(shown: boolean) {

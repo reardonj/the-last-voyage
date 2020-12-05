@@ -54,16 +54,26 @@ export default class MainMenu extends Phaser.Scene {
       });
     }
 
-    this.addMenuItem(328, "Mission Logs", () => {
-      this.scene.add(MissionLogs.Name, MissionLogs, false).scene.sendToBack();
-      this.scene.transition({
-        target: MissionLogs.Name,
-        duration: UI.TransitionLength,
-        remove: true,
-        allowInput: false
+    if (SavedGames.supported()) {
+      this.addMenuItem(328, "Mission Logs", () => {
+        this.scene.add(MissionLogs.Name, MissionLogs, false).scene.sendToBack();
+        this.scene.transition({
+          target: MissionLogs.Name,
+          duration: UI.TransitionLength,
+          remove: true,
+          allowInput: false
+        });
+        (<Transition>this.scene.get(Transition.Name)).startTransition(UI.TransitionLength);
       });
-      (<Transition>this.scene.get(Transition.Name)).startTransition(UI.TransitionLength);
-    });
+    } else {
+      const item = this.add.bitmapText(this.cameras.main.width / 2, 328, Fonts.Proportional24, `[ Mission Logs ]`)
+        .setTint(Colours.DeadTint)
+        .setOrigin(0.5, 0.5);
+      this.add.bitmapText(this.cameras.main.width / 2, 340, Fonts.Proportional16, "Warning, browser security settings prevent saving.")
+        .setMaxWidth(600)
+        .setTint(Colours.WarningTint)
+        .setOrigin(0.5, 0.5);
+    }
 
     this.addMenuItem(395, "Replay Intro", () => {
       this.scene.add(SplashScreen.Name, SplashScreen, false).scene.sendToBack();
@@ -83,12 +93,12 @@ export default class MainMenu extends Phaser.Scene {
     this.add.bitmapText(320, 490, Fonts.Proportional16, "P to Pause\nHover for info\nClick on [ buttons ]").setTint(Colours.TextTint)
 
     // Thrust
-    const thrust = this.add.bitmapText(610, 490, Fonts.Proportional16, "Thrust\nUp for main thrusters\nDown for reverse")
-      .setTint(Colours.TextTint).setOrigin(0.5, 0);
+    const thrust = this.add.bitmapText(510, 490, Fonts.Proportional16, "Thrust\nUp for main thrusters\nDown for reverse")
+      .setTint(Colours.TextTint);
 
     // Rotation
-    const rotate = this.add.bitmapText(840, 490, Fonts.Proportional16, "Rotation\nRight for clockwise\nLeft for counterclockwise")
-      .setTint(Colours.TextTint).setOrigin(0.5, 0);
+    const rotate = this.add.bitmapText(730, 490, Fonts.Proportional16, "Rotation\nRight for clockwise\nLeft for counterclockwise")
+      .setTint(Colours.TextTint);
 
     // Saves
     const saving = this.add.bitmapText(400, 550, Fonts.Proportional16,
@@ -110,10 +120,11 @@ export default class MainMenu extends Phaser.Scene {
   }
 
   private addMenuItem(y: number, text: string, action: Function) {
-    const continueText = this.add.bitmapText(this.cameras.main.width / 2, y, Fonts.Proportional24, `[ ${text} ]`)
-      .setOrigin(0.5, 0.5);
-    UI.makeInteractive(continueText, true);
-    continueText.on("pointerdown", action, this);
+    const item = this.add.bitmapText(this.cameras.main.width / 2, y, Fonts.Proportional24, `[ ${text} ]`);
+    UI.centre(0, this.cameras.main.width, item);
+    item.y = Math.floor(item.y - item.height / 2);
+    UI.makeInteractive(item, true);
+    item.on("pointerdown", action, this);
   }
 
   private loadSave(): GameState | null {

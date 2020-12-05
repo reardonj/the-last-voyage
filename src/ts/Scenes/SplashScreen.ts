@@ -68,12 +68,20 @@ export default class SplashScreen extends Phaser.Scene {
     if (SavedGames.introShown()) {
       this.runIntro();
     } else {
-      this.start = this.add.bitmapText(640, 360, Fonts.Proportional16, "[ Click here to start ]")
+      this.start = this.add.bitmapText(640, 350, Fonts.Proportional16, "[ Click here to start ]")
         .setOrigin(0.5, 0.5)
         .setTint(Colours.TextTint)
       UI.makeInteractive(this.start, true);
       this.start.once("pointerdown", () => {
         this.runIntro();
+      }, this);
+
+      const skip = this.add.bitmapText(640, 370, Fonts.Proportional16, "[ Skip Intro ]")
+        .setOrigin(0.5, 0.5)
+        .setTint(Colours.TextTint);
+      UI.makeInteractive(skip, true);
+      skip.once("pointerdown", () => {
+        this.loadMainMenu();
       }, this);
     }
   }
