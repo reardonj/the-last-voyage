@@ -236,7 +236,7 @@ class InterstellarObject implements ScalableObject {
     this.position = vectorToOtherStar.scale(10000);
     this.interactionObject = this.otherSystem.hasSun()
       ? scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.SelectableTint)
-      : scene.add.image(this.position.x, this.position.y, Sprites.Planet).setTint(Colours.WarningTint);
+      : scene.add.image(this.position.x, this.position.y, Sprites.BlackHole).setTint(Colours.WarningTint);
   }
 
   update(scene: Phaser.Scene) {
@@ -371,7 +371,7 @@ class SunSprite implements ScalableObject {
 
   create(scene: Phaser.Scene) {
     const outerCircle = isBlackHole(this.definition)
-      ? scene.add.image(0, 0, Sprites.Planet).setTint(Colours.WarningTint)
+      ? scene.add.image(0, 0, Sprites.BlackHole).setTint(Colours.WarningTint)
       : scene.add.image(0, 0, Sprites.Sun).setTint(0xeeeeaa);
     this.toScale.push(outerCircle);
     this.interactionObject = outerCircle;

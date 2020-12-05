@@ -94,6 +94,7 @@ export const Sprites = {
   Planet: "planet",
   Ship: "ship",
   Sun: "sun",
+  BlackHole: "blackHole",
   ShortGradient: "shortGradient",
 }
 

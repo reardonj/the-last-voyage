@@ -35,12 +35,9 @@ export default class Preloader extends Phaser.Scene {
     this.addProgressBar();
 
     this.load.path = "assets/";
-    this.load.image(Sprites.Civilization, "civilization.png");
-    this.load.image(Sprites.Dot, "dot.png");
-    this.load.image(Sprites.Sun, "sun.png");
-    this.load.image(Sprites.Planet, "planet.png");
-    this.load.image(Sprites.Ship, "ship.png");
-    this.load.image(Sprites.ShortGradient, "short-gradient.png");
+    for (const key of Object.values(Sprites)) {
+      this.load.image(key, key + ".png");
+    }
     this.load.bitmapFont(Fonts.Proportional48, "fonts/kenvector_future_thin_48.png", "fonts/kenvector_future_thin_48.xml");
     this.load.bitmapFont(Fonts.Proportional24, "fonts/kenvector_future_thin_24.png", "fonts/kenvector_future_thin_24.xml");
     this.load.bitmapFont(Fonts.Proportional16, "fonts/kenvector_future_thin_16.png", "fonts/kenvector_future_thin_16.xml");
