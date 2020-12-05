@@ -35,7 +35,7 @@ export class UI {
 
   public static showHoverHint(obj: Phaser.GameObjects.GameObject, emitter: GameState, hint: () => string) {
     obj.setInteractive();
-    obj.on("pointerover", () => emitter.emit(Events.HoverHint, hint()), this);
+    obj.on("pointerover", () => emitter.emit(Events.HoverHint, hint), this);
     obj.on("pointerout", () => emitter.emit(Events.HoverHint, null), this);
   }
 

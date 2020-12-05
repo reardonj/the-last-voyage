@@ -57,6 +57,7 @@ export default class Hud extends Phaser.Scene {
   needsAttentionAnimation: Phaser.Tweens.Tween;
   needsAttentionAlpha: number = 1;
   permanentDamage: Phaser.GameObjects.BitmapText;
+  hoverHintText: (() => string) | null;
 
   public preload(): void {
     // Preload as needed.
@@ -213,6 +214,16 @@ export default class Hud extends Phaser.Scene {
   }
 
   public update(time: number, delta: number) {
+    // Update hint
+    if (this.hoverHintText == null) {
+      this.hoverHint.alpha = Math.max(0, this.hoverHint.alpha - delta / 300);
+    } else {
+      this.hoverHint.setText(this.hoverHintText ? this.hoverHintText() : "");
+      UI.centre(0, this.cameras.main.width, this.hoverHint);
+      this.hoverHint.alpha = Math.min(1, this.hoverHint.alpha + delta / 200);
+    }
+
+
     // Update active animations for ship systems
     for (const [sys, label] of this.systems) {
       if (sys.needsAttention) {
@@ -439,9 +450,8 @@ export default class Hud extends Phaser.Scene {
     this.infoDetails = [];
   }
 
-  private showHoverHint(hint: string | null) {
-    this.hoverHint.setText(hint ?? "");
-    UI.centre(0, this.cameras.main.width, this.hoverHint);
+  private showHoverHint(hint: (() => string) | null) {
+    this.hoverHintText = hint;
   }
 
   private gameState() {
