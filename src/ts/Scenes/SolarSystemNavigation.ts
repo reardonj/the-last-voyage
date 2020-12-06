@@ -247,11 +247,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.launchEmitter.setScale(scaleFactor);
 
-    if (scale == 0.001) {
+    if (scale >= 0.001) {
+      this.currentPosition.visible = false;
       this.gameState().emit(
         Events.LocationChanged,
         [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);
     } else {
+      this.currentPosition.visible = false;
       const location = scale == 1 ? "Inner System" : "Outer System";
       this.gameState().emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
 

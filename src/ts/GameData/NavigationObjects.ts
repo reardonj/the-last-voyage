@@ -225,11 +225,16 @@ class InterstellarObject implements ScalableObject {
   mass: number = 0;
   position: Phaser.Math.Vector2;
   distanceToOtherStar: number;
+  sameSystem: boolean;
+  selectionIndicator?: Phaser.GameObjects.Sprite;
 
   constructor(
     private currentSystem: SolarSystemDefinition,
     private otherSystem: SolarSystemDefinition
-  ) { }
+  ) {
+    this.sameSystem = this.otherSystem.name === this.currentSystem.name;
+
+  }
 
   create(scene: Phaser.Scene) {
     const vectorToOtherStar = this.currentSystem.vectorTo(this.otherSystem);
@@ -238,6 +243,13 @@ class InterstellarObject implements ScalableObject {
     this.interactionObject = this.otherSystem.hasSun()
       ? scene.add.image(this.position.x, this.position.y, Sprites.Sun).setTint(Colours.SelectableTint)
       : scene.add.image(this.position.x, this.position.y, Sprites.BlackHole).setTint(Colours.WarningTint);
+    if (this.sameSystem) {
+      this.selectionIndicator = scene.add
+        .sprite(0, 0, "selectionIndicator")
+        .setTint(Colours.NeutralTint)
+        .setRotation(Math.PI / 4);
+    }
+
   }
 
   update(scene: Phaser.Scene) {
@@ -246,6 +258,8 @@ class InterstellarObject implements ScalableObject {
   setScale(scale: number) {
     this.interactionObject.setScale(scale);
     this.interactionObject.setVisible(scale >= 100)
+    this.selectionIndicator?.setScale(scale);
+    this.selectionIndicator?.setVisible(scale >= 100)
 
   }
 
@@ -254,7 +268,6 @@ class InterstellarObject implements ScalableObject {
   }
 
   info(): ObjectInfo {
-    const sameSystem = this.otherSystem.name === this.currentSystem.name;
     const travelTime = AstronomicalMath.travelTime(this.distanceToOtherStar);
     const fuelUsage = calculateFuelUsage(1, 365 * 24 * 60 * travelTime.reference, 365 * 24 * 60 * travelTime.relative);
     const details: ObjectDetail[] = [
@@ -262,8 +275,8 @@ class InterstellarObject implements ScalableObject {
       `Fuel Needed: ${(100 * fuelUsage / StatusMaxValue).toFixed(0)}% total`,
       `Travel Time: \n    ${travelTime.reference.toFixed(2)} y earth\n    ${travelTime.relative.toFixed(2)} y relative`,
       {
-        name: sameSystem ? "Return" : "Travel",
-        hint: sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
+        name: this.sameSystem ? "Return" : "Travel",
+        hint: this.sameSystem ? "Turn back to the local sun" : "Begin the relativistic journey to " + this.otherSystem.name,
         action: x => this.travel(x)
       }
     ]
