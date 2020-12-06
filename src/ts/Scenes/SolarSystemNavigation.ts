@@ -90,7 +90,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.orbitalBodies = createGameObjects(state.currentSystem()!, state.worlds);
     this.orbitalBodies.forEach(x => this.setupScalableObject(x));
 
-    this.sim = new GravitySimulation(this.orbitalBodies.map(x => x.scalable));
+    this.sim = new GravitySimulation(this.orbitalBodies.map(x => x.scalable).filter(x => x.mass > 0));
 
     this.position = arrayToPosition(state.ship.position);
     this.nextVelocity = arrayToPosition(state.ship.velocity);
@@ -224,7 +224,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const baseScale = this.game.canvas.height / 2;
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
     const scale = distFromCentre > this.farthestOrbit + 1000 ?
-      0.0004 :
+      0.0002 :
       Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.5)) / 100));
 
     if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.01) {
@@ -247,13 +247,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
     this.launchEmitter.setScale(scaleFactor);
 
-    if (scale >= 0.001) {
+    if (scale <= 0.001) {
       this.currentPosition.visible = false;
       this.gameState().emit(
         Events.LocationChanged,
         [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);
     } else {
-      this.currentPosition.visible = false;
+      this.currentPosition.visible = true;
       const location = scale == 1 ? "Inner System" : "Outer System";
       this.gameState().emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
 
