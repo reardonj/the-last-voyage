@@ -374,6 +374,7 @@ class InvisibleObjectIndicator implements ScalableObject {
 
 class SunSprite implements ScalableObject {
   private toScale: (Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Visible)[] = [];
+  private regenIndicators: (Phaser.GameObjects.Components.Transform & Phaser.GameObjects.Components.Visible)[] = [];
   position: Phaser.Math.Vector2;
   mass: number;
   interactionObject: Phaser.GameObjects.GameObject;
@@ -390,6 +391,11 @@ class SunSprite implements ScalableObject {
       ? scene.add.image(0, 0, Sprites.BlackHole).setTint(Colours.WarningTint)
       : scene.add.image(0, 0, Sprites.Sun).setTint(0xeeeeaa);
     this.toScale.push(outerCircle);
+    const ringCount = isBlackHole(this.definition) ? 0 : 5;
+    this.regenIndicators = [];
+    for (let i = 1; i <= ringCount; i++) {
+      this.regenIndicators.push(scene.add.circle(0, 0, 200 * Math.pow(i / ringCount, 2), 0xeeeeaa, 0.10));
+    }
     this.interactionObject = outerCircle;
   }
 
@@ -401,6 +407,7 @@ class SunSprite implements ScalableObject {
       o.setScale(scale);
       o.setVisible(scale < 100)
     }
+    this.regenIndicators.forEach(x => x.setVisible(scale <= 2));
   }
 
   hint() {
