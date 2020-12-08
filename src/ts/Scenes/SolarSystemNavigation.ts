@@ -62,6 +62,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
   pauseKey: Phaser.Input.Keyboard.Key;
   selectionIndicator: GameObjects.Sprite;
   selection: ((t: number) => Phaser.Math.Vector2) | null = null;
+  fastForwardKey: Phaser.Input.Keyboard.Key;
 
   public preload(): void {
   }
@@ -98,7 +99,8 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     this.cameras.main.centerOn(0, 0);
     this.cursors = this.input.keyboard.createCursorKeys();
-    this.pauseKey = this.input.keyboard.addKey("P", true, false);
+    this.pauseKey = this.input.keyboard.addKey("P");
+    this.fastForwardKey = this.input.keyboard.addKey("F");
 
     // Set up position predictions
     this.prediction = [];
@@ -209,7 +211,10 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     }
 
     if (this.cameras.main.zoom > 0.01) {
-      this.updateShip(delta);
+      const times = this.fastForwardKey.isDown ? 16 : 1;
+      for (let i = 0; i < times; i++) {
+        this.updateShip(this.fastForwardKey.isDown, delta);
+      }
     } else {
       this.gameState().emit(
         Events.UpdateStatus,
@@ -249,11 +254,13 @@ export default class SolarSystemNavigation extends Phaser.Scene {
 
     if (scale <= 0.001) {
       this.currentPosition.visible = false;
+      this.prediction.forEach(x => x.visible = false);
       this.gameState().emit(
         Events.LocationChanged,
         [`Interstellar Space near ${this.gameState().currentSystem()!.name}`]);
     } else {
       this.currentPosition.visible = true;
+      this.prediction.forEach(x => x.visible = true);
       const location = scale == 1 ? "Inner System" : "Outer System";
       this.gameState().emit(Events.LocationChanged, [this.gameState().currentSystem()!.name, location]);
 
@@ -261,7 +268,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     return scale;
   }
 
-  private updateShip(deltaMs: number): number {
+  private updateShip(isFastForward: boolean, deltaMs: number): number {
     const daysPassed = 7.2 / 60 / 24 * deltaMs;
 
     let ownAcc = new Phaser.Math.Vector2();
@@ -269,16 +276,14 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     if (this.nextPredictions) {
       acc.add(this.nextPredictions[1][2]);
     }
-    if (this.cursors.right?.isDown) {
+    if (!isFastForward && this.cursors.right?.isDown) {
       this.orientation += (Math.PI / 90);
-    } else if (this.cursors.left?.isDown) {
+    } else if (!isFastForward && this.cursors.left?.isDown) {
       this.orientation += (-Math.PI / 90);
     }
 
-    const needsUpdate =
-      !this.nextPredictions ||
-      this.cursors.up?.isDown ||
-      this.cursors.down?.isDown;
+    const hasInput = !isFastForward && (this.cursors.up?.isDown || this.cursors.down?.isDown);
+    const needsUpdate = !this.nextPredictions || hasInput;
     if (needsUpdate) {
       ownAcc = this.nextAcc().scale(AstronomicalMath.Acceleration1GDay * daysPassed * daysPassed);
       acc.add(ownAcc);

@@ -90,7 +90,7 @@ export default class MainMenu extends Phaser.Scene {
     UI.centre(0, this.cameras.main.width, controls);
 
     // Explanation
-    this.add.bitmapText(320, 490, Fonts.Proportional16, "P to Pause\nHover for info\nClick on [ buttons ]").setTint(Colours.TextTint)
+    this.add.bitmapText(320, 490, Fonts.Proportional16, "P to Pause\nF to Fast Forward\nClick on [ buttons ]").setTint(Colours.TextTint)
 
     // Thrust
     const thrust = this.add.bitmapText(510, 490, Fonts.Proportional16, "Thrust\nUp for main thrusters\nDown for reverse")
