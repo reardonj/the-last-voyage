@@ -219,7 +219,7 @@ export default class GameState implements SavedState {
     this.relativeTime += durationRelativeMinutes;
     this.fuel = clampStatusValue(this.fuel - calculateFuelUsage(thrusterAcceleration, durationEarthMinutes, durationRelativeMinutes));
     this.useIntegrity(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
-    this.useSupplies(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
+    this.useSupplies(StatusMaxValue * 0.01 * durationRelativeMinutes / YearInMinutes);
     if (this.supplies <= 0) {
       this.useIntegrity(StatusMaxValue * 0.02 * durationRelativeMinutes / YearInMinutes);
     }
@@ -260,7 +260,7 @@ export default class GameState implements SavedState {
       // Only check while inside the system proper
       const sunDist = AstronomicalMath.distance(this.ship.position, [0, 0]);
       if (sunDist < 200) {
-        this.fuel = clampStatusValue(this.fuel + 8 * durationRelativeMinutes * Math.pow(1 - sunDist / 200, 3));
+        this.fuel = clampStatusValue(this.fuel + 8 * durationRelativeMinutes * Math.pow(1 - sunDist / 250, 3));
       }
     }
 
@@ -342,7 +342,7 @@ export default class GameState implements SavedState {
     currentScene.scene.transition({
       target: this.currentSceneName(),
       data: this,
-      duration: 400,
+      duration: UI.TransitionLength,
       remove: true,
       allowInput: false
     });
