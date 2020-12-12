@@ -65,7 +65,7 @@ export default class GameOver extends Phaser.Scene {
       this.scene.sendToBack(MainMenu.Name);
       this.scene.transition({
         target: MainMenu.Name,
-        duration: 300,
+        duration: UI.TransitionLength,
         remove: true
       });
       state.transitionScene.startTransition(UI.TransitionLength);
