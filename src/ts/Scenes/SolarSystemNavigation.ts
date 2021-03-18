@@ -1,5 +1,5 @@
 /* 
-Copyright 2020, Justin Reardon. 
+Copyright 2020-2021, Justin Reardon. 
 
 This file is part of The Last Voyage.
 
@@ -229,7 +229,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     const baseScale = this.game.canvas.height / 2;
     const distFromCentre = this.position.distance(M.Vector2.ZERO);
     const scale = distFromCentre > this.farthestOrbit + 1000 ?
-      0.0002 :
+      0.0004 :
       Math.max(0.05, Math.min(1, Math.round(100 * baseScale / (distFromCentre * 1.5)) / 100));
 
     if (force || Phaser.Math.Difference(this.cameras.main.zoom, scale) >= 0.01) {

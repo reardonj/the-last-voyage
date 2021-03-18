@@ -1,5 +1,5 @@
 /* 
-Copyright 2020, Justin Reardon. 
+Copyright 2020-2021, Justin Reardon. 
 
 This file is part of The Last Voyage.
 
@@ -373,7 +373,7 @@ export default class GameState implements SavedState {
 }
 
 export function calculateFuelUsage(thrusterAcceleration: number, durationEarthMinutes: number, durationRelativeMinutes: number) {
-  return (StatusMaxValue * (0.01 * thrusterAcceleration * durationEarthMinutes + 0.01 * durationRelativeMinutes) / YearInMinutes);
+  return (StatusMaxValue * (0.012 * thrusterAcceleration * durationEarthMinutes + 0.01 * durationRelativeMinutes) / YearInMinutes);
 }
 
 function clampStatusValue(value: number) {
