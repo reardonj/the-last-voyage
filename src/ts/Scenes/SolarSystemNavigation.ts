@@ -115,6 +115,7 @@ export default class SolarSystemNavigation extends Phaser.Scene {
     this.toScale.push(this.currentPosition);
     UI.showHoverHint(this.currentPosition, this.gameState(), () => Resources.ShipName);
 
+    const zoneRect = new Phaser.Geom.Rectangle(-5, -5, 10, 10);
     // Set up launch particles
     const particleSource = this.add.particles(Sprites.Dot);
     this.launchEmitter = particleSource.createEmitter({
@@ -124,7 +125,18 @@ export default class SolarSystemNavigation extends Phaser.Scene {
       quantity: 5,
       moveToX: 10,
       moveToY: 10,
-      emitZone: { source: new Phaser.Geom.Rectangle(-5, -5, 10, 10) }
+      emitZone: {
+        source: {
+          // Definition of source type is broken in current Phaser.
+          // It is using Vector2Like as the param, but that can't
+          // be passed to getRandomPoint.
+          getRandomPoint: (point) => {
+            const random = zoneRect.getRandomPoint()
+            point.x = random.x;
+            point.y = random.y;
+          }
+        }
+      }
     });
 
     // Set up selection indicator

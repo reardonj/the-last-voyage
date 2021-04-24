@@ -91,7 +91,7 @@ export class AudioScene extends Scene implements Audio {
     }
 
     if (this.audioSupported) {
-      this.audioToggle = this.add.bitmapText(UI.Margin, 696, Fonts.Proportional16, "");
+      this.audioToggle = this.add.bitmapText(UI.Margin, 696, Fonts.Proportional16, "[ Audio Off ]");
       this.audioToggle.on("pointerdown", () => {
         if (this.sound.locked) {
           return;
@@ -102,6 +102,7 @@ export class AudioScene extends Scene implements Audio {
         SavedGames.setAudioOn(!mute);
       }, this);
       UI.makeInteractive(this.audioToggle, true);
+
       this.sound.mute = !SavedGames.audioOn();
       this.setAudioToggleText();
       this.sound.on('unlocked', () => { this.sound.mute = !SavedGames.audioOn() });

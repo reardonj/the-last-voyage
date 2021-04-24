@@ -40,7 +40,7 @@ export default class MainMenu extends Phaser.Scene {
       this.add.bitmapText(0, 150, Fonts.Proportional48, "The Last Voyage").setTint(Colours.NeutralTint));
 
     // Version
-    this.add.bitmapText(1280 - UI.Margin, 696, Fonts.Proportional16, "v 1.02").setOrigin(1, 0).setTint(Colours.TextTint)
+    this.add.bitmapText(1280 - UI.Margin, 696, Fonts.Proportional16, "v 1.03").setOrigin(1, 0).setTint(Colours.TextTint)
 
     const lastSave = this.loadSave();
     if (lastSave) {
@@ -76,7 +76,9 @@ export default class MainMenu extends Phaser.Scene {
     }
 
     this.addMenuItem(395, "Replay Intro", () => {
-      this.scene.add(SplashScreen.Name, SplashScreen, false).scene.sendToBack();
+      if (!this.scene.get(SplashScreen.Name)) {
+        this.scene.add(SplashScreen.Name, SplashScreen, false).scene.sendToBack();
+      }
       this.scene.transition({
         target: SplashScreen.Name,
         duration: UI.TransitionLength,

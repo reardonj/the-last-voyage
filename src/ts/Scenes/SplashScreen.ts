@@ -32,8 +32,6 @@ export default class SplashScreen extends Phaser.Scene {
   start: Phaser.GameObjects.BitmapText;
 
   public create(): void {
-    SavedGames.setIntroShown(true);
-
     this.dying = this.add.bitmapText(640, 200, Fonts.Proportional24, "The earth is dying...")
       .setTint(Colours.NeutralTint)
       .setOrigin(0.5, 0)
@@ -65,6 +63,14 @@ export default class SplashScreen extends Phaser.Scene {
       .setCenterAlign()
       .setAlpha(0);
 
+    const skip = this.add.bitmapText(640, 696, Fonts.Proportional16, "[ Skip Intro ]")
+      .setOrigin(0.5, 0)
+      .setTint(Colours.TextTint);
+    UI.makeInteractive(skip, true);
+    skip.once("pointerdown", () => {
+      this.loadMainMenu();
+    }, this);
+
     if (SavedGames.introShown()) {
       this.runIntro();
     } else {
@@ -75,15 +81,9 @@ export default class SplashScreen extends Phaser.Scene {
       this.start.once("pointerdown", () => {
         this.runIntro();
       }, this);
-
-      const skip = this.add.bitmapText(640, 370, Fonts.Proportional16, "[ Skip Intro ]")
-        .setOrigin(0.5, 0.5)
-        .setTint(Colours.TextTint);
-      UI.makeInteractive(skip, true);
-      skip.once("pointerdown", () => {
-        this.loadMainMenu();
-      }, this);
     }
+
+    SavedGames.setIntroShown(true);
   }
 
   private runIntro() {

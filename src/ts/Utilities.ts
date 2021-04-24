@@ -20,8 +20,8 @@ export class UI {
   public static Margin = 8;
   public static TransitionLength = 600;
 
-  public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint, sound?: boolean) {
-    obj.setInteractive({ useHandCursor: true });
+  public static makeInteractive(obj: Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Tint, sound?: boolean, config?: Phaser.Types.Input.InputConfiguration) {
+    obj.setInteractive({ ...config, useHandCursor: true });
     obj.setTint(Colours.SelectableTint);
     obj.on("pointerover", () => {
       obj.setTint(Colours.Highlight);
